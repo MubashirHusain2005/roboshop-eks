@@ -143,7 +143,7 @@ services:
       - payment
       - ratings
     ports:
-      - "8080:8080"
+      - "8080:8080"  ###May have to change to 3000:3000
     networks:
       - robot-shop
 

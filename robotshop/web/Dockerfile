@@ -23,7 +23,7 @@ RUN if [ -n "$KEY" ]; then \
 
 FROM nginx:1.21.6
 
-EXPOSE 8080
+EXPOSE 3000
 
 ENV CATALOGUE_HOST=catalogue \
     USER_HOST=user \
@@ -37,6 +37,9 @@ ENV CATALOGUE_HOST=catalogue \
 COPY --from=build /instana/*.so /tmp/
 
 COPY entrypoint.sh /root/
+
+RUN sed -i 's/\r$//' /root/entrypoint.sh && chmod +x /root/entrypoint.sh
+
 ENTRYPOINT ["/root/entrypoint.sh"]
 
 COPY default.conf.template /etc/nginx/conf.d/default.conf.template

@@ -1,4 +1,4 @@
-##6 External DNS
+## External DNS
 terraform {
   required_providers {
     aws = {
@@ -33,7 +33,7 @@ EOF
 }
 
 resource "aws_iam_role" "external_dns" {
-  name = "iam-dns"
+  name = var.external_dns_rolename
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -56,7 +56,7 @@ resource "aws_iam_role" "external_dns" {
 }
 
 resource "aws_iam_role_policy" "external_dns_route53" {
-  name = "external-dns-route53-policy"
+  name = var.external_dns_policy_name
   role = aws_iam_role.external_dns.id
 
   policy = jsonencode({
@@ -84,8 +84,8 @@ resource "aws_iam_role_policy" "external_dns_route53" {
 
 resource "kubernetes_service_account_v1" "external_dns" {
   metadata {
-    name      = "external-dns"
-    namespace = "external-dns"
+    name      = var.external_dns_name
+    namespace = var.external_dns_ns
     annotations = {
       "eks.amazonaws.com/role-arn" = aws_iam_role.external_dns.arn
     }
@@ -95,10 +95,9 @@ resource "kubernetes_service_account_v1" "external_dns" {
 
 
 
-
 resource "helm_release" "external_dns" {
-  name             = "external-dns"
-  namespace        = "external-dns"
+  name             = var.external_dns_name
+  namespace        = var.external_dns_ns
   create_namespace = false
   repository       = "https://kubernetes-sigs.github.io/external-dns/"
   chart            = "external-dns"

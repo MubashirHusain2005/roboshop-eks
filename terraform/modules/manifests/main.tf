@@ -19,9 +19,6 @@ terraform {
   }
 }
 
-
-
-
 ############################################
 # NAMESPACES
 ############################################
@@ -135,6 +132,7 @@ EOF
 ############################################
 # SECRETS / CONFIGMAPS   
 ############################################
+####Temporary mysql secret will use Vault injection
 resource "kubectl_manifest" "mysql_secret" {
   yaml_body = <<EOF
 apiVersion: v1
@@ -310,6 +308,7 @@ EOF
   ]
 }
 
+##Add Vault mysql injection here
 resource "kubectl_manifest" "mysql_statefulset" {
   yaml_body = <<EOF
 apiVersion: apps/v1
@@ -814,11 +813,11 @@ spec:
       labels:
         app: shipping
     spec:
+      serviceAccountName: shipping-sa
       containers:
         - name: robot-app-shipping
           image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/shipping:v1
           imagePullPolicy: Always
-
           env:
             - name: DB_HOST
               value: mysql
@@ -866,6 +865,7 @@ EOF
 
   depends_on = [
     kubectl_manifest.mysql_statefulset,
+    kubectl_manifest.shipping_sa
   ]
 }
 
@@ -1042,18 +1042,26 @@ spec:
           image: nginx:1.21.6
           ports:
             - containerPort: 8080
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "50Mi"
+            limits:
+              cpu: "100m"
+              memory: "100Mi"
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
+
 
         # ===============================
         # EXISTING WEB CONTAINER
         # ===============================
         - name: robot-app-web
-          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web:v1
+          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web:v5
           imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - containerPort: 3000
           env:
             - name: SESSION_SECURE
               value: "false"
@@ -1084,103 +1092,104 @@ EOF
   ]
 }
 
+##Pod Autoscaling
 
 ##Horizontal Pod Autoscaler for web traffic
-resource "kubectl_manifest" "pod_autoscaler_web" {
-  yaml_body = <<EOF
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: web-hpa
-  namespace: app-space
-  labels:
-    app: web
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: web
+#resource "kubectl_manifest" "pod_autoscaler_web" {
+  #yaml_body = <<EOF
+#apiVersion: autoscaling/v2
+#kind: HorizontalPodAutoscaler
+#metadata:
+  #name: web-hpa
+ # namespace: app-space
+ # labels:
+   # app: web
+#spec:
+  #scaleTargetRef:
+   # apiVersion: apps/v1
+   ## kind: Deployment
+    #name: web
 
-  minReplicas: 3
-  maxReplicas: 10
+ # minReplicas: 3
+ # maxReplicas: 10
 
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
+ # metrics:
+   # - type: Resource
+   #   resource:
+      #  name: cpu
+      #  target:
+       #   type: Utilization
+       #   averageUtilization: 70
 
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      selectPolicy: Max
-      policies:
-        - type: Percent
-          value: 100
-          periodSeconds: 15
-        - type: Pods
-          value: 4
-          periodSeconds: 15
+ # behavior:
+   # scaleUp:
+      #stabilizationWindowSeconds: 0
+      #selectPolicy: Max
+     # policies:
+      #  - type: Percent
+       #   value: 100
+       #   periodSeconds: 15
+       # - type: Pods
+       #   value: 4
+        #  periodSeconds: 15
 
-    scaleDown:
-      stabilizationWindowSeconds: 300
-      policies:
-        - type: Percent
-          value: 50
-          periodSeconds: 60
-EOF
-}
+    #scaleDown:
+    #  stabilizationWindowSeconds: 300
+     # policies:
+      #  - type: Percent
+     ##     value: 50
+       #   periodSeconds: 60
+#EOF
+#}
 
 
 ##Horizontal Pod Autoscaler for User
-resource "kubectl_manifest" "pod_autoscaler_user" {
-  yaml_body = <<EOF
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: user-hpa
-  namespace: data-space
-  labels:
-    app: user
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: user
+#resource "kubectl_manifest" "pod_autoscaler_user" {
+  #yaml_body = <<EOF
+#apiVersion: autoscaling/v2
+#kind: HorizontalPodAutoscaler
+#metadata:
+ # name: user-hpa
+ # namespace: data-space
+ # labels:
+ #   app: user
+#spec:
+ # scaleTargetRef:
+  #  apiVersion: apps/v1
+   # kind: Deployment
+   # name: user
 
-  minReplicas: 3
-  maxReplicas: 10
+  #minReplicas: 3
+ # maxReplicas: 10
 
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
+  #metrics:
+  #  - type: Resource
+    #  resource:
+     #   name: cpu
+     #   target:
+       #   type: Utilization
+       #   averageUtilization: 70
 
-  behavior:
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      selectPolicy: Max
-      policies:
-        - type: Percent
-          value: 100
-          periodSeconds: 15
-        - type: Pods
-          value: 4
-          periodSeconds: 15
+ # behavior:
+   # scaleUp:
+     # stabilizationWindowSeconds: 0
+     # selectPolicy: Max
+     # policies:
+      #  - type: Percent
+        #  value: 100
+        #  periodSeconds: 15
+       # - type: Pods
+        #  value: 4
+        #  periodSeconds: 15
 
-    scaleDown:
-      stabilizationWindowSeconds: 300
-      policies:
-        - type: Percent
-          value: 50
-          periodSeconds: 60
-EOF
-}
+    #scaleDown:
+      #stabilizationWindowSeconds: 300
+     # policies:
+       # - type: Percent
+        #  value: 50
+        #  periodSeconds: 60
+#EOF
+#}
 
 
 
@@ -1277,22 +1286,146 @@ data:
             proxy_pass http://ratings:80/;
         }
 
+        location / {
+             proxy_pass http://127.0.0.1:3000;
+             proxy_set_header Host $host;
+             proxy_set_header X-Real-IP $remote_addr;
+             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+             proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
         # ===============================
         # STATIC FILES
         # ===============================
         location /images/ {
-            expires 5s;
-            try_files $uri /images/placeholder.png;
-        }
+            proxy_pass http://127.0.0.1:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            }
 
-        # ===============================
-        # ANGULAR HTML5 MODE FIX
-        # ===============================
-        location / {
-            try_files $uri $uri/ /index.html;
-        }
     }
 EOF
 }
+
+
+##RBAC
+
+resource "kubectl_manifest" "vault_auth_crb" {
+  yaml_body = <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vault-auth-delegator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+- kind: ServiceAccount
+  name: vault-auth
+  namespace: kube-system
+EOF
+
+  depends_on = [kubectl_manifest.vault_auth_sa]
+}
+
+##Service Accounts
+
+resource "kubectl_manifest" "vault_auth_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-auth
+  namespace: kube-system
+EOF
+}
+
+#Cart Service Account
+resource "kubectl_manifest" "cart_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cart-sa
+  namespace: app-space
+EOF
+}
+
+#Catalogue Service Account
+resource "kubectl_manifest" "catalogue_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: catalogue-sa
+  namespace: app-space
+EOF
+}
+
+#Shipping Service Account
+resource "kubectl_manifest" "shipping_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: shipping-sa
+  namespace: app-space
+EOF
+}
+
+#Web Service Account
+resource "kubectl_manifest" "web_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: web-sa
+  namespace: app-space
+EOF
+}
+
+#Payment Service Account
+resource "kubectl_manifest" "payment_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: payment-sa
+  namespace: app-space
+EOF
+}
+
+
+#Ratings Service Account
+resource "kubectl_manifest" "ratings_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ratings-sa
+  namespace: app-space
+EOF
+}
+
+#User Service Account
+resource "kubectl_manifest" "user_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user-sa
+  namespace: app-space
+EOF
+}
+
+###Each microservice runs under its own Kubernetes 
+#ServiceAccount, which Vault uses as the 
+#workload identity to issue a short-lived Vault token
+#mapped to a least-privilege policy. 
+#This prevents lateral secret access between services
+
 
 

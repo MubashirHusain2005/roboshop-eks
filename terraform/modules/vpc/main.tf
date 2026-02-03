@@ -101,7 +101,6 @@ resource "aws_kms_key_policy" "kms_key_policy" {
 }
 
 
-
 resource "aws_vpc" "eks_vpc" {
   cidr_block           = var.vpc_cidr
   instance_tenancy     = var.inst_tenancy
@@ -281,9 +280,4 @@ resource "aws_cloudwatch_log_group" "cloud_watch_logs" {
   retention_in_days = 7
   kms_key_id        = aws_kms_key.kms_key.arn
 }
-
-
-
-
-
 

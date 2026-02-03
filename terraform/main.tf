@@ -8,8 +8,10 @@ module "vpc" {
   source             = "./modules/vpc"
   vpc_flow_logs_role = module.iam.vpc_flow_logs_role
 
+
   depends_on = [module.iam]
 }
+
 
 module "iam" {
   source = "./modules/iam"
@@ -26,6 +28,8 @@ module "eks" {
   priv_subnet2a_id     = module.vpc.priv_subnet2a_id
   priv_subnet2b_id     = module.vpc.priv_subnet2b_id
   kms_key_arn          = module.vpc.kms_key_arn
+  node_group_name      = var.node_group_name
+  node_group_name_2    = var.node_group_name_2
 
 
   depends_on = [
@@ -33,22 +37,6 @@ module "eks" {
     module.vpc
   ]
 
-}
-
-provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_ca)
-
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command     = "aws"
-    args = [
-      "eks",
-      "get-token",
-      "--cluster-name",
-      module.eks.cluster_name
-    ]
-  }
 }
 
 
@@ -67,11 +55,15 @@ module "external-dns" {
   source            = "./modules/external-dns"
   oidc_issuer_url   = module.eks.oidc_issuer_url
   oidc_provider_arn = module.eks.oidc_provider_arn
+  external_dns_policy_name = var.external_dns_policy_name
+  external_dns_name = var.external_dns_name
+  external_dns_ns = var.external_dns_ns
+  external_dns_rolename = var.external_dns_rolename
+
 
   depends_on = [
     module.eks,
     module.nginx-ingress
-
   ]
 
 }
@@ -81,7 +73,6 @@ module "manifests" {
   source                   = "./modules/manifests"
   cluster_endpoint         = module.eks.cluster_endpoint
   letsencrypt_staging_name = module.cert-manager.letsencrypt_staging_name
-  kms_key_arn              = module.vpc.kms_key_arn
 
 
   depends_on = [
@@ -106,8 +97,6 @@ module "security-group" {
   source = "./modules/security-group"
   vpc_id = module.vpc.vpc_id
 }
-
-
 
 
 

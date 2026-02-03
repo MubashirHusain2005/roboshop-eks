@@ -5,7 +5,6 @@ variable "cluster_name" {
 
 variable "clus_vers" {
   type        = string
-  description = "Version of Cluster"
 }
 
 variable "vpc_id" {
@@ -16,7 +15,6 @@ variable "vpc_id" {
 variable "iam_cluster_role_arn" {
   type = string
 }
-
 
 
 variable "nodegroup_role_arn" {
@@ -45,5 +43,13 @@ variable "priv_subnet2b_id" {
 variable "kms_key_arn" {
   type        = string
   description = "KMS key ARN used for EKS secrets encryption"
+}
+
+variable "node_group_name" {
+  type = string
+}
+
+variable "node_group_name_2" {
+  type = string
 }
 

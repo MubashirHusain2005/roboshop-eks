@@ -13,4 +13,3 @@ variable "cert_issuer" {
 variable "cluster_endpoint" {
   type = string
 }
-

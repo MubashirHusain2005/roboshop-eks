@@ -1,4 +1,3 @@
-#
 # Build the app
 #
 FROM php:7.4-apache

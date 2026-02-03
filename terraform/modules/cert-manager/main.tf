@@ -1,4 +1,4 @@
-##2  Cert manager
+##  Cert manager
 terraform {
   required_providers {
 
@@ -21,8 +21,6 @@ terraform {
     }
   }
 }
-
-
 
 
 resource "helm_release" "cert_manager" {
