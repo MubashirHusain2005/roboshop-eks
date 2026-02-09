@@ -132,7 +132,7 @@ EOF
 ############################################
 # SECRETS / CONFIGMAPS   
 ############################################
-####Temporary mysql secret will use Vault injection
+####Temporary mysql secret will use Vault injection later
 resource "kubectl_manifest" "mysql_secret" {
   yaml_body = <<EOF
 apiVersion: v1
@@ -240,7 +240,6 @@ spec:
       targetPort: 5672
 EOF
 }
-
 
 
 
@@ -637,6 +636,7 @@ metadata:
 spec:
   selector:
     app: web
+    version: v1
   ports:
   - port: 8080
     targetPort: 8080
@@ -1029,10 +1029,12 @@ spec:
   selector:
     matchLabels:
       app: web
+      version: v1
   template:
     metadata:
       labels:
         app: web
+        version: v1
     spec:
       containers:
         # ===============================
@@ -1091,106 +1093,6 @@ EOF
 
   ]
 }
-
-##Pod Autoscaling
-
-##Horizontal Pod Autoscaler for web traffic
-#resource "kubectl_manifest" "pod_autoscaler_web" {
-  #yaml_body = <<EOF
-#apiVersion: autoscaling/v2
-#kind: HorizontalPodAutoscaler
-#metadata:
-  #name: web-hpa
- # namespace: app-space
- # labels:
-   # app: web
-#spec:
-  #scaleTargetRef:
-   # apiVersion: apps/v1
-   ## kind: Deployment
-    #name: web
-
- # minReplicas: 3
- # maxReplicas: 10
-
- # metrics:
-   # - type: Resource
-   #   resource:
-      #  name: cpu
-      #  target:
-       #   type: Utilization
-       #   averageUtilization: 70
-
- # behavior:
-   # scaleUp:
-      #stabilizationWindowSeconds: 0
-      #selectPolicy: Max
-     # policies:
-      #  - type: Percent
-       #   value: 100
-       #   periodSeconds: 15
-       # - type: Pods
-       #   value: 4
-        #  periodSeconds: 15
-
-    #scaleDown:
-    #  stabilizationWindowSeconds: 300
-     # policies:
-      #  - type: Percent
-     ##     value: 50
-       #   periodSeconds: 60
-#EOF
-#}
-
-
-##Horizontal Pod Autoscaler for User
-#resource "kubectl_manifest" "pod_autoscaler_user" {
-  #yaml_body = <<EOF
-#apiVersion: autoscaling/v2
-#kind: HorizontalPodAutoscaler
-#metadata:
- # name: user-hpa
- # namespace: data-space
- # labels:
- #   app: user
-#spec:
- # scaleTargetRef:
-  #  apiVersion: apps/v1
-   # kind: Deployment
-   # name: user
-
-  #minReplicas: 3
- # maxReplicas: 10
-
-  #metrics:
-  #  - type: Resource
-    #  resource:
-     #   name: cpu
-     #   target:
-       #   type: Utilization
-       #   averageUtilization: 70
-
- # behavior:
-   # scaleUp:
-     # stabilizationWindowSeconds: 0
-     # selectPolicy: Max
-     # policies:
-      #  - type: Percent
-        #  value: 100
-        #  periodSeconds: 15
-       # - type: Pods
-        #  value: 4
-        #  periodSeconds: 15
-
-    #scaleDown:
-      #stabilizationWindowSeconds: 300
-     # policies:
-       # - type: Percent
-        #  value: 50
-        #  periodSeconds: 60
-#EOF
-#}
-
 
 
 
@@ -1310,38 +1212,147 @@ EOF
 }
 
 
-##RBAC
+###Each microservice runs under its own Kubernetes 
+#ServiceAccount, which Vault uses as the 
+#workload identity to issue a short-lived Vault token
+#mapped to a least-privilege policy. 
+#This prevents lateral secret access between services
 
-resource "kubectl_manifest" "vault_auth_crb" {
+
+####Canary Deployment V2 with changes made to the web html :Green version
+
+resource "kubectl_manifest" "canary_deployment_web_2" {
   yaml_body = <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: vault-auth-delegator
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:auth-delegator
-subjects:
-- kind: ServiceAccount
-  name: vault-auth
-  namespace: kube-system
+  name: web-2
+  namespace: app-space
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: web
+        version: v2
+    spec:
+      containers:
+        # ===============================
+        # NGINX FRONT PROXY (SIDE CAR)
+        # ===============================
+        - name: web-nginx
+          image: nginx:1.21.6
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "50Mi"
+            limits:
+              cpu: "100m"
+              memory: "100Mi"
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+
+
+        # ===============================
+        # EXISTING WEB CONTAINER
+        # ===============================
+        - name: canary-robot-app-web
+          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web:v9
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: SESSION_SECURE
+              value: "false"
+            - name: SESSION_SAMESITE
+              value: "lax"
+            - name: INSTANA_DISABLE_AUTO_INSTR
+              value: "true"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "60Mi"
+            limits:
+              cpu: "200m"
+              memory: "100Mi"
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: web-nginx-config
+
+
 EOF
 
-  depends_on = [kubectl_manifest.vault_auth_sa]
+  depends_on = [
+    kubectl_manifest.web_service,
+    kubectl_manifest.mysql_statefulset,
+    kubectl_manifest.canary_service,
+    kubectl_manifest.canary_ingress
+
+  ]
+
 }
 
-##Service Accounts
 
-resource "kubectl_manifest" "vault_auth_sa" {
+resource "kubectl_manifest" "canary_service" {
   yaml_body = <<EOF
+
 apiVersion: v1
-kind: ServiceAccount
+kind: Service
 metadata:
-  name: vault-auth
-  namespace: kube-system
+  name: web-2
+  namespace: app-space
+spec:
+  selector:
+    app: web
+    version: v2
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+EOF
+
+}
+
+
+resource "kubectl_manifest" "canary_ingress" {
+  yaml_body = <<EOF
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-canary
+  namespace: app-space
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "80"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: mubashir.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: web-2
+            port:
+              number: 8080
 EOF
 }
+
+
+####RBAC 
 
 #Cart Service Account
 resource "kubectl_manifest" "cart_sa" {
@@ -1375,6 +1386,43 @@ metadata:
   namespace: app-space
 EOF
 }
+##Read only access to the secret
+resource "kubectl_manifest" "shipping_rbac_role" {
+  yaml_body = <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: shipping-secret-reader
+  namespace: app-space
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["mysql-secret"]
+    verbs: ["get", "list"]
+EOF
+}
+
+##Rolebinding to attach to SA
+
+resource "kubectl_manifest" "shipping_rbac_rolebinding" {
+  yaml_body = <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: shipping-secret-reader-binding
+  namespace: shipping
+subjects:
+  - kind: ServiceAccount
+    name: shipping-sa
+    namespace: app-space
+roleRef:
+  kind: Role
+  name: shipping-secret-reader
+  apiGroup: rbac.authorization.k8s.io
+EOF
+
+}
+
 
 #Web Service Account
 resource "kubectl_manifest" "web_sa" {
@@ -1421,11 +1469,48 @@ metadata:
 EOF
 }
 
-###Each microservice runs under its own Kubernetes 
-#ServiceAccount, which Vault uses as the 
-#workload identity to issue a short-lived Vault token
-#mapped to a least-privilege policy. 
-#This prevents lateral secret access between services
 
+##Mysql 
 
+resource "kubectl_manifest" "mysql_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-sa
+  namespace: app-space
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: shipping-secret-reader
+  namespace: shipping
+rules:
+  - apiGroups
 
+EOF
+}
+
+##Mongo Service Account
+
+resource "kubectl_manifest" "mongo_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mongo-sa
+  namespace: data-space
+EOF
+}
+
+##Redis Service Account
+
+resource "kubectl_manifest" "redis_sa" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis
+  namespace: data-space
+EOF
+}

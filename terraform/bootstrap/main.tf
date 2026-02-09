@@ -2,11 +2,11 @@ provider "aws" {
   region = "eu-west-2"
 }
 
+
 ##S3 Bucket to store tf state file
 
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = "mhusains3"
-
+resource "aws_s3_bucket" "terraform_state_bucket" {
+  bucket = "terraformstatebucket00534353432534523"
 
   lifecycle {
     prevent_destroy = false
@@ -20,8 +20,8 @@ resource "aws_s3_bucket" "terraform_state" {
 
 ##Enabled Versioning
 
-resource "aws_s3_bucket_versioning" "versioning" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_versioning" "s3_versioning" {
+  bucket = aws_s3_bucket.terraform_state_bucket.id
   versioning_configuration {
     status = "Enabled"
   }
@@ -29,8 +29,8 @@ resource "aws_s3_bucket_versioning" "versioning" {
 
 ## Enable encryption 
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "s3_encryption" {
+  bucket = aws_s3_bucket.terraform_state_bucket.id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -42,8 +42,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "encryption" {
 
 ##Block All public access- state files should never be public
 
-resource "aws_s3_bucket_public_access_block" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_public_access_block" "terraform_s3_access" {
+  bucket = aws_s3_bucket.terraform_state_bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -52,8 +52,8 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 }
 
 ##Bucket policy enforces SSL/TLS connectiosn only 
-resource "aws_s3_bucket_policy" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_policy" "s3_bucket_policy" {
+  bucket = aws_s3_bucket.terraform_state_bucket.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -64,7 +64,7 @@ resource "aws_s3_bucket_policy" "terraform_state" {
         Principal = "*"
         Action    = "s3:*"
         Resource = [
-          "${aws_s3_bucket.terraform_state.arn}/*"
+          "${aws_s3_bucket.terraform_state_bucket.arn}/*"
         ]
         Condition = {
           Bool = {
@@ -79,7 +79,7 @@ resource "aws_s3_bucket_policy" "terraform_state" {
 ##DynamoDB for Statelock
 
 resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "terraform-lock"
+  name         = "state-lock"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -220,6 +220,16 @@ resource "aws_iam_policy" "oidc_access_aws" {
           "logs:DeleteRetentionPolicy"
         ]
         Resource = "*"
+      },
+
+      {
+        Sid    = "SecretsManager"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:DeleteSecret"
+        ]
       },
 
 
@@ -812,4 +822,5 @@ resource "aws_ecr_lifecycle_policy" "ecr_policy_web" {
     ]
   })
 }
+
 

@@ -1,0 +1,81 @@
+####Canary Deployment V2 with changes made to the web html :Green version
+
+resource "kubectl_manifest" "canary_deployment_web_2" {
+  yaml_body = <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-2
+  namespace: app-space
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: web
+        version: v2
+    spec:
+      containers:
+        # ===============================
+        # NGINX FRONT PROXY (SIDE CAR)
+        # ===============================
+        - name: web-nginx
+          image: nginx:1.21.6
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "50Mi"
+            limits:
+              cpu: "100m"
+              memory: "100Mi"
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+
+
+        # ===============================
+        # EXISTING WEB CONTAINER
+        # ===============================
+        - name: canary-robot-app-web
+          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web:v2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: SESSION_SECURE
+              value: "false"
+            - name: SESSION_SAMESITE
+              value: "lax"
+            - name: INSTANA_DISABLE_AUTO_INSTR
+              value: "true"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "60Mi"
+            limits:
+              cpu: "200m"
+              memory: "100Mi"
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: web-nginx-config
+
+
+EOF
+
+  depends_on = [
+    kubectl_manifest.web_service,
+    kubectl_manifest.mysql_statefulset,
+    kubectl_manifest.canary_service,
+    kubectl_manifest.canary_ingress
+
+  ]
+
+}

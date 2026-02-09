@@ -1,4 +1,4 @@
-name: Intialise Terraform Code and Plan
+name: Intialise Terraform Code and Apply
 
 #Workflow Triggers
 on:

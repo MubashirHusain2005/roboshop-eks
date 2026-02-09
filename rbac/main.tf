@@ -13,7 +13,6 @@ terraform {
 resource "kubectl_manifest" "mysql_sa" {
   count = var.enable_rbac ? 1 : 0
 
-
   yaml_body = <<EOF
 apiVersion: v1
 kind: ServiceAccount

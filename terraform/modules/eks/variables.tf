@@ -4,7 +4,7 @@ variable "cluster_name" {
 }
 
 variable "clus_vers" {
-  type        = string
+  type = string
 }
 
 variable "vpc_id" {

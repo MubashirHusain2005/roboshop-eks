@@ -136,7 +136,6 @@ resource "aws_iam_role_policy_attachment" "ebs_csi_driver_attach" {
 
 
 
-
 resource "aws_eks_addon" "ebs_csi_driver" {
   cluster_name                = aws_eks_cluster.eks_cluster.name
   addon_name                  = "aws-ebs-csi-driver"
@@ -147,10 +146,10 @@ resource "aws_eks_addon" "ebs_csi_driver" {
   service_account_role_arn    = aws_iam_role.ebs_csi_driver.arn
 
   depends_on = [
-  aws_iam_openid_connect_provider.eks,
-  aws_iam_role_policy_attachment.ebs_csi_driver_attach,
-  aws_eks_node_group.private_node_1,
-  aws_eks_node_group.private_node_2
+    aws_iam_openid_connect_provider.eks,
+    aws_iam_role_policy_attachment.ebs_csi_driver_attach,
+    aws_eks_node_group.private_node_1,
+    aws_eks_node_group.private_node_2
   ]
 
 }
@@ -197,10 +196,10 @@ resource "aws_eks_addon" "vpc_cni" {
   service_account_role_arn    = aws_iam_role.vpc_cni.arn
 
   depends_on = [
-  aws_iam_openid_connect_provider.eks,
-  aws_iam_role_policy_attachment.vpc_cni_policy,
-  aws_eks_node_group.private_node_1,
-  aws_eks_node_group.private_node_2
+    aws_iam_openid_connect_provider.eks,
+    aws_iam_role_policy_attachment.vpc_cni_policy,
+    aws_eks_node_group.private_node_1,
+    aws_eks_node_group.private_node_2
 
   ]
 

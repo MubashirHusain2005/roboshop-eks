@@ -52,13 +52,13 @@ module "cert-manager" {
 }
 
 module "external-dns" {
-  source            = "./modules/external-dns"
-  oidc_issuer_url   = module.eks.oidc_issuer_url
-  oidc_provider_arn = module.eks.oidc_provider_arn
+  source                   = "./modules/external-dns"
+  oidc_issuer_url          = module.eks.oidc_issuer_url
+  oidc_provider_arn        = module.eks.oidc_provider_arn
   external_dns_policy_name = var.external_dns_policy_name
-  external_dns_name = var.external_dns_name
-  external_dns_ns = var.external_dns_ns
-  external_dns_rolename = var.external_dns_rolename
+  external_dns_name        = var.external_dns_name
+  external_dns_ns          = var.external_dns_ns
+  external_dns_rolename    = var.external_dns_rolename
 
 
   depends_on = [
@@ -73,6 +73,10 @@ module "manifests" {
   source                   = "./modules/manifests"
   cluster_endpoint         = module.eks.cluster_endpoint
   letsencrypt_staging_name = module.cert-manager.letsencrypt_staging_name
+  kms_key_id = module.vpc.kms_key_id
+  oidc_issuer_url = module.eks.oidc_issuer_url
+  oidc_provider_arn = module.eks.oidc_provider_arn
+
 
 
   depends_on = [

@@ -44,3 +44,6 @@ ENTRYPOINT ["/root/entrypoint.sh"]
 
 COPY default.conf.template /etc/nginx/conf.d/default.conf.template
 COPY static /usr/share/nginx/html
+
+# ✔️ CHANGE LISTEN PORT INSIDE WEB CONTAINER TO 3000
+#RUN sed -i 's/listen 80;/listen 3000;/' /etc/nginx/conf.d/default.conf.template
