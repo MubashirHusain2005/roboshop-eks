@@ -111,6 +111,102 @@ spec:
             - name: DB_PORT
               value: "3306"
             - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-creds
+                  key: DB_PASSWORD
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets
+              readOnly: true
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 18
+            
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            failureThreshold: 3
+
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: db-secrets
+
+EOF
+
+  depends_on = [
+    kubectl_manifest.mysql_statefulset,
+    kubectl_manifest.shipping_sa,
+    aws_secretsmanager_secret_version.secrets,
+    aws_secretsmanager_secret.secrets
+
+  ]
+}
+
+
+####OLD SHIPPING STATEFULSET:WORKING
+
+resource "kubectl_manifest" "deployment_shipping" {
+  yaml_body = <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-shipping
+  namespace: app-space
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shipping
+  template:
+    metadata:
+      labels:
+        app: shipping
+    spec:
+      serviceAccountName: shipping-sa
+      containers:
+        - name: robot-app-shipping
+          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/shipping:v1
+          imagePullPolicy: Always
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
               value: shipping
             - name: DB_PASSWORD
               value: secret
@@ -154,70 +250,4 @@ EOF
     kubectl_manifest.mysql_statefulset,
     kubectl_manifest.shipping_sa
   ]
-}
-
-
-##resource "kubectl_manifest" "robotshop_config" {
-  yaml_body = <<EOF
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: web-nginx-config
-  namespace: app-space
-data:
-  default.conf: |
-    server {
-      listen 8080;
-
-        proxy_http_version 1.1;
-
-        root /usr/share/nginx/html;
-        index index.html;
-
-        location ^~ /api/catalogue/ {
-            proxy_pass http://catalogue:8080/;
-        }
-
-        location ^~ /api/user/ {
-            proxy_pass http://user:8080/;
-        }
-
-        location ^~ /api/cart/ {
-            proxy_pass http://cart:8080/;
-        }
-
-        location ^~ /api/shipping/ {
-            rewrite ^/api/shipping/?(.*)$ /$1 break;
-            proxy_pass http://shipping:8080/shipping/;
-        }
-
-        location ^~ /api/payment/ {
-            rewrite ^/api/payment/?(.*)$ /$1 break;
-            proxy_pass http://payment:8080/payment/;
-        }
-
-        location ^~ /api/ratings/ {
-            proxy_pass http://ratings:80/;
-        }
-
-        location / {
-             proxy_pass http://127.0.0.1:3000;
-             proxy_set_header Host $host;
-             proxy_set_header X-Real-IP $remote_addr;
-             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-             proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # ===============================
-        # STATIC FILES
-        # ===============================
-        location /images/ {
-            proxy_pass http://127.0.0.1:3000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            }
-    }
-EOF
 }

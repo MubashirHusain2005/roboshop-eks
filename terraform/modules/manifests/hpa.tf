@@ -1,19 +1,3 @@
-##Metrics Server
-#resource "helm_release" "metrics-server" {
-  #name = "metrics server"
-
-  #repository = "https://kubernetes-sigs.github.io/metrics-server/"
-  #chart      = "metrics-server"
- # namespace  = "kube-system"
-  #version    = "1.4.3"
-
-  #set  {
-   # name  = "syncSecret.enabled"
-    #value = true
-  #}
-
-#}
-
 ##Horizontal Pod Autoscaler for web traffic
 resource "kubectl_manifest" "pod_autoscaler_web" {
   yaml_body = <<EOF

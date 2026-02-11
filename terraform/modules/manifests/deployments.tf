@@ -506,16 +506,6 @@ EOF
   ]
 }
 
-#Shipping Service Account
-resource "kubectl_manifest" "shipping_sa" {
-  yaml_body = <<EOF
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: shipping-sa
-  namespace: app-space
-EOF
-}
 
 resource "kubectl_manifest" "deployment_shipping" {
   yaml_body = <<EOF
@@ -534,20 +524,13 @@ spec:
       labels:
         app: shipping
     spec:
-      serviceAccountName: shipping-sa
       containers:
         - name: robot-app-shipping
           image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/shipping:v1
           imagePullPolicy: Always
-          env:
-            - name: DB_HOST
-              value: mysql
-            - name: DB_PORT
-              value: "3306"
-            - name: DB_USER
-              value: shipping
-            - name: DB_PASSWORD
-              value: secret
+          envFrom:
+            - secretRef:
+                name: kube-secret
           ports:
             - containerPort: 8080
           resources:
@@ -586,7 +569,9 @@ EOF
 
   depends_on = [
     kubectl_manifest.mysql_statefulset,
-    kubectl_manifest.shipping_sa
+    kubernetes_service_account_v1.eso_serviceaact,
+   kubernetes_manifest.external_secret,
+   #kubernetes_manifest.secret_store
   ]
 }
 

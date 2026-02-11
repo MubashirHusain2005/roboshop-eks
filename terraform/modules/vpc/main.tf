@@ -18,8 +18,8 @@ terraform {
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
-    }
   }
+}
 }
 
 #KMS encryption used later for EKS Cluster encryption
@@ -38,8 +38,7 @@ resource "aws_kms_alias" "kms_alias" {
 
 }
 
-
-
+##This needs looking at because I cant attach it to the irsa role when it hasnt even been created.
 resource "aws_kms_key_policy" "kms_key_policy" {
   key_id = aws_kms_key.kms_key.id
 

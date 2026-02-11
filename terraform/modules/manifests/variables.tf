@@ -10,10 +10,8 @@ variable "secrets" {
   default = {
     DB_USER       = "shipping"
     DB_PASSWORD   = "secret"
-    root_password = "rootpass"
-    user_password = "secret"
-    RABBITMQ_USER = "guest"
-    RABBITMQ_PASSWORD = "guest"
+    root-password = "rootpass"
+    user-password = "secret"
 
   }
 
@@ -29,6 +27,3 @@ variable "oidc_issuer_url" {
   type = string
 }
 
-variable "kms_key_id" {
-  type = string
-}

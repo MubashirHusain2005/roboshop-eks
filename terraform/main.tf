@@ -73,9 +73,8 @@ module "manifests" {
   source                   = "./modules/manifests"
   cluster_endpoint         = module.eks.cluster_endpoint
   letsencrypt_staging_name = module.cert-manager.letsencrypt_staging_name
-  kms_key_id = module.vpc.kms_key_id
-  oidc_issuer_url = module.eks.oidc_issuer_url
-  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_issuer_url          = module.eks.oidc_issuer_url
+  oidc_provider_arn        = module.eks.oidc_provider_arn
 
 
 
