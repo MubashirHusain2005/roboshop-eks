@@ -7,17 +7,17 @@ spec:
   project: default
   source:
     repoURL: https://github.com/MubashirHusain2005/gatus-eks/tree/master
-    path: <path-of-your-source>
+    path: argocd
     targetRevision: main
   destination:
     server: https://kubernetes.default.svc
-    namespace: dev
+    namespace: ""
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
 
-####
+
 
 apiVersion: argoproj.io/v1alpha1
 kind: Application
