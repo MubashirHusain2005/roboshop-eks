@@ -1,7 +1,5 @@
 ####Canary Deployment V2 with changes made to the web html :Green version
 
-resource "kubectl_manifest" "canary_deployment_web_2" {
-  yaml_body = <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -67,15 +65,3 @@ spec:
           configMap:
             name: web-nginx-config
 
-
-EOF
-
-  depends_on = [
-    kubectl_manifest.web_service,
-    kubectl_manifest.mysql_statefulset,
-    kubectl_manifest.canary_service,
-    kubectl_manifest.canary_ingress
-
-  ]
-
-}

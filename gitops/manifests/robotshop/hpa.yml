@@ -1,6 +1,4 @@
 ##Horizontal Pod Autoscaler for web traffic
-resource "kubectl_manifest" "pod_autoscaler_web" {
-  yaml_body = <<EOF
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -43,13 +41,8 @@ spec:
         - type: Percent
           value: 50
           periodSeconds: 60
-EOF
-}
-
-
+---
 #Horizontal Pod Autoscaler for User
-resource "kubectl_manifest" "pod_autoscaler_user" {
-  yaml_body = <<EOF
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -92,6 +85,4 @@ spec:
         - type: Percent
           value: 50
           periodSeconds: 60
-EOF
-}
 

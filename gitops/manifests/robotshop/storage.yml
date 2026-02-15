@@ -1,9 +1,6 @@
-
 ############################################
 # STORAGE CLASSES
 ############################################
-resource "kubectl_manifest" "mongo_storageclass" {
-  yaml_body = <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -13,12 +10,7 @@ volumeBindingMode: WaitForFirstConsumer
 parameters:
   type: gp3
   encrypted: "true"
-  
-EOF
-}
-
-resource "kubectl_manifest" "mysql_storageclass" {
-  yaml_body = <<EOF
+---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -28,12 +20,7 @@ volumeBindingMode: WaitForFirstConsumer
 parameters:
   type: gp3
   encrypted: "true"
-  
-EOF
-}
-
-resource "kubectl_manifest" "storageclass_redis" {
-  yaml_body = <<EOF
+---  
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -43,6 +30,4 @@ volumeBindingMode: WaitForFirstConsumer
 parameters:
   type: gp3
   encrypted: "true"
-  
-EOF
-}
+

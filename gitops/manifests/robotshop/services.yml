@@ -1,9 +1,6 @@
-
 ############################################
 # DATA-SPACE SERVICES (separate)
 ############################################
-resource "kubectl_manifest" "mongo_service" {
-  yaml_body = <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -16,13 +13,8 @@ spec:
   ports:
   - port: 27017
     targetPort: 27017
-EOF
 
-  depends_on = [kubectl_manifest.db_namespace]
-}
-
-resource "kubectl_manifest" "mysql_service" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -34,13 +26,7 @@ spec:
   ports:
   - port: 3306
     targetPort: 3306
-EOF
-
-  depends_on = [kubectl_manifest.db_namespace]
-}
-
-resource "kubectl_manifest" "redis_service" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -53,13 +39,7 @@ spec:
   ports:
   - port: 6379
     targetPort: 6379
-EOF
-
-  depends_on = [kubectl_manifest.db_namespace]
-}
-
-resource "kubectl_manifest" "rabbitmq_service" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -72,15 +52,12 @@ spec:
     - name: amqp
       port: 5672
       targetPort: 5672
-EOF
-}
 
+---
 
 ############################################
 # APP-SPACE SERVICES (separate)
 ############################################
-resource "kubectl_manifest" "cart_service" {
-  yaml_body = <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -92,13 +69,8 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
-EOF
+---
 
-  depends_on = [kubectl_manifest.apps_namespace]
-}
-
-resource "kubectl_manifest" "catalogue_service" {
-  yaml_body = <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -110,13 +82,7 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
-EOF
-
-  depends_on = [kubectl_manifest.apps_namespace]
-}
-
-resource "kubectl_manifest" "dispatch_service" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -128,13 +94,7 @@ spec:
   ports:
   - port: 80
     targetPort: 80
-EOF
-
-  depends_on = [kubectl_manifest.apps_namespace]
-}
-
-resource "kubectl_manifest" "payment_service" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -146,13 +106,8 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
-EOF
+---
 
-  depends_on = [kubectl_manifest.apps_namespace]
-}
-
-resource "kubectl_manifest" "ratings_service" {
-  yaml_body = <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -164,13 +119,7 @@ spec:
   ports:
   - port: 80
     targetPort: 80
-EOF
-
-  depends_on = [kubectl_manifest.apps_namespace]
-}
-
-resource "kubectl_manifest" "shipping_service" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -182,14 +131,8 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
-EOF
 
-}
-
-
-
-resource "kubectl_manifest" "user_service" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -201,13 +144,8 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
-EOF
+---
 
-  depends_on = [kubectl_manifest.apps_namespace]
-}
-
-resource "kubectl_manifest" "web_service" {
-  yaml_body = <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -220,14 +158,8 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
-EOF
 
-  depends_on = [kubectl_manifest.apps_namespace]
-}
-
-
-resource "kubectl_manifest" "canary_service" {
-  yaml_body = <<EOF
+---
 
 apiVersion: v1
 kind: Service
@@ -241,7 +173,3 @@ spec:
   ports:
   - port: 8080
     targetPort: 8080
-
-EOF
-
-}

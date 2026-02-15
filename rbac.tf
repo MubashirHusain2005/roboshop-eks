@@ -225,3 +225,41 @@ roleRef:
 
 EOF
 }
+
+
+
+
+
+
+##Protect Argocd Password using ESO
+
+resource "kubernetes_manifest" "external_secret" {
+  manifest = {
+    apiVersion = "external-secrets.io/v1beta1"
+    kind       = "ExternalSecret"
+    metadata = {
+      name      = "argocd-admin-secret"
+      namespace = "argo-cd"
+    }
+    spec = {
+      refreshInterval = "1h"
+      secretStoreRef = {
+        name = "secretstore"
+        kind = "ClusterSecretStore"
+      }
+      target = {
+        name = "argocd-secret"
+      }
+      data = [
+        {
+          secretKey = "admin.password"
+          remoteRef = {
+            key      = "argocd-admin"
+            property = "password"
+          }
+
+        }
+      ]
+    }
+  }
+}

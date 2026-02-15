@@ -18,6 +18,11 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
     }
+
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
@@ -287,6 +292,17 @@ resource "aws_eks_node_group" "private_node_2" {
 
 }
 
+###Null resource to update the kubeconfig file
 
+resource "null_resource" "update_kubeconfig" {
+  provisioner "local-exec" {
+    command = "aws eks --region eu-west-2 update-kubeconfig --name eks-cluster"
+
+  }
+  depends_on = [aws_eks_node_group.private_node_2,
+    aws_eks_node_group.private_node_1,
+  aws_eks_cluster.eks_cluster]
+
+}
 
  

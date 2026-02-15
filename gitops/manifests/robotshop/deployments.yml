@@ -1,30 +1,19 @@
-
 ############################################
 # NAMESPACES
 ############################################
-resource "kubectl_manifest" "apps_namespace" {
-  yaml_body = <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
   name: app-space
-EOF
-}
-
-resource "kubectl_manifest" "db_namespace" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: data-space
-EOF
-}
-
+---
 ############################################
 # RESOURCE QUOTAS
 ############################################
-resource "kubectl_manifest" "resource_quota_appspace" {
-  yaml_body = <<EOF
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -37,13 +26,7 @@ spec:
     limits.cpu: "8"
     limits.memory: "8Gi"
     pods: "30"
-EOF
-
-  depends_on = [kubectl_manifest.apps_namespace]
-}
-
-resource "kubectl_manifest" "resource_quota_dataspace" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -56,17 +39,11 @@ spec:
     limits.cpu: "8"
     limits.memory: "16Gi"
     pods: "15"
-EOF
-
-  depends_on = [kubectl_manifest.db_namespace]
-}
+---
 
 ############################################
 # SECRETS / CONFIGMAPS   
 ############################################
-
-resource "kubectl_manifest" "mysql_secret" {
-  yaml_body = <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
@@ -76,13 +53,7 @@ type: Opaque
 stringData:
   root-password: rootpass
   user-password: secret
-EOF
-
-  depends_on = [kubectl_manifest.db_namespace]
-}
-
-resource "kubectl_manifest" "redis_configmap" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -93,19 +64,11 @@ data:
   redis.conf: |
     appendonly yes
     appendfsync everysec
-EOF
-
-  depends_on = [kubectl_manifest.db_namespace]
-}
-
+---
 
 ############################################
 # DATA-SPACE STATEFULSETS / DEPLOYMENTS
 ############################################
-
-
-resource "kubectl_manifest" "mongo_statefulset" {
-  yaml_body = <<EOF
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -156,18 +119,9 @@ spec:
       resources:
         requests:
           storage: 5Gi
-EOF
+---
+##MYSQL
 
-  depends_on = [
-    kubectl_manifest.mongo_service,
-    kubectl_manifest.mongo_storageclass,
-    kubectl_manifest.resource_quota_dataspace
-  ]
-}
-
-##
-resource "kubectl_manifest" "mysql_statefulset" {
-  yaml_body = <<EOF
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -240,18 +194,7 @@ spec:
         resources:
           requests:
             storage: 5Gi
-EOF
-
-
-  depends_on = [
-    kubectl_manifest.mysql_secret,
-    kubectl_manifest.mysql_storageclass,
-    kubectl_manifest.resource_quota_dataspace
-  ]
-}
-
-resource "kubectl_manifest" "redis_statefulset" {
-  yaml_body = <<EOF
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -300,18 +243,7 @@ spec:
       resources:
         requests:
           storage: 10Gi
-EOF
-
-  depends_on = [
-    kubectl_manifest.redis_service,
-    kubectl_manifest.storageclass_redis,
-    kubectl_manifest.redis_configmap,
-    kubectl_manifest.resource_quota_dataspace
-  ]
-}
-
-resource "kubectl_manifest" "rabbitmq_deployment" {
-  yaml_body = <<EOF
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -346,20 +278,9 @@ spec:
           limits:
             cpu: "500m"
             memory: "256Mi"
-EOF
-
-  depends_on = [
-    kubectl_manifest.rabbitmq_service,
-    kubectl_manifest.resource_quota_dataspace
-  ]
-}
-
-
-
+---
 # APP-SPACE DEPLOYMENTS 
 
-resource "kubectl_manifest" "deployment_cart" {
-  yaml_body = <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -409,16 +330,7 @@ spec:
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
-EOF
-
-  depends_on = [
-    kubectl_manifest.cart_service,
-    kubectl_manifest.resource_quota_appspace
-  ]
-}
-
-resource "kubectl_manifest" "deployment_catalogue" {
-  yaml_body = <<EOF
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -462,16 +374,7 @@ spec:
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
-EOF
-
-  depends_on = [
-    kubectl_manifest.catalogue_service,
-    kubectl_manifest.resource_quota_appspace
-  ]
-}
-
-resource "kubectl_manifest" "deployment_dispatch" {
-  yaml_body = <<EOF
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -498,17 +401,7 @@ spec:
           limits:
             cpu: "500m"
             memory: "256Mi"
-EOF
-
-  depends_on = [
-    kubectl_manifest.dispatch_service,
-    kubectl_manifest.resource_quota_appspace
-  ]
-}
-
-
-resource "kubectl_manifest" "deployment_shipping" {
-  yaml_body = <<EOF
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -565,18 +458,8 @@ spec:
             periodSeconds: 20
             failureThreshold: 3
 
-EOF
+---
 
-  depends_on = [
-    kubectl_manifest.mysql_statefulset,
-    kubernetes_service_account_v1.eso_serviceaact,
-   kubernetes_manifest.external_secret,
-   #kubernetes_manifest.secret_store
-  ]
-}
-
-resource "kubectl_manifest" "deployment_payment" {
-  yaml_body = <<EOF
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -626,17 +509,7 @@ spec:
             port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
-EOF
-
-  depends_on = [
-    kubectl_manifest.payment_service,
-    kubectl_manifest.resource_quota_appspace
-  ]
-}
-
-
-resource "kubectl_manifest" "deployment_ratings" {
-  yaml_body = <<EOF
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -670,17 +543,7 @@ spec:
           limits:
             cpu: "500m"
             memory: "256Mi"
-EOF
-
-  depends_on = [
-    kubectl_manifest.ratings_service,
-    kubectl_manifest.resource_quota_appspace
-  ]
-}
-
-
-resource "kubectl_manifest" "deployment_user" {
-  yaml_body = <<EOF
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -716,16 +579,7 @@ spec:
           limits:
             cpu: "500m"
             memory: "256Mi"
-EOF
-
-  depends_on = [
-    kubectl_manifest.user_service,
-    kubectl_manifest.resource_quota_appspace
-  ]
-}
-
-resource "kubectl_manifest" "deployment_web" {
-  yaml_body = <<EOF
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -790,20 +644,7 @@ spec:
         - name: nginx-config
           configMap:
             name: web-nginx-config
-EOF
-
-
-  depends_on = [
-    kubectl_manifest.web_service,
-    kubectl_manifest.resource_quota_appspace,
-    kubectl_manifest.mysql_statefulset
-
-  ]
-}
-
-
-
-
+---
 
 
 ###IRSA for shipping pod so it can access AWS Secrets Manager

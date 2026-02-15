@@ -1,8 +1,4 @@
-
 # RobotShop Web Ingress
-
-resource "kubectl_manifest" "robotshop_web_ingress" {
-  yaml_body = <<EOF
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -28,14 +24,7 @@ spec:
                 name: web
                 port:
                   number: 8080
-EOF
-}
-
-
-
-resource "kubectl_manifest" "configmap-https" {
-  yaml_body = <<EOF
-
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -44,12 +33,7 @@ metadata:
 data:
   X-Forwarded-Proto: "https"
 
-EOF
-}
-
-
-resource "kubectl_manifest" "robotshop_config" {
-  yaml_body = <<EOF
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -110,12 +94,7 @@ data:
           proxy_set_header X-Forwarded-Proto $scheme;
       }
     }
-EOF
-}
-
-resource "kubectl_manifest" "canary_ingress" {
-  yaml_body = <<EOF
-
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -138,5 +117,4 @@ spec:
             name: web-2
             port:
               number: 8080
-EOF
-}
+
