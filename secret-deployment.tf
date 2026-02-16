@@ -251,3 +251,9 @@ EOF
     kubectl_manifest.shipping_sa
   ]
 }
+
+
+
+aws secretsmanager delete-secret \
+>   --secret-id db-creds \
+>   --force-delete-without-recovery

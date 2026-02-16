@@ -21,6 +21,15 @@ terraform {
   }
 }
 
+resource "kubectl_manifest" "argo_namespace" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argo-cd
+EOF
+}
+
 
 #This helps to get the DNS name of the loadbalancer
 data "kubernetes_service_v1" "nginx_ingress_controller" {
@@ -31,13 +40,6 @@ data "kubernetes_service_v1" "nginx_ingress_controller" {
   }
 }
 
-data "aws_lb" "nginx_ingress_nlb" {
-  name = replace(
-    data.kubernetes_service_v1.nginx_ingress_controller.status[0].load_balancer[0].ingress[0].hostname,
-    "/\\..*/",
-    ""
-  )
-}
 
 data "aws_eks_cluster_auth" "main" {
   name = var.cluster_name
@@ -52,7 +54,7 @@ data "aws_route53_zone" "domain" {
 resource "helm_release" "argocd_deploy" {
   name             = "argocd"
   namespace        = "argo-cd"
-  create_namespace = true
+  create_namespace = false
   repository       = "https://argoproj.github.io/argo-helm"
   chart            = "argo-cd"
   version          = "7.6.6"
@@ -64,10 +66,17 @@ resource "helm_release" "argocd_deploy" {
         service = {
           type = "ClusterIP"
         }
-      }
+
+   }
+
       configs = {
         params = {
-        "server.insecure" = true }
+        "server.insecure" = true 
+        "server.localUsers" = true
+        }
+      }
+      dex = {
+        enabled = false
       }
     })
   ]
@@ -76,57 +85,83 @@ resource "helm_release" "argocd_deploy" {
 
 }
 
-resource "aws_secretsmanager_secret" "argocd_admin" {
-  name        = "argocd-admin"
-  description = "Argocd admin password"
-}
+#resource "aws_secretsmanager_secret" "argocd_admin" {
+  #name        = "argocd-admin"
+  #description = "Argocd admin password"
+#}
 
-resource "aws_secretsmanager_secret_version" "argocd_admin_version" {
-  secret_id = aws_secretsmanager_secret.argocd_admin.id
-  secret_string = jsonencode({
-    password = var.pass
-  })
+#resource "aws_secretsmanager_secret_version" "argocd_admin_version" {
+ # secret_id = aws_secretsmanager_secret.argocd_admin.id
+ # secret_string = jsonencode({
+   # password = "MySecurePassword123!"
+  #})
+
   ##The actual Password = MySecurePassword123!
-}
+#}
 ##Protect Argocd Password using ESO
 
-resource "kubectl_manifest" "external_secret" {
-  yaml_body = <<EOF
+#resource "kubectl_manifest" "external_secret" {
+  #yaml_body = <<EOF
 
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: argocd-admin-secret
-  namespace: argo-cd
-spec:
-  refreshInterval: 1h
-  secretStoreRef:
-    name: secretstore
-    kind: ClusterSecretStore
-  target:
-    name: argocd-secret
-  data:
-    - secretKey: admin.password
-      remoteRef:
-        key: argocd-admin
-        property: password
-EOF
-}
+#apiVersion: external-secrets.io/v1beta1
+#kind: ExternalSecret
+#metadata:
+ # name: argocd-admin-secret
+ # namespace: argo-cd
+#spec:
+ # refreshInterval: 1h
+ # secretStoreRef:
+   # name: secretstore
+   # kind: ClusterSecretStore
+ # target:
+   # name: argocd-secret
+   # creationPolicy: Owner
+ # data:
+   # - secretKey: admin.password
+    #  remoteRef:
+      #  key: argocd-admin
+       # property: password
+   # - secretKey: server.secretkey
+     # remoteRef:
+       # key: argocd-admin
+       # property: server.secretkey
+#EOF
+#}
 
-
+#data "kubernetes_service" "nginx_ingress_controller" {
+#metadata {
+# name      = "ingress-nginx-controller"
+#namespace = "ingress-nginx"
+#}
+#}
 ###Route 53 dns records for ArgoCD (pointing to NGINX Ingress NLB)
 
-resource "aws_route53_record" "argocd" {
-  zone_id = data.aws_route53_zone.domain.zone_id
-  name    = "argocd.mubashir.site"
-  type    = "A"
+#resource "aws_route53_record" "argocd" {
+#zone_id = data.aws_route53_zone.domain.zone_id
+# name    = "argocd.mubashir.site"
+#type    = "CNAME"
+# ttl     = 300
 
-  alias {
-    name                   = data.aws_lb.nginx_ingress_nlb.dns_name
-    zone_id                = data.aws_lb.nginx_ingress_nlb.zone_id
-    evaluate_target_health = true
-  }
-}
+# records = [
+# data.kubernetes_service.nginx_ingress_controller
+# ]
+#}
+
+##A record pointing to mubashir.site
+
+#resource "aws_route53_record" "website_domain" {
+#zone_id = data.aws_route53_zone.primary.zone_id
+#name    = "mubashir.site"
+#type    = "A"
+#ttl     = 300
+
+# alias {
+# name    = var.alb_dns_name
+# zone_id = var.alb_zone_id
+# evaluate_target_health = var.health
+#}
+
+#}
 
 resource "kubectl_manifest" "argocd-ingress" {
   yaml_body = <<EOF
@@ -138,6 +173,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-staging
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    external-dns.alpha.kubernetes.io/hostname: argocd.mubashir.site
 spec:
   ingressClassName: nginx
   tls:
@@ -155,5 +191,9 @@ spec:
             name: argocd-server
             port:
               number: 8080
+
 EOF
+  depends_on = [helm_release.argocd_deploy,
+  ]
+
 }

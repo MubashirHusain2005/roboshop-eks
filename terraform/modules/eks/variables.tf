@@ -73,3 +73,8 @@ variable "secrets" {
 #variable "oidc_issuer_url" {
 # type = string
 #}
+
+variable "oidc_name" {
+  type    = string
+  default = "github.to.aws.oidc"
+}

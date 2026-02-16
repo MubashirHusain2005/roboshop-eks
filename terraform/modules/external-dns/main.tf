@@ -42,7 +42,7 @@ resource "aws_iam_role" "external_dns" {
         Effect = "Allow"
         Principal = {
           Federated = var.oidc_provider_arn
-        }
+        } #original-var.oidc_provider_arn  new-"${aws_iam_openid_connect_provider.eks.arn}"
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
@@ -134,7 +134,8 @@ resource "helm_release" "external_dns" {
     kubectl_manifest.external_dns_namespace,
     kubernetes_service_account_v1.external_dns,
     aws_iam_role.external_dns,
-    aws_iam_role_policy.external_dns_route53
+    aws_iam_role_policy.external_dns_route53,
+    var.helm_release_nginx
   ]
 }
 

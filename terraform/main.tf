@@ -56,6 +56,7 @@ module "external-dns" {
   external_dns_name        = var.external_dns_name
   external_dns_ns          = var.external_dns_ns
   external_dns_rolename    = var.external_dns_rolename
+  helm_release_nginx       = module.nginx-ingress.helm_release_nginx
 
 
   depends_on = [
@@ -86,24 +87,17 @@ module "argocd" {
   cluster_name       = module.eks.cluster_name
   helm_release_nginx = module.nginx-ingress.helm_release_nginx
 
-  depends_on = [ module.eks ]
+  depends_on = [module.eks]
 }
-
-
 
 
 
 resource "null_resource" "cleanup_script" {
   provisioner "local-exec" {
     command = "kubectl delete validatingwebhookconfiguration externalsecret-validate"
-    when = destroy
+    when    = destroy
 
-  }  
+  }
 }
 
-resource "null_resource" "cleanup_script2" {
-    provisioner "local-exec" {
-    command = "kubectl delete ingress -A"
-    when = destroy
-    }
-}
+

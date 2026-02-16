@@ -1,4 +1,23 @@
-resource "kubectl_manifest" "external_secrets__namespace" {
+resource "kubectl_manifest" "deployments_namespace" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app-space
+EOF
+}
+
+resource "kubectl_manifest" "databases_namespace" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data-space
+EOF
+}
+
+
+resource "kubectl_manifest" "external_secrets_namespace" {
   yaml_body = <<EOF
 apiVersion: v1
 kind: Namespace
@@ -106,7 +125,9 @@ resource "kubernetes_service_account_v1" "eso_serviceaact" {
     }
   }
   depends_on = [
-    aws_iam_role_policy_attachment.iampolicyattach-eso
+    aws_iam_role_policy_attachment.iampolicyattach-eso,
+    kubectl_manifest.external_secrets_namespace
+    
   ]
 }
 
