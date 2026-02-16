@@ -47,7 +47,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: user-hpa
-  namespace: data-space
+  namespace: app-space
   labels:
     app: user
 spec:
