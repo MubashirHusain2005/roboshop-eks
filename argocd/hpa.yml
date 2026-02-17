@@ -54,7 +54,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: user
+    name: robotshop-user
 
   minReplicas: 3
   maxReplicas: 10

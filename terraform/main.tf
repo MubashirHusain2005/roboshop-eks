@@ -99,6 +99,7 @@ module "grafana" {
   source               = "./modules/grafana"
   cluster_name         = module.eks.cluster_name
   monitoring_namespace = module.prometheus.monitoring_namespace
+  prometheus_helmchart = module.prometheus.prometheus_helmchart
 }
 
 

@@ -98,7 +98,11 @@ spec:
       selfHeal: true
 
 EOF
+
+depends_on = [helm_release.argocd_deploy]
 }
+
+
 
 #resource "aws_secretsmanager_secret" "argocd_admin" {
 #name        = "argocd-admin"
@@ -178,8 +182,43 @@ EOF
 
 #}
 
+#resource "kubectl_manifest" "argocd-ingress" {
+  #yaml_body  = <<EOF
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+  #name: argocd
+ # namespace: argo-cd
+ # annotations:
+   # cert-manager.io/cluster-issuer: letsencrypt-staging
+   # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+   # external-dns.alpha.kubernetes.io/hostname: argocd.mubashir.site
+#spec:
+ # ingressClassName: nginx
+ # tls:
+   # - hosts:
+    #    - argocd.mubashir.site 
+     # secretName: argocd-argocd-tls
+ # rules:
+ # - host: argocd.mubashir.site
+  #  http:
+    #  paths:
+     # - path: /
+       # pathType: Prefix
+      #  backend:
+       #   service:
+        #    name: argocd-server
+        #    port:
+         #     number: 443
+
+#EOF
+ # depends_on = [helm_release.argocd_deploy]
+
+#}
+
 resource "kubectl_manifest" "argocd-ingress" {
-  yaml_body  = <<EOF
+  yaml_body = <<EOF
+
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -187,27 +226,28 @@ metadata:
   namespace: argo-cd
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/acme-challenge-type: http01
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    acme.cert-manager.io/http01-edit-in-place: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     external-dns.alpha.kubernetes.io/hostname: argocd.mubashir.site
+
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - argocd.mubashir.site 
-      secretName: argocd-argocd-tls
   rules:
   - host: argocd.mubashir.site
     http:
       paths:
       - path: /
         pathType: Prefix
-        backend:
+        backend: 
           service:
             name: argocd-server
             port:
-              number: 8080
-
+              number: 80
+  tls:
+  - hosts:
+    - argocd.mubashir.site
+    secretName: argocd-tls
 EOF
-  depends_on = [helm_release.argocd_deploy]
-
 }
