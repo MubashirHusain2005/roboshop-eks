@@ -31,16 +31,6 @@ EOF
 }
 
 
-#This helps to get the DNS name of the loadbalancer
-data "kubernetes_service_v1" "nginx_ingress_controller" {
-  metadata {
-    name      = "ingress-nginx-controller"
-    namespace = "ingress-nginx"
-
-  }
-}
-
-
 data "aws_eks_cluster_auth" "main" {
   name = var.cluster_name
 }
@@ -67,12 +57,12 @@ resource "helm_release" "argocd_deploy" {
           type = "ClusterIP"
         }
 
-   }
+      }
 
       configs = {
         params = {
-        "server.insecure" = true 
-        "server.localUsers" = true
+          "server.insecure"   = true
+          "server.localUsers" = true
         }
       }
       dex = {
@@ -111,45 +101,45 @@ EOF
 }
 
 #resource "aws_secretsmanager_secret" "argocd_admin" {
-  #name        = "argocd-admin"
-  #description = "Argocd admin password"
+#name        = "argocd-admin"
+#description = "Argocd admin password"
 #}
 
 #resource "aws_secretsmanager_secret_version" "argocd_admin_version" {
- # secret_id = aws_secretsmanager_secret.argocd_admin.id
- # secret_string = jsonencode({
-   # password = "MySecurePassword123!"
-  #})
+# secret_id = aws_secretsmanager_secret.argocd_admin.id
+# secret_string = jsonencode({
+# password = "MySecurePassword123!"
+#})
 
-  ##The actual Password = MySecurePassword123!
+##The actual Password = MySecurePassword123!
 #}
 ##Protect Argocd Password using ESO
 
 #resource "kubectl_manifest" "external_secret" {
-  #yaml_body = <<EOF
+#yaml_body = <<EOF
 
 #apiVersion: external-secrets.io/v1beta1
 #kind: ExternalSecret
 #metadata:
- # name: argocd-admin-secret
- # namespace: argo-cd
+# name: argocd-admin-secret
+# namespace: argo-cd
 #spec:
- # refreshInterval: 1h
- # secretStoreRef:
-   # name: secretstore
-   # kind: ClusterSecretStore
- # target:
-   # name: argocd-secret
-   # creationPolicy: Owner
- # data:
-   # - secretKey: admin.password
-    #  remoteRef:
-      #  key: argocd-admin
-       # property: password
-   # - secretKey: server.secretkey
-     # remoteRef:
-       # key: argocd-admin
-       # property: server.secretkey
+# refreshInterval: 1h
+# secretStoreRef:
+# name: secretstore
+# kind: ClusterSecretStore
+# target:
+# name: argocd-secret
+# creationPolicy: Owner
+# data:
+# - secretKey: admin.password
+#  remoteRef:
+#  key: argocd-admin
+# property: password
+# - secretKey: server.secretkey
+# remoteRef:
+# key: argocd-admin
+# property: server.secretkey
 #EOF
 #}
 
@@ -189,7 +179,7 @@ EOF
 #}
 
 resource "kubectl_manifest" "argocd-ingress" {
-  yaml_body = <<EOF
+  yaml_body  = <<EOF
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -218,7 +208,6 @@ spec:
               number: 8080
 
 EOF
-  depends_on = [helm_release.argocd_deploy,
-  ]
+  depends_on = [helm_release.argocd_deploy]
 
 }

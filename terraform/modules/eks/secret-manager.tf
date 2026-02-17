@@ -127,7 +127,7 @@ resource "kubernetes_service_account_v1" "eso_serviceaact" {
   depends_on = [
     aws_iam_role_policy_attachment.iampolicyattach-eso,
     kubectl_manifest.external_secrets_namespace
-    
+
   ]
 }
 

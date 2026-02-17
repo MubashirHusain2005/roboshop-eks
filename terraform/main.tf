@@ -90,6 +90,17 @@ module "argocd" {
   depends_on = [module.eks]
 }
 
+module "prometheus" {
+  source       = "./modules/prometheus"
+  cluster_name = module.eks.cluster_name
+}
+
+module "grafana" {
+  source               = "./modules/grafana"
+  cluster_name         = module.eks.cluster_name
+  monitoring_namespace = module.prometheus.monitoring_namespace
+}
+
 
 
 resource "null_resource" "cleanup_script" {
