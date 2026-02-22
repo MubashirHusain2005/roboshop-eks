@@ -22,19 +22,6 @@ terraform {
   }
 }
 
-data "kubernetes_service" "redis_service" {
-  metadata {
-    name = "redis"
-    namespace = "data-space"
-  }
-}
-
-data "kubernetes_service" "mysql_service" {
-  metadata {
-    name = "mysql"
-    namespace = "app-space"
-  }
-}
 
 resource "kubectl_manifest" "monitoring_namespace" {
   yaml_body = <<EOF
@@ -75,27 +62,34 @@ resource "helm_release" "mysql_exporter" {
 
   values = [
     yamlencode({
-      mysql = {
-        host           = "mysql.app-space.svc.cluster.local"
-        user           = "metrics_user"
-        existingSecret = "mysql-exporter-secret"
-        passwordKey    = "MYSQL_PASSWORD"
-      }
-
       serviceMonitor = {
         enabled = true
-        additionalLabels = {
-          release = "prometheus"
-        }
+        additionalLabels = { release = "prometheus" }
       }
+      extraVolumeMounts = [
+        {
+          name      = "mysql-mycnf"
+          mountPath = "/home/.my.cnf"
+          subPath   = ".my.cnf"
+          readOnly  = true
+        }
+      ]
+      extraVolumes = [
+        {
+          name = "mysql-mycnf"
+          configMap = {
+            name = "mysql-exporter-mycnf"
+          }
+        }
+      ]
     })
   ]
 
-  depends_on = [helm_release.prometheus,
-  kubectl_manifest.mysql_exporter_secret,
-  data.kubernetes_service.mysql_service]
+  depends_on = [
+    kubectl_manifest.mysql_exporter_auth,
+    kubectl_manifest.mysql_exporter_my_cnf
+  ]
 }
-
 
 
 ###Redis exporter to collect metrics
@@ -127,10 +121,26 @@ resource "helm_release" "redis_exporter" {
   # Make sure the release is installed after any dependencies (optional)
   depends_on = [
     helm_release.prometheus,
-    kubectl_manifest.redis_secret,
-    data.kubernetes_service.redis_service
+    kubectl_manifest.redis_secret
   ]
 }
+
+resource "kubectl_manifest" "mysql_exporter_my_cnf" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-exporter-mycnf
+  namespace: monitoring
+data:
+  .my.cnf: |
+    [client]
+    user=metrics_user
+    password=metrics_password
+    host=mysql.app-space.svc.cluster.local
+EOF
+}
+
 
 ##Temporary K8s job- this will allow the exporter to temporarily authenticate to the mysql server so we can scrape metrics
 
@@ -138,7 +148,7 @@ resource "kubectl_manifest" "mysql_exporter_auth" {
   yaml_body = <<EOF
 
 apiVersion: batch/v1
-kind: job
+kind: Job
 metadata:
   name: mysql-exporter-authentication
   namespace: app-space
@@ -162,8 +172,14 @@ spec:
             secretKeyRef:
               name: mysql-secret
               key: root-password
-    restartPolicy: OnFailure
-
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+      restartPolicy: OnFailure
 EOF
 
   depends_on = [kubectl_manifest.mysql_exporter_secret ]

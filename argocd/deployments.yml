@@ -44,16 +44,16 @@ spec:
 ############################################
 # SECRETS / CONFIGMAPS   
 ############################################
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysql-secret
-  namespace: app-space    
-type: Opaque
-stringData:
-  root-password: rootpass
-  user-password: secret
----
+#apiVersion: v1
+#kind: Secret
+#metadata:
+ # name: mysql-secret
+  #namespace: app-space    
+#type: Opaque
+#stringData:
+ # root-password: rootpass
+  #user-password: secret
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
