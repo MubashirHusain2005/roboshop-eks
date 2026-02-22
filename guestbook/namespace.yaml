@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: database-monitoring
+
+
+###Redis exporter configuration
+
+##Create namespace
+###Create the redis password
+##Apply the redis statefulset
+###Create the redis service
+##Install the redis exporter using helm with the redis-exporter-values.yaml
+##Install prometheus and grafana

@@ -112,4 +112,10 @@ resource "null_resource" "cleanup_script" {
   }
 }
 
+resource "null_resource" "cleanup_secrets" {
+  provisioner "local-exec" {
+    command = " aws secretsmanager delete-secret   --secret-id db-creds"
+    when = destroy
+  }
+}
 

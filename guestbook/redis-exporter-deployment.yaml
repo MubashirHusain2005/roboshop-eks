@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: redis-exporter
+    meta.helm.sh/release-namespace: database-monitoring
+  creationTimestamp: "2026-02-21T19:58:24Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: redis-exporter
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: prometheus-redis-exporter
+    app.kubernetes.io/version: v1.81.0
+    helm.sh/chart: prometheus-redis-exporter-6.21.0
+  name: redis-exporter-prometheus-redis-exporter
+  namespace: database-monitoring
+  resourceVersion: "4953"
+  uid: 2728be90-5baf-40fa-ac3d-35982ef8e813
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: redis-exporter
+      app.kubernetes.io/name: prometheus-redis-exporter
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: redis-exporter
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: prometheus-redis-exporter
+        app.kubernetes.io/version: v1.81.0
+        helm.sh/chart: prometheus-redis-exporter-6.21.0
+    spec:
+      containers:
+      - env:
+        - name: REDIS_ADDR
+          value: redis://redis.database-monitoring.svc.cluster.local:6379
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: REDIS_PASSWORD
+        image: oliver006/redis_exporter:v1.81.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: exporter-port
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: prometheus-redis-exporter
+        ports:
+        - containerPort: 9121
+          name: exporter-port
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: exporter-port
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: redis-exporter-prometheus-redis-exporter
+      serviceAccountName: redis-exporter-prometheus-redis-exporter
+      terminationGracePeriodSeconds: 30
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2026-02-21T19:58:26Z"
+    lastUpdateTime: "2026-02-21T19:58:26Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2026-02-21T19:58:24Z"
+    lastUpdateTime: "2026-02-21T19:58:26Z"
+    message: ReplicaSet "redis-exporter-prometheus-redis-exporter-76cbbd8d48" has
+      successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

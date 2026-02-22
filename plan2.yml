@@ -76,3 +76,7 @@ backend "s3" {
     dynamodb_table = "terraform-lock"
     encrypt        = true
   }
+
+
+
+  argocdpass: MyStrongPassword123

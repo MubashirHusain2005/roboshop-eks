@@ -261,3 +261,91 @@ aws secretsmanager delete-secret \
 
 
 
+resource "kubectl_manifest" "web_service_monitor" {
+    yaml_body = <<EOF
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: robotshop-servicemonitor
+  namespace: monitoring
+  selector:
+    matchLabels:
+      app: web
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+  namespaceSelector:
+    matchNames:
+        - app-space
+
+EOF
+}
+
+resource "kubectl_manifest" "user_service_monitor" {
+    yaml_body = <<EOF
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: robotshop-servicemonitor
+  namespace: monitoring
+  selector:
+    matchLabels:
+      app: user
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+  namespaceSelector:
+    matchNames:
+        - app-space
+
+EOF
+}
+
+resource "kubectl_manifest" "payment_service_monitor" {
+    yaml_body = <<EOF
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: robotshop-servicemonitor
+  namespace: monitoring
+  selector:
+    matchLabels:
+      app: payment
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+  namespaceSelector:
+    matchNames:
+        - app-space
+
+EOF
+}
+
+resource "kubectl_manifest" "shipping_service_monitor" {
+    yaml_body = <<EOF
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: robotshop-servicemonitor
+  namespace: monitoring
+  selector:
+    matchLabels:
+      app: shipping
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+  namespaceSelector:
+    matchNames:
+        - app-space
+EOF
+}
+
+##Pod Monitors to scrape metrics for databases

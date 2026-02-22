@@ -6,3 +6,4 @@ variable "monitoring_namespace" {
   type    = string
   default = "monitoring"
 }
+

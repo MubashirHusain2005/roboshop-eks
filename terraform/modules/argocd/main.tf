@@ -65,6 +65,11 @@ resource "helm_release" "argocd_deploy" {
           "server.localUsers" = true
         }
       }
+
+      secret = {
+        argocdServerAdminPassword = "$2a$10$Jsn3fOA5LWlmPf3bsfeom.3aXbdSd.ybCmvL4TYTh76IlRqRI2GNK"
+      }
+    
       dex = {
         enabled = false
       }
