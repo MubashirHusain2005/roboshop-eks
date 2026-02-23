@@ -90,7 +90,7 @@ resource "helm_release" "mysql_exporter" {
   ]
 
   depends_on = [
-    kubectl_manifest.mysql_exporter_auth,
+    #kubectl_manifest.mysql_exporter_auth,
     kubectl_manifest.mysql_exporter_my_cnf,
     helm_release.prometheus
 
@@ -153,62 +153,64 @@ EOF
 
 ##Temporary K8s job- this will allow the exporter to temporarily authenticate to the mysql server so we can scrape metrics
 
-resource "kubectl_manifest" "mysql_exporter_auth" {
-  yaml_body = <<EOF
+#resource "kubectl_manifest" "mysql_exporter_auth" {
+  #yaml_body = <<EOF
 
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: mysql-exporter-authentication
-  namespace: monitoring
-spec:
-  template:
-    spec:
-      containers:
-      - name: mysql-client
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
-        command:
-        - sh
-        - -c
-        - |
-          mysql -h mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "
-          CREATE USER IF NOT EXISTS 'metrics_user'@'%' IDENTIFIED BY 'metrics_password';
-          GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'metrics_user'@'%';
-          FLUSH PRIVILEGES;"
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name:  mysql-exporter-secret
-              key: root-password
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "256Mi"
-      restartPolicy: OnFailure
-EOF
+#apiVersion: batch/v1
+#kind: Job
+#metadata:
+  #name: mysql-exporter-authentication
+  #namespace: app-space
+#spec:
+  #template:
+    #spec:
+      #containers:
+     # - name: mysql-client
+      #  image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
+      #  command:
+     #   - sh
+      #  - -c
+      #  - |
+       #   mysql -h mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "
+       #   CREATE USER IF NOT EXISTS 'metrics_user'@'%' IDENTIFIED BY 'metrics_password';
+        #  GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'metrics_user'@'%';
+        #  FLUSH PRIVILEGES;"
+      #  env:
+     #   - name: MYSQL_ROOT_PASSWORD
+        #  valueFrom:
+         #   secretKeyRef:
+           #   name:  mysql-secret
+            #  key: root-password
+      #  resources:
+        #  requests:
+       #     cpu: "100m"
+          #  memory: "128Mi"
+       #   limits:
+        #    cpu: "200m"
+        #    memory: "256Mi"
+      #restartPolicy: OnFailure
+#EOF
 
-  depends_on = [kubectl_manifest.mysql_exporter_secret]
-}
+  #depends_on = [kubectl_manifest.mysql_exporter_secret]
+#}
 
 
 
-resource "kubectl_manifest" "mysql_exporter_secret" {
-  yaml_body = <<EOF
+#resource "kubectl_manifest" "mysql_exporter_secret" {
+  ##yaml_body = <<EOF
 
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysql-exporter-secret
-  namespace: monitoring
-type: Opaque
-stringData:
-  MYSQL_PASSWORD: metrics_password 
-EOF
-}
+#apiVersion: v1
+#kind: Secret
+#metadata:
+  #name: mysql-exporter-secret
+  #namespace: app-space
+#type: Opaque
+#stringData:
+  #MYSQL_PASSWORD: metrics_password 
+#EOF
+#}
+
+
 
 resource "kubectl_manifest" "redis_secret" {
   yaml_body = <<EOF

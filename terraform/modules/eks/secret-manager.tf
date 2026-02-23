@@ -173,7 +173,7 @@ spec:
     name: secretstore
     kind: ClusterSecretStore
   target:
-    name: kube-secret
+    name: mysql-secret
   data:
     - secretKey: DB_USER
       remoteRef:
@@ -183,6 +183,14 @@ spec:
       remoteRef:
         key: db-creds
         property: DB_PASSWORD
+    - secretKey: root-password
+      remoteRef:
+        key: db-creds
+        property: root-password
+    - secretKey: user-password
+      remoteRef:
+        key: db-creds
+        property: user-password
 EOF
 
   depends_on = [

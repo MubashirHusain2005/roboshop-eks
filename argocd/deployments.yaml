@@ -155,7 +155,7 @@ spec:
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql-exporter-secret
+                  name: mysql-secret
                   key: user-password
           resources:
             requests:
