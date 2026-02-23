@@ -623,7 +623,7 @@ spec:
           - name: REDIS_PORT
             value: "6379"
           - name: MONGO_HOST
-            value: "mongo.data-space.svc.cluster.local"
+            value: mongo.data-space.svc.cluster.local
         resources:
           requests:
             cpu: "100m"
