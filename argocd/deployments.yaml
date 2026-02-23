@@ -434,7 +434,7 @@ spec:
           imagePullPolicy: Always
           envFrom:
             - secretRef:
-                name: kube-secret
+                name: mysql-secret
           ports:
             - containerPort: 8080
           resources:
