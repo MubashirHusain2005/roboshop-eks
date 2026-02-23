@@ -589,6 +589,41 @@ spec:
             value: "true"
           - name: REDIS_HOST
             value: redis.data-space.svc.cluster.local
+          - name: REDIS_PORT
+            value: "6379"
+          - name: MONGO_URL
+            value: apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-user
+  namespace: app-space
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user
+  template:
+    metadata:
+      labels:
+        app: user
+    spec:
+      containers:
+      - name: robot-app-user
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/user:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+          - name: TRUST_PROXY
+            value: "true"
+          - name: INSTANA_DISABLE_AUTO_INSTR
+            value: "true"
+          - name: REDIS_HOST
+            value: redis.data-space.svc.cluster.local
+          - name: REDIS_PORT
+            value: "6379"
+          - name: MONGO_HOST
+            value: "mongo.data-space.svc.cluster.local"
         resources:
           requests:
             cpu: "100m"
