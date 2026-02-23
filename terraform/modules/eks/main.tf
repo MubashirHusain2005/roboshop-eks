@@ -46,7 +46,6 @@ resource "aws_iam_openid_connect_provider" "eks" {
 }
 
 
-
 #EKS 
 
 resource "aws_eks_cluster" "eks_cluster" {

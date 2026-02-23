@@ -338,3 +338,74 @@ spec:
         resources:
           requests:
             storage: 5Gi
+
+
+
+#apiVersion: v1
+#kind: Secret
+#metadata:
+ # name: mysql-secret
+  #namespace: app-space    
+#type: Opaque
+#stringData:
+ # root-password: rootpass
+  #user-password: secret
+
+
+---
+
+
+###IRSA for shipping pod so it can access AWS Secrets Manager
+
+#resource "aws_iam_role" "shipping_irsa" {
+#name = "iam-secrets-access"
+
+# assume_role_policy = jsonencode({
+# Version = "2012-10-17"
+#  Statement = [
+#  {
+#   Effect = "Allow"
+# Principal = {
+#   Federated = "${aws_iam_openid_connect_provider.eks.arn}"
+#  }
+#  Action = "sts:AssumeRoleWithWebIdentity"
+# Condition = {
+#  StringEquals = {
+#    "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:app-space:shipping_sa",
+#  "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" = "sts.amazonaws.com"
+#  }
+# }
+#}
+#]
+# })
+#}
+
+
+#resource "aws_iam_policy" "shipping_secrets_policy" {
+# name = "shipping-secrets-manager-access"
+
+# policy = jsonencode({
+# Version = "2012-10-17"
+# Statement = [
+#  {
+# Effect = "Allow"
+# Action = [
+#  "secretsmanager:GetSecretValue",
+# #  "secretsmanager:DescribeSecret"
+#]
+# Resource = "arn:aws:secretsmanager:eu-west-2:*:secret:robotshop/shipping/*"
+# }
+#]
+#})
+#}
+
+#resource "aws_iam_role_policy_attachment" "shipping_policy_irsa" {
+# role       = aws_iam_role.shipping_irsa.name
+#policy_arn = aws_iam_policy.shipping_secrets_policy.arn
+#}
+
+
+
+kubectl get secret argocd-initial-admin-secret -n argo-cd -o jsonpath="{.data.password}" | base64 --decode; echo
+
+kubectl get secret prometheus-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 --decode; echo

@@ -4,12 +4,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: mongo
-  namespace: data-space
+  name: {{ Values.mongoappName }}
+  namespace: {{ .Values.databaseNamespace }}
 spec:
   type: ClusterIP
   selector:
-    app: mongo
+    app: {{ Values.mongoappName }}
   ports:
   - port: 27017
     targetPort: 27017
@@ -18,11 +18,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysql
-  namespace: app-space    
+  name: {{ Values.mysqlappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
-    app: mysql
+    app: {{ Values.mysqlappName }}
   ports:
   - port: 3306
     targetPort: 3306
@@ -30,12 +30,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis
-  namespace: data-space
+  name: {{ Values.redisappName }}
+  namespace: {{ .Values.databaseNamespace }}
 spec:
   type: ClusterIP
   selector:
-    app: redis
+    app: {{ Values.redisappName }}
   ports:
   - port: 6379
     targetPort: 6379
@@ -43,11 +43,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: rabbitmq
-  namespace: data-space
+  name: {{ Values.rabbitmqappName }}
+  namespace: {{ .Values.databaseNamespace }}
 spec:
   selector:
-    app: rabbitmq
+    app: {{ Values.rabbitmqappName }}
   ports:
     - name: amqp
       port: 5672
@@ -61,11 +61,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: cart
-  namespace: app-space
+  name: {{ Values.cartappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
-    app: cart
+    app: {{ Values.cartappName }}
   ports:
   - port: 8080
     targetPort: 8080
@@ -74,11 +74,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: catalogue
-  namespace: app-space
+  name: {{ Values.catalogueappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
-    app: catalogue
+    app: {{ Values.catalogueappName }}
   ports:
   - port: 8080
     targetPort: 8080
@@ -86,11 +86,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: dispatch
-  namespace: app-space
+  name: {{ Values.dispatchappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
-    app: dispatch
+    app: {{ Values.dispatchappName }}
   ports:
   - port: 80
     targetPort: 80
@@ -98,8 +98,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: payment
-  namespace: app-space
+  name: {{ Values.paymentsvcname }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
     app: robotshop-payment 
@@ -111,8 +111,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ratings
-  namespace: app-space
+  name: {{ Values.ratingssvcname }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
     app: robotshop-ratings
@@ -123,11 +123,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: shipping
-  namespace: app-space
+  name: {{ Values.shippingappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
-    app: shipping
+    app: {{ Values.shippingappName }}
   ports:
   - port: 8080
     targetPort: 8080
@@ -136,11 +136,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: user
-  namespace: app-space
+  name: {{ Values.userappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
-    app: user
+    app: {{ Values.userappName }}
   ports:
   - port: 8080
     targetPort: 8080
@@ -149,11 +149,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: web
-  namespace: app-space
+  name: {{ Values.webappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
-    app: web
+    app: {{ Values.webappName }}
     version: v1
   ports:
   - port: 8080
@@ -164,11 +164,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: web-2
-  namespace: app-space
+  name: {{ Values.canarywebname }}
+  namespace: {{ .Values.appNamespace }}
 spec:
   selector:
-    app: web
+    app: {{ Values.webappName }}
     version: v2
   ports:
   - port: 8080

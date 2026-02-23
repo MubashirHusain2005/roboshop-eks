@@ -4,12 +4,12 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: app-space
+  name: {{ .Values.appNamespace }}
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: data-space
+  name: {{ .Values.databaseNamespace }}
 ---
 ############################################
 # RESOURCE QUOTAS
@@ -18,7 +18,7 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: app-quota
-  namespace: app-space
+  namespace: {{ .Values.appNamespace }}
 spec:
   hard:
     requests.cpu: "4"
@@ -31,7 +31,7 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: data-quota
-  namespace: data-space
+  namespace: {{ .Values.databaseNamespace }}
 spec:
   hard:
     requests.cpu: "4"
@@ -44,21 +44,11 @@ spec:
 ############################################
 # SECRETS / CONFIGMAPS   
 ############################################
-#apiVersion: v1
-#kind: Secret
-#metadata:
- # name: mysql-secret
-  #namespace: app-space    
-#type: Opaque
-#stringData:
- # root-password: rootpass
-  #user-password: secret
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: redis-config
-  namespace: data-space 
+  namespace: {{ .Values.databaseNamespace }}
   
 data:
   redis.conf: |
@@ -66,23 +56,23 @@ data:
     appendfsync everysec
 ---
 ############################################
-# DATA-SPACE STATEFULSETS / DEPLOYMENTS
+#  STATEFULSETS / DEPLOYMENTS
 ############################################
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mongo
-  namespace: data-space
+  name: {{ .Values.mongoappName }}
+  namespace: {{ .Values.databaseNamespace }}
 spec:
-  serviceName: mongo
-  replicas: 1
+  serviceName: {{ .Values.mongoappName }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: mongo
-  template:
+      app: {{ .Values.mongoappName }}
+  template:   
     metadata:
       labels:
-        app: mongo
+        app: {{ .Values.mongoappName }}
     spec:
       affinity:
         nodeAffinity:
@@ -94,20 +84,15 @@ spec:
                 values:
                 - database
       containers:
-      - name: mongo
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mongo:v1
+      - name: {{ .Values.mongoappName }}
+        image: "{{ .Values.mongo.image.repository }}:{{ .Values.mongo.image.tag }}"
         ports:
         - containerPort: 27017
         volumeMounts:
         - name: mongo-data
           mountPath: /data/db
         resources:
-          requests:
-            cpu: "100m"
-            memory: "256Mi"
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
+          {{- toYaml .Values.mongo.resources | nindent 10 }}
   volumeClaimTemplates:
   - metadata:
       name: mongo-data
@@ -119,29 +104,28 @@ spec:
         requests:
           storage: 5Gi
 ---
-##MYSQL
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mysql
-  namespace: app-space   
+  name:  {{ .Values.mysqlappName }}
+  namespace: {{ .Values.appNamespace }} 
 spec:
-  serviceName: mysql
-  replicas: 1
+  serviceName: {{ .Values.mysqlappName }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: mysql
+      app:  {{ .Values.mysqlappName }}
   template:
     metadata:
       labels:
-        app: mysql
+        app:  {{ .Values.mysqlappName }}
     spec:
       containers:
-        - name: mysql
-          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
+        - name: {{ .Values.mysqlappName }}
+          image: "{{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}"
           ports:
             - containerPort: 3306
-              name: mysql
+              name:  {{ .Values.mysqlappName }}
           env:
             - name: MYSQL_DATABASE
               value: cities
@@ -158,12 +142,7 @@ spec:
                   name: mysql-secret
                   key: user-password
           resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
+           {{- toYaml .Values.mysql.resources | nindent 10 }}
           volumeMounts:
             - name: mysql-data
               mountPath: /var/lib/mysql
@@ -181,6 +160,11 @@ spec:
                     --silent
             initialDelaySeconds: 30
             periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 60
+            periodSeconds: 10
   volumeClaimTemplates:
     - metadata:
         name: mysql-data
@@ -195,22 +179,22 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: redis
-  namespace: data-space
+  name: {{ .Values.redisappName }}
+  namespace: {{ .Values.databaseNamespace }}
 spec:
-  serviceName: "redis"
-  replicas: 1
+  serviceName: {{ .Values.redisappName }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: redis
+      app: {{ .Values.redisappName }}
   template:
     metadata:
       labels:
-        app: redis
+        app: {{ .Values.redisappName }}
     spec:
       containers:
-      - name: redis
-        image: redis:6.2
+      - name: {{ .Values.redisappName }}
+        image: "{{ .Values.redis.image }}"
         ports:
         - containerPort: 6379
 
@@ -258,21 +242,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rabbitmq
-  namespace: data-space
+  name: {{ .Values.rabbitmqappName }}
+  namespace: {{ .Values.databaseNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: rabbitmq
+      app: {{ .Values.rabbitmqappName }}
   template:
     metadata:
       labels:
-        app: rabbitmq
+        app: {{ .Values.rabbitmqappName }}
     spec:
       containers:
-      - name: rabbitmq
-        image: rabbitmq:3.8-management-alpine
+      - name: {{ .Values.rabbitmqappName }}
+        image: "{{ .Values.rabbitmq.image }}"
         ports:
         - containerPort: 5672
         env:
@@ -283,33 +267,27 @@ spec:
           - name: RABBITMQ_ALLOW_GUEST
             value: "true"
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
+          {{- toYaml .Values.rabbitmq.resources | nindent 10 }}
 ---
 # APP-SPACE DEPLOYMENTS 
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: robotshop-cart
-  namespace: app-space
+  name: {{ .Values.deploymentName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: cart
+      app: {{ .Values.cartappName }}
   template:
     metadata:
       labels:
-        app: cart
+        app: {{ .Values.cartappName }}
     spec:
       containers:
-      - name: robot-app-cart
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/cart:v1
+      - name: {{ .Values.cartappName }}
+        image: "{{ .Values.cart.image.repository }}:{{ .Values.cart.image.tag }}"
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -323,12 +301,7 @@ spec:
         - name: INSTANA_DISABLE_AUTP_INSTR
           value: "true"
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
+          {{- toYaml .Values.cart.resources | nindent 10 }}
         livenessProbe:
           httpGet:
             path: /health
@@ -345,21 +318,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: robotshop-catalogue
-  namespace: app-space
+  name: {{ .Values.cataloguedeploymentName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: catalogue
+      app: {{ .Values.catalogueappName }}
   template:
     metadata:
       labels:
-        app: catalogue
+        app: {{ .Values.catalogueappName }}
     spec:
       containers:
       - name: robot-app-catalogue
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/catalogue:v1
+        image: "{{ .Values.catalogue.image.repository }}:{{ .Values.catalogue.image.tag }}"
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -367,12 +340,7 @@ spec:
         - name: MONGO_URL
           value: mongodb://mongo.data-space.svc.cluster.local:27017/catalogue
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
+          {{- toYaml .Values.catalogue.resources | nindent 10 }}
         livenessProbe:
           httpGet:
             path: /health
@@ -389,61 +357,51 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: robotshop-dispatch
-  namespace: app-space
+  name: {{ .Values.dispatchdeploymentName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: dispatch
+      app: {{ .Values.dispatchappName }}
   template:
     metadata:
       labels:
-        app: dispatch
+        app: {{ .Values.dispatchappName }}
     spec:
       containers:
-      - name: robot-app-dispatch
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/dispatch:v1
-        imagePullPolicy: Always
+      - name: {{ .Values.dispatch.image.name }}
+        image: "{{ .Values.dispatch.image.repository }}:{{ .Values.dispatch.image.tag }}"
+        imagePullPolicy: {{ .Values.dispatch.image.pullPolicy }}
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
+         {{- toYaml .Values.dispatch.resources | nindent 10 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: robotshop-shipping
-  namespace: app-space
+  name: {{ .Values.shippingdeploymentName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: shipping
+      app: {{ .Values.shippingappName }}
   template:
     metadata:
       labels:
-        app: shipping
+        app: {{ .Values.shippingappName }}
     spec:
       containers:
-        - name: robot-app-shipping
-          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/shipping:v1
-          imagePullPolicy: Always
+        - name: {{ .Values.shipping.image.name }}
+          image: "{{ .Values.shipping.image.repository }}:{{ .Values.shipping.image.tag }}"
+          imagePullPolicy: {{ .Values.shipping.image.pullPolicy }}
           envFrom:
             - secretRef:
                 name: kube-secret
           ports:
             - containerPort: 8080
           resources:
-            requests:
-              cpu: "250m"
-              memory: "512Mi"
-            limits:
-              cpu: "500m"
-              memory: "1Gi"
+             {{- toYaml .Values.shipping.resources | nindent 10 }}
 
           startupProbe:
             httpGet:
@@ -474,22 +432,22 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: robotshop-payment
-  namespace: app-space
+  name: {{ .Values.paymentappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: robotshop-payment
+      app: {{ .Values.paymentappName }}
   template:
     metadata:
       labels:
-        app: robotshop-payment
+        app: {{ .Values.paymentappName }}
     spec:
       containers:
-      - name: robot-app-payment
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/payment:v1
-        imagePullPolicy: Always
+      - name: {{ .Values.paymentappName }}
+        image: "{{ .Values.payment.image.repository }}:{{ .Values.payment.image.tag }}"
+        imagePullPolicy: {{ .Values.payment.image.pullPolicy }}
         ports:
         - containerPort: 8080
         env:
@@ -502,12 +460,7 @@ spec:
           - name: RABBITMQ_USER
             value: guest
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
+           {{- toYaml .Values.payment.resources | nindent 10 }}
         livenessProbe:
           httpGet:
             path: /health
@@ -524,22 +477,22 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: robotshop-ratings
-  namespace: app-space
+  name: {{ .Values.ratingsappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: robotshop-ratings
+      app: {{ .Values.ratingsappName }}
   template:
     metadata:
       labels:
-        app: robotshop-ratings
+        app: {{ .Values.ratingsappName }}
     spec:
       containers:
-      - name: robot-app-ratings
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/ratings:v1
-        imagePullPolicy: Always
+      - name: {{ .Values.ratings.image.name }}
+        image: "{{ .Values.ratings.image.repository }}:{{ .Values.ratings.image.tag }}"
+        imagePullPolicy: {{ .Values.ratings.image.pullPolicy }}
         ports:
         - containerPort: 80
         env:
@@ -548,32 +501,27 @@ spec:
           - name: MONGO_PORT
             value: "27017"
         resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
+           {{- toYaml .Values.ratings.resources | nindent 10 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: robotshop-user
-  namespace: app-space
+  name: {{ .Values.userdeploymentName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: user
+      app: {{ .Values.userappName }}
   template:
     metadata:
       labels:
-        app: user
+        app: {{ .Values.userappName }}
     spec:
       containers:
-      - name: robot-app-user
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/user:v1
-        imagePullPolicy: Always
+      - name: {{ .Values.user.image.name }}
+        image: "{{ .Values.user.image.repository }}:{{ .Values.user.image.tag }}"
+        imagePullPolicy:  {{ .Values.user.image.pullPolicy }}
         ports:
         - containerPort: 8080
         env:
@@ -585,44 +533,35 @@ spec:
             value: redis.data-space.svc.cluster.local
         resources:
           requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
+           {{- toYaml .Values.user.resources | nindent 10 }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
-  namespace: app-space
+  name: {{ .Values.webappName }}
+  namespace: {{ .Values.appNamespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: web
+      app: {{ .Values.webappName }}
       version: v1
   template:
     metadata:
       labels:
-        app: web
+        app: {{ .Values.webappName }}
         version: v1
     spec:
       containers:
         # ===============================
         # NGINX FRONT PROXY (SIDE CAR)
         # ===============================
-        - name: web-nginx
-          image: nginx:1.21.6
+        - name: {{ .Values.sidecar-web.image.name }}
+          image: {{ .Values.sidecar-web.image.respository }}
           ports:
             - containerPort: 8080
           resources:
-            requests:
-              cpu: "50m"
-              memory: "50Mi"
-            limits:
-              cpu: "100m"
-              memory: "100Mi"
+            {{- toYaml .Values.sidecar-web.resources | nindent 10 }}
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
@@ -631,9 +570,9 @@ spec:
         # ===============================
         # EXISTING WEB CONTAINER
         # ===============================
-        - name: robot-app-web
-          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web:v1
-          imagePullPolicy: Always
+        - name: {{ .Values.web.image.name }}
+          image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
+          imagePullPolicy: {{ .Values.user.image.pullPolicy }}
           ports:
             - containerPort: 3000
           env:
@@ -644,65 +583,9 @@ spec:
             - name: INSTANA_DISABLE_AUTO_INSTR
               value: "true"
           resources:
-            requests:
-              cpu: "100m"
-              memory: "60Mi"
-            limits:
-              cpu: "200m"
-              memory: "100Mi"
+            {{- toYaml .Values.web.resources | nindent 10 }}
 
       volumes:
         - name: nginx-config
           configMap:
             name: web-nginx-config
----
-
-
-###IRSA for shipping pod so it can access AWS Secrets Manager
-
-#resource "aws_iam_role" "shipping_irsa" {
-#name = "iam-secrets-access"
-
-# assume_role_policy = jsonencode({
-# Version = "2012-10-17"
-#  Statement = [
-#  {
-#   Effect = "Allow"
-# Principal = {
-#   Federated = "${aws_iam_openid_connect_provider.eks.arn}"
-#  }
-#  Action = "sts:AssumeRoleWithWebIdentity"
-# Condition = {
-#  StringEquals = {
-#    "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub" = "system:serviceaccount:app-space:shipping_sa",
-#  "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud" = "sts.amazonaws.com"
-#  }
-# }
-#}
-#]
-# })
-#}
-
-
-#resource "aws_iam_policy" "shipping_secrets_policy" {
-# name = "shipping-secrets-manager-access"
-
-# policy = jsonencode({
-# Version = "2012-10-17"
-# Statement = [
-#  {
-# Effect = "Allow"
-# Action = [
-#  "secretsmanager:GetSecretValue",
-# #  "secretsmanager:DescribeSecret"
-#]
-# Resource = "arn:aws:secretsmanager:eu-west-2:*:secret:robotshop/shipping/*"
-# }
-#]
-#})
-#}
-
-#resource "aws_iam_role_policy_attachment" "shipping_policy_irsa" {
-# role       = aws_iam_role.shipping_irsa.name
-#policy_arn = aws_iam_policy.shipping_secrets_policy.arn
-#}

@@ -1,0 +1,239 @@
+mongoappName: mongo
+
+mysqlappName: mysql
+
+redisappName: redis
+
+rabbitmqappName: rabbitmq
+
+cartdeploymentName: robotshop-cart
+
+cartappName: cart
+
+cataloguedeploymentName: robotshop-catalogue
+
+catalogueappName: catalogue
+
+dispatchappName: dispatch
+
+dispatchdeploymentName: robotshop-dispatch
+
+shippingappName: shipping
+
+shippingdeploymentName: robotshop-shipping
+
+paymentappName: robotshop-payment
+
+ratingsappName: robotshop-ratings
+
+userdeploymentName:  robotshop-user
+
+userappName: user
+
+webappName: web
+
+paymentsvcname: payment
+
+ratingsvcname: ratings
+
+canarywebname: web-2
+
+appNamespace: app-space
+
+databaseNamespace: data-space
+
+replicaCount: 1
+
+mongo:
+  image:
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mongo
+    tag: v1
+
+mysql:
+  image:
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql
+    tag: v1
+
+redis:
+  image: redis:6.2
+
+rabbitmq:
+  image: rabbitmq:3.8-management-alpine
+
+cart:
+  image:
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/cart
+    tag: v1 
+
+catalogue:
+  image:
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/catalogue
+    tag: v1
+
+dispatch:
+  image:
+    name: robotshop-dispatch
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/dispatch
+    tag: v1
+    imagePullPolicy: Always
+
+shipping:
+  image:
+    name: robot-app-shipping
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/shipping
+    tag: v1
+    imagePullPolicy: Always 
+
+
+payment:
+  image:
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/payment
+    tag: v1
+    imagePullPolicy: Always 
+
+
+
+ratings:
+  image:
+    name: robot-app-ratings
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/ratings
+    tag: v1
+    imagePullPolicy: Always 
+
+
+user:
+  image:
+    name: robot-app-user
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/user
+    tag: v1
+    imagePullPolicy: Always 
+
+sidecar-web:
+  image:
+    name: web-nginx
+    repository: nginx:1.21.6
+
+web:
+  image:
+    name: robot-app-web
+    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web
+    tag: v1
+    imagePullPolicy: Always 
+
+cart:
+  resources:
+    request:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  
+mongo:
+  resources:
+    request:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+mysql:
+  resources:
+    request:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+rabbitmq:
+  resources:
+    request:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+catalogue:
+  resources:
+    request:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+dispatch:
+  resources:
+    request:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+shipping:
+  resources:
+    request:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+
+shipping:
+  resources:
+    request:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+ratings:
+  resources:
+    request:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+
+user:
+  resources:
+    request:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+web:
+  resources:
+    request:
+      cpu: 100m
+      memory: 60Mi
+    limits:
+      cpu: 200m
+      memory: 100Mi
+
+sidecar-web:
+  resources:
+    request:
+      cpu: 50m
+      memory: 50Mi
+    limits:
+      cpu: 100m
+      memory: 100Mi
+
+storage:
+  parmeters:
+    type: gp3
+    encrypted: "true"
+
+
+

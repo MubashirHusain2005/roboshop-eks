@@ -99,13 +99,22 @@ spec:
     namespace: default  
   syncPolicy:
     automated:
-      prune: true
+     #prune: true
       selfHeal: true
 
 EOF
 
-depends_on = [helm_release.argocd_deploy]
+depends_on = [helm_release.argocd_deploy]  # I want prometheus to be created first
 }
+
+
+
+
+
+
+
+
+
 
 
 

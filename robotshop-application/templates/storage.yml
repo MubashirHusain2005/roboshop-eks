@@ -8,8 +8,7 @@ metadata:
 provisioner: ebs.csi.aws.com
 volumeBindingMode: WaitForFirstConsumer
 parameters:
-  type: gp3
-  encrypted: "true"
+   {{- toYaml .Values.storage.parameters | nindent 10 }}
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -18,8 +17,7 @@ metadata:
 provisioner: ebs.csi.aws.com
 volumeBindingMode: WaitForFirstConsumer
 parameters:
-  type: gp3
-  encrypted: "true"
+  {{- toYaml .Values.storage.parameters | nindent 10 }}
 ---  
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -28,5 +26,5 @@ metadata:
 provisioner: ebs.csi.aws.com
 volumeBindingMode: WaitForFirstConsumer
 parameters:
-  type: gp3
-  encrypted: "true"
+  {{- toYaml .Values.storage.parameters | nindent 10 }}
+

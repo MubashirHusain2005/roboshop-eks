@@ -46,6 +46,10 @@ resource "helm_release" "prometheus" {
   cleanup_on_fail  = false
   timeout          = 300
 
+  values = [
+  file("${path.root}/../robotshop-application/prometheus-values.yaml")
+]
+
   depends_on = [var.cluster_name,
   kubectl_manifest.monitoring_namespace,
   ]
@@ -77,8 +81,8 @@ resource "helm_release" "mysql_exporter" {
       extraVolumes = [
         {
           name = "mysql-mycnf"
-          configMap = {
-            name = "mysql-exporter-mycnf"
+          secret = {
+            secretName = "mysql-exporter-mycnf"
           }
         }
       ]
@@ -87,12 +91,14 @@ resource "helm_release" "mysql_exporter" {
 
   depends_on = [
     kubectl_manifest.mysql_exporter_auth,
-    kubectl_manifest.mysql_exporter_my_cnf
+    kubectl_manifest.mysql_exporter_my_cnf,
+    helm_release.prometheus
+
   ]
 }
 
 
-###Redis exporter to collect metrics
+###Redis exporter to collect redis metrics
 resource "helm_release" "redis_exporter" {
   name       = "redis-exporter"
   namespace  = "monitoring"
@@ -121,18 +127,21 @@ resource "helm_release" "redis_exporter" {
   # Make sure the release is installed after any dependencies (optional)
   depends_on = [
     helm_release.prometheus,
-    kubectl_manifest.redis_secret
+    kubectl_manifest.redis_secret,
   ]
 }
+
+
 
 resource "kubectl_manifest" "mysql_exporter_my_cnf" {
   yaml_body = <<EOF
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: mysql-exporter-mycnf
   namespace: monitoring
-data:
+type: Opaque
+stringData:
   .my.cnf: |
     [client]
     user=metrics_user
@@ -151,7 +160,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: mysql-exporter-authentication
-  namespace: app-space
+  namespace: monitoring
 spec:
   template:
     spec:
@@ -170,7 +179,7 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: mysql-secret
+              name:  mysql-exporter-secret
               key: root-password
         resources:
           requests:
@@ -182,7 +191,7 @@ spec:
       restartPolicy: OnFailure
 EOF
 
-  depends_on = [kubectl_manifest.mysql_exporter_secret ]
+  depends_on = [kubectl_manifest.mysql_exporter_secret]
 }
 
 
@@ -218,20 +227,20 @@ EOF
 
 ##Service Monitors for Deployments to scrape metrics
 
-#resource "kubectl_manifest" "mysql_service_monitor" {
+#resource "kubectl_manifest" "user_service_monitor" {
     #yaml_body = <<EOF
 
 #apiVersion: monitoring.coreos.com/v1
 #kind: ServiceMonitor
 #metadata:
-  #name: mysql-exporter
-  #namespace: app-space
+  #name: servicemonitor-user
+  #namespace: monitoring
   #labels:
-    #release: monitoring
+    ##release: prometheus
 #spec:
   #selector:
     #matchLabels:
-      #app: mysql
+     # app: user
   #endpoints:
    # - port: metrics
      # interval: 15s
@@ -273,3 +282,38 @@ EOF
 
 }
 
+
+resource "kubectl_manifest" "prometheus_rule" {
+    yaml_body = <<EOF
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: node-resource-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: node-alerts
+    rules:
+
+    - alert: HighNodeCPU
+      expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        description: "Node CPU usage above 80%"
+
+    - alert: HighNodeMemory
+      expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        description: "Node memory usage above 85%"
+
+EOF
+
+  depends_on = [ helm_release.prometheus ]
+
+}
