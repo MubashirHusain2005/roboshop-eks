@@ -220,7 +220,13 @@ spec:
             secretKeyRef:
               name: redis-secret
               key: REDIS_PASSWORD
-
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "190Mi"
+          limits:
+            cpu: "300m"
+            memory: "256Mi"
         volumeMounts:
         # Redis config from ConfigMap
         - name: redis-config
