@@ -593,6 +593,11 @@ spec:
             value: "redis.data-space.svc.cluster.local"
           - name: REDIS_PORT
             value: "6379"
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: redis-secret
+                key: REDIS_PASSWORD
 
           # Mongo
           - name: MONGO_HOST
