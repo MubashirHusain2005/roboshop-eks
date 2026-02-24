@@ -45,10 +45,21 @@ spec:
 # SECRETS / CONFIGMAPS   
 ############################################
 apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-secret
+  namespace: app-space    
+type: Opaque
+stringData:
+  REDIS_PASSWORD: redispassword
+---
+
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: redis-config
-  namespace: data-space  
+  namespace: data-space 
+  
 data:
   redis.conf: |
     appendonly yes
@@ -157,7 +168,6 @@ spec:
             - name: mysql-data
               mountPath: /var/lib/mysql
               subPath: mysql
-          serviceAccountName: mysql-sa 
           readinessProbe:
             exec:
               command:
@@ -169,7 +179,7 @@ spec:
                     -u root \
                     -p"$MYSQL_ROOT_PASSWORD" \
                     --silent
-            initialDelaySeconds: 120
+            initialDelaySeconds: 30
             periodSeconds: 10
   volumeClaimTemplates:
     - metadata:
@@ -211,11 +221,12 @@ spec:
             cpu: "300m"
             memory: "256Mi"
         volumeMounts:
-       
+        # Redis config from ConfigMap
         - name: redis-config
           mountPath: /usr/local/etc/redis/redis.conf
           subPath: redis.conf
 
+        # Persistent data volume
         - name: redis-data
           mountPath: /data
 
@@ -225,7 +236,7 @@ spec:
         - |
           redis-server /usr/local/etc/redis/redis.conf \
           --appendonly yes
-
+##Secret created by terraform
       volumes:
       - name: redis-config
         configMap:

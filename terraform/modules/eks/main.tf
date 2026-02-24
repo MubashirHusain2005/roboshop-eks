@@ -291,7 +291,7 @@ resource "aws_eks_node_group" "private_node_2" {
 
 }
 
-###Null resource to update the kubeconfig file
+###Null resource to update my kubeconfig file
 
 resource "null_resource" "update_kubeconfig" {
   provisioner "local-exec" {

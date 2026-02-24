@@ -5,15 +5,15 @@ on:
     branches:
       - master
     #paths:
-     # - 'robotshop/cart/**'
-      #- 'robotshop/catalogue/**'
-     # - 'robotshop/payment/**'
-     # - 'robotshop/mongo/**'
-     # - 'robotshop/mysql/**'
-      #- 'robotshop/ratings/**'
-     # - 'robotshop/shipping/**'
-     # - 'robotshop/user/**'
-     # - 'robotshop/web/**'
+     # - 'app/cart/**'
+      #- 'app/catalogue/**'
+     # - 'app/payment/**'
+     # - 'app/mongo/**'
+     # - 'app/mysql/**'
+      #- 'app/ratings/**'
+     # - 'app/shipping/**'
+     # - 'app/user/**'
+     # - 'app/web/**'
      # -  '.github/workflows/**'
 
 
@@ -95,7 +95,7 @@ jobs:
         SERVICE: ${{ matrix.service }}
         IMAGE_TAG: ${{ steps.version.outputs.tag }}
       run: |
-        cd robotshop/$SERVICE
+        cd app/$SERVICE
         IMAGE_REF="$ECR_REGISTRY/$SERVICE:$IMAGE_TAG"
         docker build -t $IMAGE_REF .
         echo "image-ref=$IMAGE_REF" >> $GITHUB_OUTPUT

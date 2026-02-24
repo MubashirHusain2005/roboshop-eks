@@ -410,7 +410,7 @@ kubectl get secret argocd-initial-admin-secret -n argo-cd -o jsonpath="{.data.pa
 
 kubectl get secret prometheus-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 --decode; echo
 
-
+kubectl get secret -n monitoring grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 
 resource "kubectl_manifest" "robot_app" {
   yaml_body = <<EOF
