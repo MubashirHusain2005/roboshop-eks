@@ -1,102 +1,32 @@
-provider "aws" {
-  region = "eu-west-2"
+resource "aws_eks_access_entry" "terraform_admin" {
+  cluster_name  = "eks-cluster"
+  principal_arn = "arn:aws:iam::038774803581:role/github.to.aws.oidc"
+
+  lifecycle {
+    prevent_destroy = false
+  }
+  depends_on = [aws_eks_cluster.eks_cluster]
+
 }
 
 
-##S3 Bucket to store tf state file
+resource "aws_eks_access_policy_association" "terraform_admin" {
+  cluster_name  = aws_eks_cluster.eks_cluster.name
+  principal_arn = "arn:aws:iam::038774803581:role/github.to.aws.oidc"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
-resource "aws_s3_bucket" "terraform_state_bucket" {
-  bucket = "terraformstatebucket00534353432534523"
+  access_scope {
+    type = "cluster"
+  }
 
   lifecycle {
     prevent_destroy = false
   }
 
-  tags = {
-    Name        = "My bucket"
-    Description = "Storage for Terraform State"
-  }
+  depends_on = [aws_eks_cluster.eks_cluster]
+
 }
 
-##Enabled Versioning
-
-resource "aws_s3_bucket_versioning" "s3_versioning" {
-  bucket = aws_s3_bucket.terraform_state_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-## Enable encryption 
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "s3_encryption" {
-  bucket = aws_s3_bucket.terraform_state_bucket.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-    bucket_key_enabled = true
-  }
-}
-
-##Block All public access- state files should never be public
-
-resource "aws_s3_bucket_public_access_block" "terraform_s3_access" {
-  bucket = aws_s3_bucket.terraform_state_bucket.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-##Bucket policy enforces SSL/TLS connectiosn only 
-resource "aws_s3_bucket_policy" "s3_bucket_policy" {
-  bucket = aws_s3_bucket.terraform_state_bucket.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "EnforceTLS"
-        Effect    = "Deny"
-        Principal = "*"
-        Action    = "s3:*"
-        Resource = [
-          "${aws_s3_bucket.terraform_state_bucket.arn}/*"
-        ]
-        Condition = {
-          Bool = {
-            "aws:SecureTransport" = "false"
-          }
-        }
-      }
-    ]
-  })
-}
-
-##DynamoDB for Statelock
-
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "state-lock"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-
-
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-
-  tags = {
-    Name        = "terraform-lock"
-    description = "Terraform State lock for EKS"
-  }
-}
-
-
-#OIDC for github actions
 
 data "tls_certificate" "github_actions" {
   url = "https://token.actions.githubusercontent.com"
@@ -108,7 +38,6 @@ resource "aws_iam_openid_connect_provider" "oidc" {
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.github_actions.certificates[0].sha1_fingerprint]
 }
-
 
 
 resource "aws_iam_role" "github_oidc_role" {
@@ -147,36 +76,35 @@ resource "aws_iam_policy" "oidc_access_aws" {
     Version = "2012-10-17"
     Statement = [
 
-      {
-        Sid      = "ListStateBucket"
-        Effect   = "Allow"
-        Action   = "s3:ListBucket"
-        Resource = "arn:aws:s3:::mhusains3"
-      },
-      {
-        Sid    = "ReadWriteStateObject"
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject"
-        ]
-        Resource = "arn:aws:s3:::mhusains3/*"
-      },
+     # {
+       # Sid      = "ListStateBucket"
+       # Effect   = "Allow"
+        #Action   = "s3:ListBucket"
+        #Resource = "arn:aws:s3:::mhusains3"
+      #},
+      #{
+       # Sid    = "ReadWriteStateObject"
+       # Effect = "Allow"
+       # Action = [
+        #  "s3:GetObject",
+          #"s3:PutObject",
+          #"s3:DeleteObject"
+       # ]
+       # Resource = "*"
+     # },
 
-
-      {
-        Sid    = "DynamoDBTableAccess"
-        Effect = "Allow"
-        Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:DescribeTable",
-          "dynamodb:UpdateItem"
-        ]
-        Resource = "arn:aws:dynamodb:eu-west-2:038774803581:table/terraform-lock"
-      },
+     # {
+       # Sid    = "DynamoDBTableAccess"
+       # Effect = "Allow"
+       # Action = [
+        #  "dynamodb:GetItem",
+         # "dynamodb:PutItem",
+         # "dynamodb:DeleteItem",
+         # "dynamodb:DescribeTable",
+         # "dynamodb:UpdateItem"
+       # ]
+       # Resource = "*"
+     # },
 
       {
         Sid    = "AccessToKMS"
@@ -274,10 +202,6 @@ resource "aws_iam_policy" "oidc_access_aws" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "oidc_s3_access" {
-  role       = aws_iam_role.github_oidc_role.name
-  policy_arn = aws_iam_policy.oidc_access_aws.arn
-}
 
 
 #IAM Role for ECR
@@ -822,4 +746,3 @@ resource "aws_ecr_lifecycle_policy" "ecr_policy_web" {
     ]
   })
 }
-

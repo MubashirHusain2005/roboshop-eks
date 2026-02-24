@@ -107,18 +107,15 @@ EOF
 
 
 
-
-
-
 #resource "aws_secretsmanager_secret" "argocd_admin" {
 #name        = "argocd-admin"
 #description = "Argocd admin password"
 #}
 
 #resource "aws_secretsmanager_secret_version" "argocd_admin_version" {
-# secret_id = aws_secretsmanager_secret.argocd_admin.id
-# secret_string = jsonencode({
-# password = "MySecurePassword123!"
+ #secret_id = aws_secretsmanager_secret.argocd_admin.id
+ #secret_string = jsonencode({
+ #password = "MySecurePassword123!"
 #})
 
 ##The actual Password = MySecurePassword123!
