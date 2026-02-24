@@ -409,3 +409,32 @@ spec:
 kubectl get secret argocd-initial-admin-secret -n argo-cd -o jsonpath="{.data.password}" | base64 --decode; echo
 
 kubectl get secret prometheus-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 --decode; echo
+
+
+
+resource "kubectl_manifest" "robot_app" {
+  yaml_body = <<EOF
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: robotshop-app
+  namespace: argo-cd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
+    path: argocd
+    targetRevision: master
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default  
+  syncPolicy:
+    automated:
+     prune: true
+      selfHeal: true
+
+EOF
+
+depends_on = [helm_release.argocd_deploy]  # I want prometheus to be created first
+}
