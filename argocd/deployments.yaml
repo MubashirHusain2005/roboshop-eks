@@ -38,7 +38,7 @@ spec:
     requests.memory: "8Gi"
     limits.cpu: "8"
     limits.memory: "16Gi"
-    pods: "15"
+    pods: "20"
 ---
 
 ############################################
