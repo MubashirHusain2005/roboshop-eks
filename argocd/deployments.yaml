@@ -561,7 +561,7 @@ spec:
             cpu: "500m"
             memory: "256Mi"
 ---
-
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robotshop-user
@@ -663,7 +663,7 @@ spec:
         - name: nginx-config
           configMap:
             name: web-nginx-config
----
+
 
 
 ###IRSA for shipping pod so it can access AWS Secrets Manager
