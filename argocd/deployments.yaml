@@ -599,6 +599,8 @@ spec:
             value: "mongo.data-space.svc.cluster.local"
           - name: MONGO_PORT
             value: "27017"
+          - name: MONGO_URL
+            value: "mongodb://mongo.data-space.svc.cluster.local:27017/users"
 
         resources:
           requests:
