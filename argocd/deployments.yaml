@@ -48,7 +48,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: redis-secret
-  namespace: data-space    
+  namespace: app-space    
 type: Opaque
 stringData:
   REDIS_PASSWORD: redispassword
