@@ -36,8 +36,8 @@ resource "helm_release" "grafana" {
   timeout          = 300
 
   depends_on = [var.cluster_name,
-  var.monitoring_namespace,
-  var.prometheus_helmchart
+    var.monitoring_namespace,
+    var.prometheus_helmchart
   ]
 }
 

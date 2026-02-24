@@ -4,6 +4,6 @@ output "monitoring_namespace" {
 }
 
 output "prometheus_helmchart" {
-    value = helm_release.prometheus.name
+  value = helm_release.prometheus.name
 }
 

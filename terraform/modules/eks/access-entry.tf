@@ -91,7 +91,7 @@ resource "aws_iam_policy" "oidc_access_aws" {
           "s3:PutObject",
           "s3:DeleteObject"
         ]
-        Resource = "arn:aws:s3:::mhusains3/*"
+        Resource = "*"
       },
 
 
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "oidc_access_aws" {
           "dynamodb:DescribeTable",
           "dynamodb:UpdateItem"
         ]
-        Resource = "arn:aws:dynamodb:eu-west-2:038774803581:table/terraform-lock"
+        Resource = "*"
       },
 
       {

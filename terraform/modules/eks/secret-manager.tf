@@ -201,31 +201,31 @@ EOF
 ####Secret to fetch from AWS Secrets Manager and create a k8s secret so mysql-exporter can authenticate with mysql
 
 #resource "kubectl_manifest" "external_secret_mysql" {
- # yaml_body = <<EOF
+# yaml_body = <<EOF
 #apiVersion: external-secrets.io/v1beta1
 #kind: ExternalSecret
 #metadata:
- # name: shipping-db-secret
-  #namespace: monitoring
+# name: shipping-db-secret
+#namespace: monitoring
 #spec:
- # refreshInterval: 1h
- # secretStoreRef:
-   # name: secretstore
-   # kind: ClusterSecretStore
- # target:
-   # name: kube-secret
+# refreshInterval: 1h
+# secretStoreRef:
+# name: secretstore
+# kind: ClusterSecretStore
+# target:
+# name: kube-secret
 #  data:
-  #  - secretKey: DB_USER
-     # remoteRef:
-      #  key: db-creds
-       # property: DB_USER
-   # - secretKey: DB_PASSWORD
-    #  remoteRef:
-       # key: db-creds
-        #property: DB_PASSWORD
+#  - secretKey: DB_USER
+# remoteRef:
+#  key: db-creds
+# property: DB_USER
+# - secretKey: DB_PASSWORD
+#  remoteRef:
+# key: db-creds
+#property: DB_PASSWORD
 #EOF
 
- # depends_on = [
-    #kubectl_manifest.cluster_secret_store
- # ]
+# depends_on = [
+#kubectl_manifest.cluster_secret_store
+# ]
 #}

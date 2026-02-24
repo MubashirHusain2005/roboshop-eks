@@ -47,11 +47,11 @@ resource "helm_release" "prometheus" {
   timeout          = 300
 
   values = [
-  file("${path.root}/../robotshop-application/prometheus-values.yaml")
-]
+    file("${path.root}/../robotshop-application/prometheus-values.yaml")
+  ]
 
   depends_on = [var.cluster_name,
-  kubectl_manifest.monitoring_namespace,
+    kubectl_manifest.monitoring_namespace,
   ]
 }
 
@@ -67,7 +67,7 @@ resource "helm_release" "mysql_exporter" {
   values = [
     yamlencode({
       serviceMonitor = {
-        enabled = true
+        enabled          = true
         additionalLabels = { release = "prometheus" }
       }
       extraVolumeMounts = [
@@ -104,19 +104,19 @@ resource "helm_release" "redis_exporter" {
   namespace  = "monitoring"
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "prometheus-redis-exporter"
-  version    = "6.21.0"  
+  version    = "6.21.0"
 
   values = [
     yamlencode({
       redisAddress = "redis://redis.data-space.svc.cluster.local:6379"
 
-      existingSecret = "redis-secret"
+      existingSecret            = "redis-secret"
       existingSecretPasswordKey = "REDIS_PASSWORD"
 
       serviceMonitor = {
-        enabled = true
+        enabled   = true
         namespace = "monitoring"
-        interval = "15s"
+        interval  = "15s"
         labels = {
           release = "prometheus"
         }
@@ -154,59 +154,59 @@ EOF
 ##Temporary K8s job- this will allow the exporter to temporarily authenticate to the mysql server so we can scrape metrics
 
 #resource "kubectl_manifest" "mysql_exporter_auth" {
-  #yaml_body = <<EOF
+#yaml_body = <<EOF
 
 #apiVersion: batch/v1
 #kind: Job
 #metadata:
-  #name: mysql-exporter-authentication
-  #namespace: app-space
+#name: mysql-exporter-authentication
+#namespace: app-space
 #spec:
-  #template:
-    #spec:
-      #containers:
-     # - name: mysql-client
-      #  image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
-      #  command:
-     #   - sh
-      #  - -c
-      #  - |
-       #   mysql -h mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "
-       #   CREATE USER IF NOT EXISTS 'metrics_user'@'%' IDENTIFIED BY 'metrics_password';
-        #  GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'metrics_user'@'%';
-        #  FLUSH PRIVILEGES;"
-      #  env:
-     #   - name: MYSQL_ROOT_PASSWORD
-        #  valueFrom:
-         #   secretKeyRef:
-           #   name:  mysql-secret
-            #  key: root-password
-      #  resources:
-        #  requests:
-       #     cpu: "100m"
-          #  memory: "128Mi"
-       #   limits:
-        #    cpu: "200m"
-        #    memory: "256Mi"
-      #restartPolicy: OnFailure
+#template:
+#spec:
+#containers:
+# - name: mysql-client
+#  image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
+#  command:
+#   - sh
+#  - -c
+#  - |
+#   mysql -h mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "
+#   CREATE USER IF NOT EXISTS 'metrics_user'@'%' IDENTIFIED BY 'metrics_password';
+#  GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'metrics_user'@'%';
+#  FLUSH PRIVILEGES;"
+#  env:
+#   - name: MYSQL_ROOT_PASSWORD
+#  valueFrom:
+#   secretKeyRef:
+#   name:  mysql-secret
+#  key: root-password
+#  resources:
+#  requests:
+#     cpu: "100m"
+#  memory: "128Mi"
+#   limits:
+#    cpu: "200m"
+#    memory: "256Mi"
+#restartPolicy: OnFailure
 #EOF
 
-  #depends_on = [kubectl_manifest.mysql_exporter_secret]
+#depends_on = [kubectl_manifest.mysql_exporter_secret]
 #}
 
 
 
 #resource "kubectl_manifest" "mysql_exporter_secret" {
-  ##yaml_body = <<EOF
+##yaml_body = <<EOF
 
 #apiVersion: v1
 #kind: Secret
 #metadata:
-  #name: mysql-exporter-secret
-  #namespace: app-space
+#name: mysql-exporter-secret
+#namespace: app-space
 #type: Opaque
 #stringData:
-  #MYSQL_PASSWORD: metrics_password 
+#MYSQL_PASSWORD: metrics_password 
 #EOF
 #}
 
@@ -230,22 +230,22 @@ EOF
 ##Service Monitors for Deployments to scrape metrics
 
 #resource "kubectl_manifest" "user_service_monitor" {
-    #yaml_body = <<EOF
+#yaml_body = <<EOF
 
 #apiVersion: monitoring.coreos.com/v1
 #kind: ServiceMonitor
 #metadata:
-  #name: servicemonitor-user
-  #namespace: monitoring
-  #labels:
-    ##release: prometheus
+#name: servicemonitor-user
+#namespace: monitoring
+#labels:
+##release: prometheus
 #spec:
-  #selector:
-    #matchLabels:
-     # app: user
-  #endpoints:
-   # - port: metrics
-     # interval: 15s
+#selector:
+#matchLabels:
+# app: user
+#endpoints:
+# - port: metrics
+# interval: 15s
 
 #EOF
 #}
@@ -286,7 +286,7 @@ EOF
 
 
 resource "kubectl_manifest" "prometheus_rule" {
-    yaml_body = <<EOF
+  yaml_body = <<EOF
 
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -316,6 +316,6 @@ spec:
 
 EOF
 
-  depends_on = [ helm_release.prometheus ]
+  depends_on = [helm_release.prometheus]
 
 }

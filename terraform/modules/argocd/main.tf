@@ -69,7 +69,7 @@ resource "helm_release" "argocd_deploy" {
       secret = {
         argocdServerAdminPassword = "$2a$10$Jsn3fOA5LWlmPf3bsfeom.3aXbdSd.ybCmvL4TYTh76IlRqRI2GNK"
       }
-    
+
       dex = {
         enabled = false
       }
@@ -189,36 +189,36 @@ EOF
 #}
 
 #resource "kubectl_manifest" "argocd-ingress" {
-  #yaml_body  = <<EOF
+#yaml_body  = <<EOF
 #apiVersion: networking.k8s.io/v1
 #kind: Ingress
 #metadata:
-  #name: argocd
- # namespace: argo-cd
- # annotations:
-   # cert-manager.io/cluster-issuer: letsencrypt-staging
-   # nginx.ingress.kubernetes.io/ssl-redirect: "true"
-   # external-dns.alpha.kubernetes.io/hostname: argocd.mubashir.site
+#name: argocd
+# namespace: argo-cd
+# annotations:
+# cert-manager.io/cluster-issuer: letsencrypt-staging
+# nginx.ingress.kubernetes.io/ssl-redirect: "true"
+# external-dns.alpha.kubernetes.io/hostname: argocd.mubashir.site
 #spec:
- # ingressClassName: nginx
- # tls:
-   # - hosts:
-    #    - argocd.mubashir.site 
-     # secretName: argocd-argocd-tls
- # rules:
- # - host: argocd.mubashir.site
-  #  http:
-    #  paths:
-     # - path: /
-       # pathType: Prefix
-      #  backend:
-       #   service:
-        #    name: argocd-server
-        #    port:
-         #     number: 443
+# ingressClassName: nginx
+# tls:
+# - hosts:
+#    - argocd.mubashir.site 
+# secretName: argocd-argocd-tls
+# rules:
+# - host: argocd.mubashir.site
+#  http:
+#  paths:
+# - path: /
+# pathType: Prefix
+#  backend:
+#   service:
+#    name: argocd-server
+#    port:
+#     number: 443
 
 #EOF
- # depends_on = [helm_release.argocd_deploy]
+# depends_on = [helm_release.argocd_deploy]
 
 #}
 

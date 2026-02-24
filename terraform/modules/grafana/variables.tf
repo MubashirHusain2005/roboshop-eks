@@ -8,5 +8,5 @@ variable "monitoring_namespace" {
 }
 
 variable "prometheus_helmchart" {
-    type = string
+  type = string
 }
