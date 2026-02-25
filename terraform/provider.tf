@@ -1,4 +1,10 @@
 terraform {
+  backend "s3" {
+    bucket = "terraformstatebucket00534353432534523"
+    region = "eu-west-2"
+    key = "envs/dev/terraform.tfstate"
+    encrypt = true
+  }
   required_version = "1.13.3"
 
   required_providers {
