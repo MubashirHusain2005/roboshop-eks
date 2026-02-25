@@ -280,6 +280,85 @@ resource "aws_iam_role_policy_attachment" "oidc_s3_access" {
 }
 
 
+##KMS Encryption of ECR Repos
+
+
+resource "aws_kms_key" "kms_key" {
+  description             = "Encryption KMS key"
+  enable_key_rotation     = true
+  deletion_window_in_days = 20
+}
+
+
+
+resource "aws_kms_alias" "kms_alias" {
+  name          = "kms-ecr"
+  target_key_id = aws_kms_key.kms_key.id
+
+}
+
+##This needs looking at because I cant attach it to the irsa role when it hasnt even been created.
+resource "aws_kms_key_policy" "kms_key_policy" {
+  key_id = aws_kms_key.kms_key.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+
+        Principal = {
+          AWS = "arn:aws:iam::038774803581:terraform-test"
+        }
+
+        Action   = "kms:*"
+        Resource = "*"
+      },
+
+      {
+        Sid    = "AllowCloudWatchLogsUseOfKey"
+        Effect = "Allow"
+
+        Principal = {
+          Service = "logs.eu-west-2.amazonaws.com"
+        }
+
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey",
+          "kms:CreateGrant"
+        ]
+
+        Resource = "*"
+      },
+      {
+        Sid    = "AllowEKSUseOfKey"
+        Effect = "Allow"
+
+        Principal = {
+          Service = "eks.amazonaws.com"
+        }
+
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ],
+
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+
 #IAM Role for ECR
 
 resource "aws_iam_role" "ecr_role" {
@@ -333,6 +412,7 @@ resource "aws_iam_role_policy_attachment" "ecr_policy" {
 }
 
 
+
 # ECR to store my Cart Docker image
 resource "aws_ecr_repository" "cart" {
   name                 = var.cart
@@ -345,7 +425,8 @@ resource "aws_ecr_repository" "cart" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -386,7 +467,8 @@ resource "aws_ecr_repository" "catalogue" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -427,7 +509,8 @@ resource "aws_ecr_repository" "dispatch" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -468,7 +551,8 @@ resource "aws_ecr_repository" "fluentd" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -509,7 +593,8 @@ resource "aws_ecr_repository" "loadgen" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -550,7 +635,8 @@ resource "aws_ecr_repository" "mongo" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -591,7 +677,8 @@ resource "aws_ecr_repository" "mysql" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -632,7 +719,8 @@ resource "aws_ecr_repository" "payment" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -673,7 +761,8 @@ resource "aws_ecr_repository" "ratings" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -713,7 +802,8 @@ resource "aws_ecr_repository" "shipping" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -754,7 +844,8 @@ resource "aws_ecr_repository" "user" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -787,6 +878,7 @@ resource "aws_ecr_lifecycle_policy" "ecr_policy_user" {
 resource "aws_ecr_repository" "web" {
   name                 = var.web
   image_tag_mutability = var.image_tag_mutability
+ 
 
   # Scan images for vulnerabilities on push
   image_scanning_configuration {
@@ -795,7 +887,8 @@ resource "aws_ecr_repository" "web" {
 
   # Encryption at rest
   encryption_configuration {
-    encryption_type = "AES256"
+    encryption_type = "KMS"
+    kms_key =  aws_kms_key.kms_key.arn
   }
 
 }
@@ -822,4 +915,3 @@ resource "aws_ecr_lifecycle_policy" "ecr_policy_web" {
     ]
   })
 }
-
