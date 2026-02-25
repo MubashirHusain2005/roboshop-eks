@@ -6,27 +6,26 @@ on:
       - master
 
 env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_REGION: eu-west-2
   EKS_CLUSTER_NAME: eks-cluster
-  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }} # GitHub OIDC role
 
 jobs:
   terraform-destroy:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
+      id-token: write          # Required for GitHub OIDC
       contents: read
 
     steps:
-    # 1️⃣ Checkout repo
+    # 1️⃣ Checkout repository
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2️⃣ Configure AWS credentials via GitHub OIDC
-    - name: Configure AWS credentials using OIDC
+    # 2️⃣ Configure AWS credentials using GitHub OIDC
+    - name: Configure AWS credentials via OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}  # GitHub OIDC IAM Role
         aws-region: ${{ env.AWS_REGION }}
 
     # 3️⃣ Install kubectl
@@ -35,23 +34,22 @@ jobs:
       with:
         version: v1.30.0
 
-    # 4️⃣ Update kubeconfig for EKS using the OIDC role
+    # 4️⃣ Update kubeconfig for EKS
     - name: Update kubeconfig for EKS
       run: |
         aws eks update-kubeconfig \
           --region ${{ env.AWS_REGION }} \
-          --name ${{ env.EKS_CLUSTER_NAME }} \
-          --role-arn ${{ env.AWS_ROLE_ARN }}
+          --name eks-cluster \
+          --role-arn ${{ secrets.AWS_ROLE_ARN }}
 
-    # 5️⃣ Patch aws-auth ConfigMap to add GitHub OIDC role AND local IAM user
-    - name: Patch aws-auth for GitHub OIDC + IAM user
+    # 5️⃣ Patch aws-auth ConfigMap (optional if OIDC role already mapped)
+    - name: Patch aws-auth ConfigMap
       run: |
         kubectl patch configmap aws-auth -n kube-system --type='merge' -p '{
           "data": {
-            "mapRoles": "- rolearn: ${{ env.AWS_ROLE_ARN }}\n  username: github-actions\n  groups:\n    - system:masters",
-            "mapUsers": "- userarn: arn:aws:iam::038774803581:user/terraform-test\n  username: terraform-test\n  groups:\n    - system:masters"
+            "mapRoles": "- rolearn: ${{ secrets.AWS_ROLE_ARN }}\n  username: github-actions\n  groups:\n    - system:masters"
           }
-        }'
+        }' || echo "Patch skipped if already exists"
 
     # 6️⃣ Set up Terraform
     - name: Setup Terraform
@@ -59,12 +57,12 @@ jobs:
       with:
         terraform_version: 1.13.3
 
-    # 7️⃣ Initialise Terraform
+    # 7️⃣ Terraform init
     - name: Terraform Init
       working-directory: ./terraform
       run: terraform init
 
-    # 8️⃣ Destroy all Terraform-managed resources
+    # 8️⃣ Destroy Terraform resources
     - name: Terraform Destroy
       working-directory: ./terraform
       run: terraform destroy --auto-approve
