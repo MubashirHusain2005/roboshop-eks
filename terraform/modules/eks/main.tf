@@ -314,3 +314,23 @@ resource "null_resource" "update_kubeconfig" {
     #command = "kubectl wait --for=condition=ready nodes --all --timeout=10m"
  #}
 #}
+
+
+resource "kubernetes_config_map" "aws_auth" {
+  depends_on = [aws_eks_cluster.cluster]
+
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = yamlencode([
+      {
+        rolearn  = aws_iam_role.github_oidc_role.arn
+        username = "github-actions"
+        groups   = ["system:masters"]
+      }
+    ])
+  }
+}
