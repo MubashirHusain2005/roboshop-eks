@@ -6,7 +6,7 @@ metadata:
   name: app-space
 EOF
 
-  depends_on = [aws_eks_cluster.eks_cluster.id]
+  depends_on = [aws_eks_cluster.eks_cluster]
 }
 
 resource "kubectl_manifest" "databases_namespace" {
@@ -16,7 +16,7 @@ kind: Namespace
 metadata:
   name: data-space
 EOF
-  depends_on = [aws_eks_cluster.eks_cluster.id]
+  depends_on = [aws_eks_cluster.eks_cluster]
 }
 
 
