@@ -7,7 +7,6 @@ metadata:
 EOF
 
   depends_on = [aws_eks_cluster.eks_cluster,
-null_resource.wait_for_nodes,
 aws_eks_node_group.private_node_1,
 aws_eks_node_group.private_node_2
 ]
