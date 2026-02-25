@@ -29,22 +29,6 @@ terraform {
 }
 
 
-provider "vault" {
-  address          = "http://127.0.0.1:8200"
-  skip_child_token = true
-
-  auth_login {
-    path = "auth/approle/login"
-
-
-    parameters = {
-      role_id   = "fb4ad0da-a1a3-3711-80ae-fd26a5cbcb5c"
-      secret_id = "bafa87bd-5254-14f3-8e0a-9e7af0d10388"
-    }
-  }
-}
-
-
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_ca)
