@@ -237,27 +237,27 @@ EOF
 #}
 
 
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
+#resource "kubernetes_config_map" "aws_auth" {
+ # metadata {
+   # name      = "aws-auth"
+   # namespace = "kube-system"
+  #}
 ## FOR Github OIDC
-  data = {
-    mapRoles = <<YAML
-- rolearn: arn:aws:iam::038774803581:role/github.to.aws.oidc
-  username: github-actions
-  groups:
-    - system:masters
-YAML
+ # data = {
+  #  mapRoles = <<YAML
+#- rolearn: arn:aws:iam::038774803581:role/github.to.aws.oidc
+ # username: github-actions
+  #groups:
+    #- system:masters
+#YAML
 ##For IAM USER
-    mapUsers = <<YAML
-- userarn: arn:aws:iam::038774803581:user/terraform-test
-  username: terraform-test
-  groups:
-    - system:masters
-YAML
-  }
-  depends_on = [aws_eks_cluster.eks_cluster]
+   # mapUsers = <<YAML
+#- userarn: arn:aws:iam::038774803581:user/terraform-test
+  #username: terraform-test
+  #groups:
+#   # - system:masters
+#YAML
+  #}
+  #depends_on = [aws_eks_cluster.eks_cluster]
 
-}
+#}
