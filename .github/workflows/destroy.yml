@@ -1,47 +1,70 @@
 name: Destroy Infrastructure
 
-#Workflow Triggers
 on:
   push:
     branches:
       - master
 
-##Environment Variables      
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
-  AWS_CREDENTIALS: ${{ secrets.AWS_ROLE_ARN }}
- 
+  EKS_CLUSTER_NAME: eks-cluster
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }} # GitHub OIDC role
 
-#Define Jobs
 jobs:
-  terraform:
+  terraform-destroy:
     runs-on: ubuntu-latest
-
     permissions:
       id-token: write
-      contents: read 
+      contents: read
 
     steps:
-
+    # 1️⃣ Checkout repo
     - name: Checkout repository
       uses: actions/checkout@v4
 
-
+    # 2️⃣ Configure AWS credentials via GitHub OIDC
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        aws-region: ${{ vars.AWS_REGION }}
+        aws-region: ${{ env.AWS_REGION }}
 
-    - name: Set up Terraform
+    # 3️⃣ Install kubectl
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: '1.29.0'
+
+    # 4️⃣ Update kubeconfig for EKS using the OIDC role
+    - name: Update kubeconfig for EKS
+      run: |
+        aws eks update-kubeconfig \
+          --region ${{ env.AWS_REGION }} \
+          --name ${{ env.EKS_CLUSTER_NAME }} \
+          --role-arn ${{ env.AWS_ROLE_ARN }}
+
+    # 5️⃣ Patch aws-auth ConfigMap to add GitHub OIDC role AND local IAM user
+    - name: Patch aws-auth for GitHub OIDC + IAM user
+      run: |
+        kubectl patch configmap aws-auth -n kube-system --type='merge' -p '{
+          "data": {
+            "mapRoles": "- rolearn: ${{ env.AWS_ROLE_ARN }}\n  username: github-actions\n  groups:\n    - system:masters",
+            "mapUsers": "- userarn: arn:aws:iam::038774803581:user/terraform-test\n  username: terraform-test\n  groups:\n    - system:masters"
+          }
+        }'
+
+    # 6️⃣ Set up Terraform
+    - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: 1.13.3
 
-    - name: Initialise Terraform
+    # 7️⃣ Initialise Terraform
+    - name: Terraform Init
       working-directory: ./terraform
-      run: terraform init 
+      run: terraform init
 
-    - name: Terraform Destory
+    # 8️⃣ Destroy all Terraform-managed resources
+    - name: Terraform Destroy
       working-directory: ./terraform
       run: terraform destroy --auto-approve
