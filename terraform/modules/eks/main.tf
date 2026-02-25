@@ -304,4 +304,13 @@ resource "null_resource" "update_kubeconfig" {
 
 }
 
- 
+resource "null_resource" "wait_for_nodes" {
+  depends_on = [
+    module.eks.node_groups["private_node_1"],
+    module.eks.node_groups["private_node_2"]
+  ]
+
+  provisioner "local-exec" {
+    command = "kubectl wait --for=condition=ready nodes --all --timeout=10m"
+  }
+}
