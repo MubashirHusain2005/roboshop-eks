@@ -1,0 +1,61 @@
+name: Intialise Terraform Code and Apply
+
+#Workflow Triggers
+on:
+  push:
+    branches:
+      - master
+      
+##Environment Variables
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_CREDENTIALS: ${{ secrets.AWS_ROLE_ARN }}
+  
+#Define Jobs
+jobs:
+  terraform:
+    name: "Deploy Infrastructure to Cloud"
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+      security-events: write
+
+    steps:
+
+    - name: Configure AWS credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+         aws-region: ${{ vars.AWS_REGION }}
+
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.13.3
+
+    
+    - name: Terraform init
+      working-directory: ./terraform
+      run: terraform init 
+
+
+    - name: Terraform Apply
+      working-directory: ./terraform
+      run: terraform apply --auto-approve
+
+
+
+
+
+    
+
+    
+
+    

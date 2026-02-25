@@ -80,30 +80,35 @@ resource "helm_release" "argocd_deploy" {
 
 }
 
-resource "kubectl_manifest" "robot_app" {
-  yaml_body = <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: robotshop-app
-  namespace: argo-cd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
-    path: argocd
-    targetRevision: master
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-EOF
+#resource "kubectl_manifest" "robot_app" {
+  #yaml_body = <<EOF
+#apiVersion: argoproj.io/v1alpha1
+#kind: Application
+#metadata:
+  #name: robotshop-app
+  #namespace: argo-cd
+#spec:
+  #project: default
+  #source:
+    #repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
+    #path: argocd
+    #targetRevision: master
+  #destination:
+    #server: https://kubernetes.default.svc
+    #namespace: default
+  #syncPolicy:
+    #automated:
+      #prune: true
+      #selfHeal: true
+#EOF
 
-  depends_on = [helm_release.argocd_deploy]
-}
+  #depends_on = [helm_release.argocd_deploy]
+#}
+
+
+
+
+
 
 
 
@@ -150,74 +155,7 @@ EOF
 #EOF
 #}
 
-#data "kubernetes_service" "nginx_ingress_controller" {
-#metadata {
-# name      = "ingress-nginx-controller"
-#namespace = "ingress-nginx"
-#}
-#}
-###Route 53 dns records for ArgoCD (pointing to NGINX Ingress NLB)
 
-#resource "aws_route53_record" "argocd" {
-#zone_id = data.aws_route53_zone.domain.zone_id
-# name    = "argocd.mubashir.site"
-#type    = "CNAME"
-# ttl     = 300
-
-# records = [
-# data.kubernetes_service.nginx_ingress_controller
-# ]
-#}
-
-##A record pointing to mubashir.site
-
-#resource "aws_route53_record" "website_domain" {
-#zone_id = data.aws_route53_zone.primary.zone_id
-#name    = "mubashir.site"
-#type    = "A"
-#ttl     = 300
-
-# alias {
-# name    = var.alb_dns_name
-# zone_id = var.alb_zone_id
-# evaluate_target_health = var.health
-#}
-
-#}
-
-#resource "kubectl_manifest" "argocd-ingress" {
-#yaml_body  = <<EOF
-#apiVersion: networking.k8s.io/v1
-#kind: Ingress
-#metadata:
-#name: argocd
-# namespace: argo-cd
-# annotations:
-# cert-manager.io/cluster-issuer: letsencrypt-staging
-# nginx.ingress.kubernetes.io/ssl-redirect: "true"
-# external-dns.alpha.kubernetes.io/hostname: argocd.mubashir.site
-#spec:
-# ingressClassName: nginx
-# tls:
-# - hosts:
-#    - argocd.mubashir.site 
-# secretName: argocd-argocd-tls
-# rules:
-# - host: argocd.mubashir.site
-#  http:
-#  paths:
-# - path: /
-# pathType: Prefix
-#  backend:
-#   service:
-#    name: argocd-server
-#    port:
-#     number: 443
-
-#EOF
-# depends_on = [helm_release.argocd_deploy]
-
-#}
 
 resource "kubectl_manifest" "argocd-ingress" {
   yaml_body = <<EOF
