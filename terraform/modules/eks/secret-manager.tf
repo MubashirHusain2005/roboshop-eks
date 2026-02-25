@@ -235,3 +235,29 @@ EOF
 #kubectl_manifest.cluster_secret_store
 # ]
 #}
+
+
+resource "kubernetes_config_map" "aws_auth" {
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = <<YAML
+- rolearn: arn:aws:iam::038774803581:role/github.to.aws.oidc
+  username: github-actions
+  groups:
+    - system:masters
+YAML
+
+    mapUsers = <<YAML
+- userarn: arn:aws:iam::038774803581:user/terraform-test
+  username: terraform-test
+  groups:
+    - system:masters
+YAML
+  }
+  depends_on = [aws_eks_cluster.eks_cluster]
+
+}
