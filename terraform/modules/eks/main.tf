@@ -317,7 +317,7 @@ resource "null_resource" "update_kubeconfig" {
 
 
 resource "kubernetes_config_map" "aws_auth" {
-  depends_on = [aws_eks_cluster.cluster]
+  depends_on = [aws_eks_cluster.eks_cluster]
 
   metadata {
     name      = "aws-auth"
@@ -327,7 +327,7 @@ resource "kubernetes_config_map" "aws_auth" {
   data = {
     mapRoles = yamlencode([
       {
-        rolearn  = aws_iam_role.github_oidc_role.arn
+        rolearn  = "arn:aws:iam::038774803581:role/github-to-aws-oidc"
         username = "github-actions"
         groups   = ["system:masters"]
       }
