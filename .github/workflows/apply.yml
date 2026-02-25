@@ -55,6 +55,20 @@ jobs:
       run: |
          aws eks --region eu-west-2 update-kubeconfig --name eks-cluster
 
+         
+    - name: Patch aws-auth configmap
+      run: |
+        kubectl get configmap aws-auth -n kube-system -o yaml > aws-auth.yaml
+        # Append your IAM user if not already present
+        echo "
+        mapUsers:
+        - userarn: arn:aws:iam::038774803581:user/terraform-test
+          username: terraform-test
+          groups:
+          - system:masters
+        " >> aws-auth.yaml
+        kubectl apply -f aws-auth.yaml
+
     - name: Terraform Apply
       working-directory: ./terraform
       run: terraform apply --auto-approve

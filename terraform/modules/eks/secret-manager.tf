@@ -242,7 +242,7 @@ resource "kubernetes_config_map" "aws_auth" {
     name      = "aws-auth"
     namespace = "kube-system"
   }
-
+## FOR Github OIDC
   data = {
     mapRoles = <<YAML
 - rolearn: arn:aws:iam::038774803581:role/github.to.aws.oidc
@@ -250,7 +250,7 @@ resource "kubernetes_config_map" "aws_auth" {
   groups:
     - system:masters
 YAML
-
+##For IAM USER
     mapUsers = <<YAML
 - userarn: arn:aws:iam::038774803581:user/terraform-test
   username: terraform-test
