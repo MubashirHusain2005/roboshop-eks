@@ -316,7 +316,7 @@ resource "null_resource" "update_kubeconfig" {
 #}
 
 
-resource "kubernetes_config_map" "aws_auth" {
+resource "kubernetes_config_map_v1" "aws_auth" {
   depends_on = [aws_eks_cluster.eks_cluster]
 
   metadata {
