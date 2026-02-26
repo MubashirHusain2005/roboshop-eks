@@ -92,6 +92,7 @@ module "argocd" {
 module "prometheus" {
   source       = "./modules/prometheus"
   cluster_name = module.eks.cluster_name
+  cluster_endpoint = module.eks.cluster_endpoint
 }
 
 module "grafana" {

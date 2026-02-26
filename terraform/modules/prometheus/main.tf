@@ -148,6 +148,8 @@ stringData:
     password=metrics_password
     host=mysql.app-space.svc.cluster.local
 EOF
+
+depends_on = 
 }
 
 

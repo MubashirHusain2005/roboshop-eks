@@ -7,3 +7,6 @@ variable "monitoring_namespace" {
   default = "monitoring"
 }
 
+variable "cluster_endpoint" {
+  type = string
+}
