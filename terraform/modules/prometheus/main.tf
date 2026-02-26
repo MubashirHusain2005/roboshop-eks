@@ -149,7 +149,7 @@ stringData:
     host=mysql.app-space.svc.cluster.local
 EOF
 
-depends_on = var.cluster_endpoint
+depends_on = [var.cluster_endpoint]
 }
 
 
