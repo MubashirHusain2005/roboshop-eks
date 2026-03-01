@@ -40,6 +40,10 @@ jobs:
       working-directory: ./terraform
       run: terraform init
 
+    - name: Configure kubeconfig
+      run: |
+        aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
+
   
     - name: Terraform Destroy
       working-directory: ./terraform

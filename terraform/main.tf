@@ -238,6 +238,7 @@ resource "null_resource" "cleanup_script" {
   depends_on = [module.eks]
 }
 
+##Will only work in local terraform not github actions
 resource "null_resource" "cleanup_secrets" {
   provisioner "local-exec" {
     command = "aws secretsmanager delete-secret --secret-id db-creds --force-delete-without-recovery"
@@ -245,7 +246,7 @@ resource "null_resource" "cleanup_secrets" {
   }
 }
 
-###Null resource to update my kubeconfig file
+###Null resource to update my kubeconfig file-has to run seperately if using github actions
 
 resource "null_resource" "update_kubeconfig" {
   provisioner "local-exec" {
