@@ -3,10 +3,10 @@ name: Terraform Deploy
 # Workflow triggers
 on:
   push:
-    branches: [main]
+    branches: [master]
    # paths: ['terraform/**']
   pull_request:
-    branches: [main]
+    branches: [master]
    # paths: ['terraform/**']
   workflow_dispatch:
     inputs:
