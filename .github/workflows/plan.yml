@@ -83,11 +83,7 @@ jobs:
       with:
         version: v1.30.0
 
-    - name: Configure kubectl for my eks cluster
-      run: |
-         aws eks --region eu-west-2 update-kubeconfig --name eks-cluster
-      
-
+   
     - name: Terraform Plan
       working-directory: ./terraform
       run: terraform plan

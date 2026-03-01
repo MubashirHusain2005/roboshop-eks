@@ -45,26 +45,21 @@ jobs:
       working-directory: ./terraform
       run: terraform init 
 
-    - name: Update kubeconfig
-      run: |
-        aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
+    
 
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
       with:
         version: v1.30.0
 
-    - name: Patch aws-auth configmap
-      run: |
-       kubectl patch configmap aws-auth -n kube-system --type='merge' -p '{
-         "data": {
-           "mapUsers": "- userarn: arn:aws:iam::038774803581:user/terraform-test\n  username: terraform-test\n  groups:\n    - system:masters"
-        }
-        }'
-
+  
     - name: Terraform Apply
       working-directory: ./terraform
       run: terraform apply --auto-approve
+
+    - name: Update kubeconfig after apply 
+      run: |
+        aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
 
 
 
