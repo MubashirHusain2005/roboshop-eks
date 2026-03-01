@@ -18,29 +18,29 @@ jobs:
       contents: read
 
     steps:
-    # 1️⃣ Checkout repo
+ 
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2️⃣ Configure AWS credentials via GitHub OIDC
+  
     - name: Configure AWS credentials using OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ env.AWS_ROLE_ARN }}
         aws-region: ${{ env.AWS_REGION }}
 
-    # 3️⃣ Set up Terraform
+   
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: 1.13.3
 
-    # 4️⃣ Terraform Init
+  
     - name: Terraform Init
       working-directory: ./terraform
       run: terraform init
 
-    # 5️⃣ Destroy all Terraform-managed resources
+  
     - name: Terraform Destroy
       working-directory: ./terraform
       run: terraform destroy --auto-approve
