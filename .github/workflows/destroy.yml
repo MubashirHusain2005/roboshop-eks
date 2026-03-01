@@ -1,7 +1,8 @@
 name: Destroy Infrastructure
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [master]
 
 env:
   AWS_REGION: eu-west-2
