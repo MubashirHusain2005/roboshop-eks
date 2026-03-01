@@ -2,16 +2,10 @@ name: Terraform Deploy
 
 # Workflow triggers
 on:
-  push:
-    branches: [master]
-   # paths: ['terraform/**']
-  pull_request:
-    branches: [master]
-   # paths: ['terraform/**']
   workflow_dispatch:
     inputs:
       action:
-        description: "Terraform action"
+        description: "Select Terraform action"
         required: true
         type: choice
         options: [plan, apply, destroy]
@@ -74,40 +68,30 @@ jobs:
         working-directory: ./terraform
         run: terraform fmt -check -recursive
 
-      # Terraform Plan (only for plan or apply)
+      
       - name: Terraform Plan
-        if: |
-          github.event_name == 'pull_request' ||
-          github.event.inputs.action == 'plan' ||
-          github.event.inputs.action == 'apply'
-        working-directory: ./terraform
-        run: terraform plan 
+        if: github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply'
+        run: terraform plan -out=tfplan
 
-      # Terraform Apply (uses the plan file)
+      
       - name: Terraform Apply
-        if: |
-         (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-         (github.event_name == 'workflow_dispatch' && github.event.inputs.action != 'plan')
-        working-directory: ./terraform
-        run: terraform apply -auto-approve 
+        if: github.event.inputs.action == 'apply'
+        run: terraform apply -auto-approve tfplan
 
-      # Terraform Destroy
+      
       - name: Terraform Destroy
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
-        working-directory: ./terraform
+        if: github.event.inputs.action == 'destroy'
         run: terraform destroy -auto-approve
 
-      # Optional: Configure kubeconfig to interact with EKS
+     
       - name: Install kubectl
-        if: |
-          (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.action != 'plan')
+        if: github.event.inputs.action == 'apply'
         uses: azure/setup-kubectl@v3
         with:
           version: v1.30.0
 
       - name: Update kubeconfig
-        if: github.event.inputs.action != 'plan'
+        if: github.event.inputs.action == 'apply'
         run: |
           aws eks update-kubeconfig \
             --region ${{ env.AWS_REGION }} \
