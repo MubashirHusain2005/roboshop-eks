@@ -108,7 +108,7 @@ prune: true
 selfHeal: true
 EOF
   depends_on = [helm_release.argocd_deploy,
-  module.eks]
+  var.private_node_1_name, var.private_node_2_name]
 }
 
 

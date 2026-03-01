@@ -235,14 +235,14 @@ resource "null_resource" "cleanup_script" {
       aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
       kubectl delete validatingwebhookconfiguration externalsecret-validate
     EOT
-    when = destroy
+    when    = destroy
   }
 }
 
 ##Will only work in local terraform not github actions
 resource "null_resource" "cleanup_secrets" {
   provisioner "local-exec" {
-    command =  <<EOT
+    command = <<EOT
      aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
     aws secretsmanager delete-secret --secret-id db-creds --force-delete-without-recovery
     EOT
@@ -274,7 +274,7 @@ resource "null_resource" "cleanup_helm" {
       aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
       ./delete.sh
     EOT
-    when = destroy
+    when    = destroy
   }
 }
 
