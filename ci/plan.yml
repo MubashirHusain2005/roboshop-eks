@@ -3,7 +3,7 @@ name: Intialise Terraform
 #Workflow Triggers
 on:
   push:
-    branches: [main]
+    branches: [master]
       
 ##Environment Variables
 env:
