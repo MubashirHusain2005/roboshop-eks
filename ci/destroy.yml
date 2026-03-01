@@ -1,14 +1,12 @@
 name: Destroy Infrastructure
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
 
 env:
   AWS_REGION: eu-west-2
   EKS_CLUSTER_NAME: eks-cluster
-  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }} # GitHub OIDC role mapped in aws-auth
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }} 
 
 jobs:
   terraform-destroy:

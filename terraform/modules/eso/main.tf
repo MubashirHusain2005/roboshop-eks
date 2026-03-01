@@ -2,8 +2,8 @@ terraform {
   required_providers {
 
     aws = {
-      source = "hashicorp/aws"
-      version = ">= 6.2.0" 
+      source  = "hashicorp/aws"
+      version = ">= 6.2.0"
     }
 
     kubernetes = {
@@ -83,9 +83,9 @@ resource "helm_release" "external_secrets" {
   chart      = "external-secrets"
   version    = "0.14.0"
 
- values = [
-  templatefile("${path.root}/${var.external_secrets_values_file}", {})
-]
+  values = [
+    templatefile("${path.root}/${var.external_secrets_values_file}", {})
+  ]
 
 
   depends_on = [kubernetes_service_account_v1.eso_serviceaact]

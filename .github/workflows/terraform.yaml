@@ -1,0 +1,106 @@
+name: Terraform Deploy
+
+# Workflow triggers
+on:
+  push:
+    branches: [main]
+    paths: ['terraform/**']
+  pull_request:
+    branches: [main]
+    paths: ['terraform/**']
+  workflow_dispatch:
+    inputs:
+      action:
+        required: true
+        type: choice
+        options: [plan, apply, destroy]
+        default: plan
+
+# Environment variables
+env:
+  AWS_REGION: eu-west-2
+  TF_VERSION: 1.13.3
+  TF_STATE_KEY: envs/dev/eks/terraform.tfstate
+
+# Concurrency to prevent overlapping runs
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  terraform:
+    name: "Terraform Infrastructure"
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      security-events: write
+
+    steps:
+      # Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials via OIDC
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # Terraform init with remote backend
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
+            -backend-config="key=${{ env.TF_STATE_KEY }}" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="encrypt=true"
+
+      # Terraform validate & fmt
+      - name: Terraform Validate
+        working-directory: ./terraform
+        run: terraform validate -no-color
+
+      - name: Terraform Format Check
+        working-directory: ./terraform
+        run: terraform fmt -check -recursive
+
+      # Terraform Plan (only for plan or apply)
+      - name: Terraform Plan
+        if: github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply'
+        working-directory: ./terraform
+        run: terraform plan 
+
+      # Terraform Apply (uses the plan file)
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply'
+        working-directory: ./terraform
+        run: terraform apply -auto-approve 
+
+      # Terraform Destroy
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        working-directory: ./terraform
+        run: terraform destroy -auto-approve 
+
+      # Optional: Configure kubeconfig to interact with EKS
+      - name: Install kubectl
+        if: github.event.inputs.action != 'plan'
+        uses: azure/setup-kubectl@v3
+        with:
+          version: v1.30.0
+
+      - name: Update kubeconfig
+        if: github.event.inputs.action != 'plan'
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name eks-cluster

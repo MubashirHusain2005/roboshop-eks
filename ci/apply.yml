@@ -2,11 +2,9 @@ name: Intialise Terraform Code and Apply
 
 #Workflow Triggers
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
       
-##Environment Variables
+
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_CREDENTIALS: ${{ secrets.AWS_ROLE_ARN }}

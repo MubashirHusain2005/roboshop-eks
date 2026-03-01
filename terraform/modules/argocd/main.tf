@@ -2,8 +2,8 @@ terraform {
   required_providers {
 
     aws = {
-      source = "hashicorp/aws"
-      version = ">= 6.2.0" 
+      source  = "hashicorp/aws"
+      version = ">= 6.2.0"
     }
 
     kubernetes = {
@@ -20,7 +20,7 @@ terraform {
       version = ">= 1.7.0"
     }
 
-     null = {
+    null = {
       source  = "hashicorp/null"
       version = "~> 3.2"
     }
@@ -86,30 +86,30 @@ resource "helm_release" "argocd_deploy" {
 
 }
 
-#resource "kubectl_manifest" "robot_app" {
-#yaml_body = <<EOF
-#apiVersion: argoproj.io/v1alpha1
-#kind: Application
-#metadata:
-#name: robotshop-app
-#namespace: argo-cd
-#spec:
-#project: default
-#source:
-#repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
-#path: argocd
-#targetRevision: master
-#destination:
-#server: https://kubernetes.default.svc
-#namespace: default
-#syncPolicy:
-#automated:
-#prune: true
-#selfHeal: true
-#EOF
-
-#depends_on = [helm_release.argocd_deploy]
-#}
+resource "kubectl_manifest" "robot_app" {
+  yaml_body = <<EOF
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+name: robotshop-app
+namespace: argo-cd
+spec:
+project: default
+source:
+repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
+path: argocd
+targetRevision: master
+destination:
+server: https://kubernetes.default.svc
+namespace: default
+syncPolicy:
+automated:
+prune: true
+selfHeal: true
+EOF
+  depends_on = [helm_release.argocd_deploy,
+  module.eks]
+}
 
 
 

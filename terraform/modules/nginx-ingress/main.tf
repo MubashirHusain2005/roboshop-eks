@@ -2,8 +2,8 @@ terraform {
   required_providers {
 
     aws = {
-      source = "hashicorp/aws"
-      version = ">= 6.2.0" 
+      source  = "hashicorp/aws"
+      version = ">= 6.2.0"
     }
 
     kubernetes = {
@@ -20,7 +20,7 @@ terraform {
       version = ">= 1.7.0"
     }
 
-     null = {
+    null = {
       source  = "hashicorp/null"
       version = "~> 3.2"
     }
@@ -44,8 +44,8 @@ resource "helm_release" "nginx_ingress" {
 
 
   values = [
-  file(var.nginx_values_file)
-]
+    file(var.nginx_values_file)
+  ]
 
   depends_on = [var.cluster_endpoint]
 }

@@ -1,22 +1,9 @@
 name: Build Scan and Push Docker Images to ECR
 
 on:
-  push:
-    branches:
-      - master
-    #paths:
-     # - 'app/cart/**'
-      #- 'app/catalogue/**'
-     # - 'app/payment/**'
-     # - 'app/mongo/**'
-     # - 'app/mysql/**'
-      #- 'app/ratings/**'
-     # - 'app/shipping/**'
-     # - 'app/user/**'
-     # - 'app/web/**'
-     # -  '.github/workflows/**'
-
-
+  workflow_dispatch:
+  
+    
 permissions:
   id-token: write
   contents: write

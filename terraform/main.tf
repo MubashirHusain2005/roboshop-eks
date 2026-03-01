@@ -10,7 +10,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 6.2.0" 
+      version = ">= 6.2.0"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -27,7 +27,7 @@ terraform {
       version = ">= 1.7.0"
     }
 
-     null = {
+    null = {
       source  = "hashicorp/null"
       version = "~> 3.2"
     }
@@ -152,7 +152,7 @@ module "nginx-ingress" {
   cluster_endpoint    = module.eks.cluster_endpoint
   private_node_1_name = module.eks.private_node_1_name
   private_node_2_name = module.eks.private_node_2_name
-  nginx_values_file = "${path.root}/../robotshop-application/nginx-values.yaml"
+  nginx_values_file   = "${path.root}/../robotshop-application/nginx-values.yaml"
 
   depends_on = [
     module.eks
@@ -173,7 +173,7 @@ module "external-dns" {
   private_node_2_name      = module.eks.private_node_2_name
   external_dns_values_file = "${path.root}/../robotshop-application/external-dns-values.tpl.yaml"
 
-   depends_on = [
+  depends_on = [
     module.eks,
     module.nginx-ingress
   ]
@@ -187,7 +187,7 @@ module "argocd" {
   private_node_1_name = module.eks.private_node_1_name
   private_node_2_name = module.eks.private_node_2_name
 
- depends_on = [module.eks]
+  depends_on = [module.eks]
 }
 
 module "prometheus" {
@@ -235,13 +235,17 @@ resource "null_resource" "cleanup_script" {
       aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
       kubectl delete validatingwebhookconfiguration externalsecret-validate
     EOT
+    when = destroy
   }
 }
 
 ##Will only work in local terraform not github actions
 resource "null_resource" "cleanup_secrets" {
   provisioner "local-exec" {
-    command = "aws secretsmanager delete-secret --secret-id db-creds --force-delete-without-recovery"
+    command =  <<EOT
+     aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
+    aws secretsmanager delete-secret --secret-id db-creds --force-delete-without-recovery
+    EOT
     when    = destroy
   }
 }
@@ -260,16 +264,17 @@ resource "null_resource" "update_kubeconfig" {
 
 ##Clean deletion of helm charts
 
-## Clean deletion of Helm charts
+resource "null_resource" "cleanup_helm" {
+  triggers = {
+    always_run = timestamp()
+  }
 
-#resource "null_resource" "cleanup_helm" {
-  # This triggers every time we destroy this resource
-  #triggers = {
-  ##  always_run = timestamp()
-  #}
+  provisioner "local-exec" {
+    command = <<EOT
+      aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
+      ./delete.sh
+    EOT
+    when = destroy
+  }
+}
 
-  #provisioner "local-exec" {
-    #command = "./delete.sh"
-  # when    = destroy
- # }
-#}
