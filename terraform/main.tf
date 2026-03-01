@@ -261,14 +261,14 @@ resource "null_resource" "update_kubeconfig" {
 
 ## Clean deletion of Helm charts
 
-resource "null_resource" "cleanup_helm" {
+#resource "null_resource" "cleanup_helm" {
   # This triggers every time we destroy this resource
-  triggers = {
-    always_run = timestamp()
-  }
+  #triggers = {
+  ##  always_run = timestamp()
+  #}
 
-  provisioner "local-exec" {
-    command = "./delete.sh"
-    when    = destroy
-  }
-}
+  #provisioner "local-exec" {
+    #command = "./delete.sh"
+  # when    = destroy
+ # }
+#}

@@ -4,13 +4,12 @@ data "aws_iam_role" "github_oidc_role" {
     name = "github.to.aws.oidc"
 }
 
-
-resource "aws_eks_access_entry" "github_role" {
-  cluster_name      = var.cluster_name
-  principal_arn     = data.aws_iam_role.github_oidc_role.arn
-  kubernetes_groups = ["dev:admins"]
-  type              = "STANDARD"
-}
+#resource "aws_eks_access_entry" "github_role" {
+  #cluster_name      = var.cluster_name
+ # principal_arn     = data.aws_iam_role.github_oidc_role.arn
+  #kubernetes_groups = ["dev:admins"]
+  #type              = "STANDARD"
+#}
 
 ##My IAM User
 
