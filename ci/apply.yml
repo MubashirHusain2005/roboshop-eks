@@ -57,6 +57,11 @@ jobs:
       working-directory: ./terraform
       run: terraform apply --auto-approve
 
+    - name: Wait for EKS cluster
+      run: |
+        echo "Waiting 60 seconds for EKS cluster to become ready..."
+        sleep 60
+
     - name: Update kubeconfig after apply 
       run: |
         aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
