@@ -231,11 +231,11 @@ module "eso" {
 # =========================================
 resource "null_resource" "cleanup_script" {
   provisioner "local-exec" {
-    command = "kubectl delete validatingwebhookconfiguration externalsecret-validate"
-    when    = destroy
+    command = <<EOT
+      aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
+      kubectl delete validatingwebhookconfiguration externalsecret-validate
+    EOT
   }
-
-  depends_on = [module.eks]
 }
 
 ##Will only work in local terraform not github actions
