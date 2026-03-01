@@ -3,6 +3,7 @@ terraform {
 
     aws = {
       source = "hashicorp/aws"
+      version = ">= 6.2.0" 
     }
 
     kubernetes = {
@@ -17,6 +18,11 @@ terraform {
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
+    }
+
+     null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
     }
   }
 }
@@ -37,39 +43,9 @@ resource "helm_release" "nginx_ingress" {
   timeout          = 600
 
 
-  set {
-    name  = "controller.service.type"
-    value = "LoadBalancer"
-  }
-  set {
-    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-type"
-    value = "nlb"
-  }
-  set {
-    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"
-    value = "internet-facing"
-  }
-
-  set {
-    name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-nlb-target-type"
-    value = "instance"
-  }
-  set {
-    name  = "controller.hostNetwork"
-    value = "true"
-  }
-
-  set {
-    name  = "controller.replicaCount"
-    value = "1"
-  }
-  set {
-    name  = "controller.service.externalTrafficPolicy"
-    value = "Local"
-  }
+  values = [
+  file(var.nginx_values_file)
+]
 
   depends_on = [var.cluster_endpoint]
 }
-
-
-

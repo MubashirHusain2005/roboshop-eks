@@ -21,6 +21,11 @@ output "cluster_ca" {
 }
 
 
+output "private_node_1_name" {
+  value = aws_eks_node_group.private_node_1.node_group_name
+}
 
-
+output "private_node_2_name" {
+  value = aws_eks_node_group.private_node_2.node_group_name
+}
 

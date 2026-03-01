@@ -3,6 +3,7 @@ terraform {
 
     aws = {
       source = "hashicorp/aws"
+      version = ">= 6.2.0" 
     }
 
     kubernetes = {
@@ -17,6 +18,11 @@ terraform {
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
+    }
+
+     null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
     }
 
   }
@@ -47,8 +53,9 @@ resource "helm_release" "prometheus" {
   timeout          = 300
 
   values = [
-    file("${path.root}/../robotshop-application/prometheus-values.yaml")
+    file(var.prometheus_values_file)
   ]
+
 
   depends_on = [var.cluster_name,
     kubectl_manifest.monitoring_namespace,
@@ -149,7 +156,7 @@ stringData:
     host=mysql.app-space.svc.cluster.local
 EOF
 
-depends_on = [var.cluster_endpoint]
+  depends_on = [var.cluster_endpoint]
 }
 
 

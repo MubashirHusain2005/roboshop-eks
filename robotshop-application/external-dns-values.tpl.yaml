@@ -1,0 +1,13 @@
+provider: aws
+aws:
+  region: eu-west-2
+
+provider: aws
+aws:
+  region: eu-west-2
+
+serviceAccount:
+  create: false
+  name: external-dns
+  annotations:
+    eks.amazonaws.com/role-arn: "${role_arn}"

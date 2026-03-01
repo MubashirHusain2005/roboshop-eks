@@ -3,6 +3,7 @@ terraform {
 
     aws = {
       source = "hashicorp/aws"
+      version = ">= 6.2.0" 
     }
 
     kubernetes = {
@@ -17,6 +18,11 @@ terraform {
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
+    }
+
+     null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
     }
   }
 }
@@ -81,28 +87,28 @@ resource "helm_release" "argocd_deploy" {
 }
 
 #resource "kubectl_manifest" "robot_app" {
-  #yaml_body = <<EOF
+#yaml_body = <<EOF
 #apiVersion: argoproj.io/v1alpha1
 #kind: Application
 #metadata:
-  #name: robotshop-app
-  #namespace: argo-cd
+#name: robotshop-app
+#namespace: argo-cd
 #spec:
-  #project: default
-  #source:
-    #repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
-    #path: argocd
-    #targetRevision: master
-  #destination:
-    #server: https://kubernetes.default.svc
-    #namespace: default
-  #syncPolicy:
-    #automated:
-      #prune: true
-      #selfHeal: true
+#project: default
+#source:
+#repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
+#path: argocd
+#targetRevision: master
+#destination:
+#server: https://kubernetes.default.svc
+#namespace: default
+#syncPolicy:
+#automated:
+#prune: true
+#selfHeal: true
 #EOF
 
-  #depends_on = [helm_release.argocd_deploy]
+#depends_on = [helm_release.argocd_deploy]
 #}
 
 
@@ -118,9 +124,9 @@ resource "helm_release" "argocd_deploy" {
 #}
 
 #resource "aws_secretsmanager_secret_version" "argocd_admin_version" {
- #secret_id = aws_secretsmanager_secret.argocd_admin.id
- #secret_string = jsonencode({
- #password = "MySecurePassword123!"
+#secret_id = aws_secretsmanager_secret.argocd_admin.id
+#secret_string = jsonencode({
+#password = "MySecurePassword123!"
 #})
 
 ##The actual Password = MySecurePassword123!

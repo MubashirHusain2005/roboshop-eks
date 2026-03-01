@@ -3,6 +3,7 @@ terraform {
   required_providers {
     aws = {
       source = "hashicorp/aws"
+      version = ">= 6.2.0" 
     }
 
     kubernetes = {
@@ -17,6 +18,11 @@ terraform {
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
+    }
+
+     null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
     }
   }
 }
@@ -106,28 +112,9 @@ resource "helm_release" "external_dns" {
   wait    = true
   timeout = 600
 
-  set {
-    name  = "provider"
-    value = "aws"
-  }
-
-  set {
-    name  = "aws.region"
-    value = "eu-west-2"
-  }
-
-  set {
-    name  = "serviceAccount.create"
-    value = "false"
-  }
-  set {
-    name  = "serviceAccount.name"
-    value = "external-dns"
-  }
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.external_dns.arn
-  }
+  values = [templatefile(var.external_dns_values_file, {
+    role_arn = aws_iam_role.external_dns.arn
+  })]
 
 
   depends_on = [
@@ -138,4 +125,5 @@ resource "helm_release" "external_dns" {
     var.helm_release_nginx
   ]
 }
+
 

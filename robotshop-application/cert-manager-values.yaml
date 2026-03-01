@@ -1,0 +1,5 @@
+installCRDs: true
+
+# Optional: extra configuration for cert-manager
+replicaCount: 1
+# You can add more cert-manager specific values here

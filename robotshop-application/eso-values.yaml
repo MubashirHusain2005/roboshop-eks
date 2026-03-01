@@ -1,0 +1,7 @@
+serviceAccount:
+  create: false
+  name: eso-sa
+
+replicaCount: 1
+logLevel: info
+# add other chart values here

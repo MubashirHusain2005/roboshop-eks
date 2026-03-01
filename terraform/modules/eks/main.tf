@@ -3,6 +3,7 @@ terraform {
 
     aws = {
       source = "hashicorp/aws"
+       version = ">= 6.2.0" 
     }
 
     kubernetes = {
@@ -44,7 +45,6 @@ resource "aws_iam_openid_connect_provider" "eks" {
   thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
   url             = data.aws_eks_cluster.eks.identity[0].oidc[0].issuer
 }
-
 
 #EKS 
 
@@ -291,46 +291,17 @@ resource "aws_eks_node_group" "private_node_2" {
 
 }
 
-###Null resource to update my kubeconfig file
 
-resource "null_resource" "update_kubeconfig" {
-  provisioner "local-exec" {
-    command = "aws eks --region eu-west-2 update-kubeconfig --name eks-cluster"
-
-  }
-  depends_on = [aws_eks_node_group.private_node_2,
-    aws_eks_node_group.private_node_1,
-  aws_eks_cluster.eks_cluster]
-
-}
 
 #resource "null_resource" "wait_for_nodes" {
-  #depends_on = [
-    #module.eks.node_groups["private_node_1"],
-    #module.eks.node_groups["private_node_2"]
-  #]
+#depends_on = [
+#module.eks.node_groups["private_node_1"],
+#module.eks.node_groups["private_node_2"]
+#]
 
-  #provisioner "local-exec" {
-    #command = "kubectl wait --for=condition=ready nodes --all --timeout=10m"
- #}
+#provisioner "local-exec" {
+#command = "kubectl wait --for=condition=ready nodes --all --timeout=10m"
+#}
 #}
 
 
-resource "kubernetes_config_map_v1" "aws_auth" {
-  depends_on = [aws_eks_cluster.eks_cluster]
-
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = yamlencode([
-      {
-        rolearn  = "arn:aws:iam::038774803581:role/github-to-aws-oidc"
-        username = "github-actions"
-        groups   = ["system:masters"]
-      }
-    ])
-  }
-}

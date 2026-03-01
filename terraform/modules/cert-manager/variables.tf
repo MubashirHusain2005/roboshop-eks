@@ -13,3 +13,18 @@ variable "cert_issuer" {
 variable "cluster_endpoint" {
   type = string
 }
+
+
+variable "private_node_1_name" {
+  type = string
+}
+
+variable "private_node_2_name" {
+  type = string
+}
+
+variable "cert_manager_values_file" {
+  description = "Path to the cert-manager values.yaml file"
+  type        = string
+
+}

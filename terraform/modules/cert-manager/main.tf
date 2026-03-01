@@ -4,6 +4,7 @@ terraform {
 
     aws = {
       source = "hashicorp/aws"
+      version = ">= 6.2.0" 
     }
 
     kubernetes = {
@@ -18,6 +19,11 @@ terraform {
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
+    }
+
+     null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
     }
   }
 }
@@ -34,10 +40,10 @@ resource "helm_release" "cert_manager" {
   wait             = true
   timeout          = 600
 
-  set {
-    name  = "installCRDs"
-    value = "true"
-  }
+
+
+  values = [templatefile(var.cert_manager_values_file, {})]
+
 
 
   depends_on = [var.cluster_endpoint]

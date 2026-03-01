@@ -3,6 +3,7 @@ terraform {
 
     aws = {
       source = "hashicorp/aws"
+       version = ">= 6.2.0" 
     }
 
     kubernetes = {
@@ -17,6 +18,11 @@ terraform {
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.7.0"
+    }
+
+     null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
     }
   }
 }

@@ -438,3 +438,80 @@ EOF
 
 depends_on = [helm_release.argocd_deploy]  # I want prometheus to be created first
 }
+
+
+
+############################################
+# Read Existing EKS Cluster
+############################################
+#data "eks_cluster" "eks" {
+  #name = module.eks.cluster_name
+#}
+
+############################################
+# Get Auth Token For Cluster
+############################################
+#data "aws_eks_cluster_auth" "eks" {
+  #name = module.eks.cluster_name
+#}
+
+##################################################
+# Kubernetes Provider
+##################################################
+
+provider "kubernetes" {
+  host                   = aws_eks_cluster.eks_cluster.endpoint
+  cluster_ca_certificate = base64decode(aws_eks_cluster.eks_cluster.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.eks.token
+  
+}
+
+
+
+
+##################################################
+# Helm Provider
+##################################################
+
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.eks.endpoint
+    cluster_ca_certificate = base64decode(
+      data.aws_eks_cluster.eks.certificate_authority[0].data
+    )
+    token = data.aws_eks_cluster_auth.eks.token
+  }
+}
+
+##################################################
+# Kubectl Provider
+##################################################
+
+provider "kubectl" {
+  host                   = data.aws_eks_cluster.eks.endpoint
+  cluster_ca_certificate = base64decode(
+    data.aws_eks_cluster.eks.certificate_authority[0].data
+  )
+  token                  = data.aws_eks_cluster_auth.eks.token
+  load_config_file       = false
+}
+
+
+resource "kubernetes_config_map_v1" "aws_auth" {
+  depends_on = [module.eks.cluster_name]
+
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = yamlencode([
+      {
+        rolearn  = "arn:aws:iam::038774803581:role/github-to-aws-oidc"
+        username = "github-actions"
+        groups   = ["system:masters"]
+      }
+    ])
+  }
+}

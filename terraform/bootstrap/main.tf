@@ -426,7 +426,7 @@ resource "aws_ecr_repository" "cart" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -468,7 +468,7 @@ resource "aws_ecr_repository" "catalogue" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -510,7 +510,7 @@ resource "aws_ecr_repository" "dispatch" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -552,7 +552,7 @@ resource "aws_ecr_repository" "fluentd" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -594,7 +594,7 @@ resource "aws_ecr_repository" "loadgen" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -636,7 +636,7 @@ resource "aws_ecr_repository" "mongo" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -678,7 +678,7 @@ resource "aws_ecr_repository" "mysql" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -720,7 +720,7 @@ resource "aws_ecr_repository" "payment" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -762,7 +762,7 @@ resource "aws_ecr_repository" "ratings" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -803,7 +803,7 @@ resource "aws_ecr_repository" "shipping" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -845,7 +845,7 @@ resource "aws_ecr_repository" "user" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }
@@ -878,7 +878,7 @@ resource "aws_ecr_lifecycle_policy" "ecr_policy_user" {
 resource "aws_ecr_repository" "web" {
   name                 = var.web
   image_tag_mutability = var.image_tag_mutability
- 
+
 
   # Scan images for vulnerabilities on push
   image_scanning_configuration {
@@ -888,7 +888,7 @@ resource "aws_ecr_repository" "web" {
   # Encryption at rest
   encryption_configuration {
     encryption_type = "KMS"
-    kms_key =  aws_kms_key.kms_key.arn
+    kms_key         = aws_kms_key.kms_key.arn
   }
 
 }

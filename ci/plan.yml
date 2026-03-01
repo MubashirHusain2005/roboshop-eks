@@ -78,14 +78,19 @@ jobs:
       with:
           sarif_file: results.sarif
 
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: v1.30.0
+
+    - name: Configure kubectl for eks cluster
+      run: |
+         aws eks --region eu-west-2 update-kubeconfig --name eks-cluster
+      
 
     - name: Terraform Plan
       working-directory: ./terraform
       run: terraform plan
    
-
-  #  - name: Terraform Apply
-      #working-directory: ./terraform
-     # run: terraform apply --auto-approve
 
 

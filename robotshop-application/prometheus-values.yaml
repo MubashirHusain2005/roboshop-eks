@@ -20,5 +20,5 @@ alertmanager:
             from: "alerts@example.com"
             smarthost: "smtp.gmail.com:587"
             auth_username: "stokemubashir@gmail.com"
-            auth_password: xiwkoekzbcbxqwtn
+            auth_password: "xiwkoekzbcbxqwtn"
             require_tls: true

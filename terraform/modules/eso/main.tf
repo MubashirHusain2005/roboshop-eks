@@ -1,3 +1,33 @@
+terraform {
+  required_providers {
+
+    aws = {
+      source = "hashicorp/aws"
+      version = ">= 6.2.0" 
+    }
+
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.23.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.12.0"
+    }
+
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.7.0"
+    }
+
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
+  }
+}
+
+
 resource "kubectl_manifest" "deployments_namespace" {
   yaml_body = <<EOF
 apiVersion: v1
@@ -6,20 +36,18 @@ metadata:
   name: app-space
 EOF
 
-  depends_on = [aws_eks_cluster.eks_cluster,
-aws_eks_node_group.private_node_1,
-aws_eks_node_group.private_node_2
-]
+  depends_on = [var.cluster_endpoint
+  ]
 }
 
 resource "kubectl_manifest" "databases_namespace" {
-  yaml_body = <<EOF
+  yaml_body  = <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
   name: data-space
 EOF
-  depends_on = [aws_eks_cluster.eks_cluster]
+  depends_on = [var.cluster_endpoint]
 }
 
 
@@ -30,6 +58,8 @@ kind: Namespace
 metadata:
   name: external-secrets
 EOF
+
+  depends_on = [var.cluster_endpoint]
 }
 
 ##Creates the container to store secrets
@@ -53,15 +83,9 @@ resource "helm_release" "external_secrets" {
   chart      = "external-secrets"
   version    = "0.14.0"
 
-  set {
-    name  = "serviceAccount.create"
-    value = "false"
-  }
-
-  set {
-    name  = "serviceAccount.name"
-    value = "eso-sa"
-  }
+ values = [
+  templatefile("${path.root}/${var.external_secrets_values_file}", {})
+]
 
 
   depends_on = [kubernetes_service_account_v1.eso_serviceaact]
@@ -78,13 +102,13 @@ resource "aws_iam_role" "iam_role_eso" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = "${aws_iam_openid_connect_provider.eks.arn}"
+          Federated = "${var.oidc_provider_arn}"
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${replace(aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer, "https://", "")}:sub" = "system:serviceaccount:external-secrets:eso-sa",
-            "${replace(aws_eks_cluster.eks_cluster.identity[0].oidc[0].issuer, "https://", "")}:aud" = "sts.amazonaws.com"
+            "${replace(var.oidc_issuer_url, "https://", "")}:sub" = "system:serviceaccount:external-secrets:eso-sa",
+            "${replace(var.oidc_issuer_url, "https://", "")}:aud" = "sts.amazonaws.com"
           }
         }
       }
@@ -132,8 +156,7 @@ resource "kubernetes_service_account_v1" "eso_serviceaact" {
   }
   depends_on = [
     aws_iam_role_policy_attachment.iampolicyattach-eso,
-    kubectl_manifest.external_secrets_namespace
-
+    kubectl_manifest.external_secrets_namespace,
   ]
 }
 
@@ -200,7 +223,7 @@ spec:
 EOF
 
   depends_on = [
-    kubectl_manifest.cluster_secret_store
+    kubectl_manifest.cluster_secret_store,
   ]
 }
 
@@ -238,26 +261,28 @@ EOF
 
 
 #resource "kubernetes_config_map" "aws_auth" {
- # metadata {
-   # name      = "aws-auth"
-   # namespace = "kube-system"
-  #}
+# metadata {
+# name      = "aws-auth"
+# namespace = "kube-system"
+#}
 ## FOR Github OIDC
- # data = {
-  #  mapRoles = <<YAML
+# data = {
+#  mapRoles = <<YAML
 #- rolearn: arn:aws:iam::038774803581:role/github.to.aws.oidc
- # username: github-actions
-  #groups:
-    #- system:masters
+# username: github-actions
+#groups:
+#- system:masters
 #YAML
 ##For IAM USER
-   # mapUsers = <<YAML
+# mapUsers = <<YAML
 #- userarn: arn:aws:iam::038774803581:user/terraform-test
-  #username: terraform-test
-  #groups:
+#username: terraform-test
+#groups:
 #   # - system:masters
 #YAML
-  #}
-  #depends_on = [aws_eks_cluster.eks_cluster]
+#}
+#depends_on = [aws_eks_cluster.eks_cluster]
 
 #}
+
+
