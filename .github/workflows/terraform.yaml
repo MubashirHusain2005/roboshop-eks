@@ -1,6 +1,5 @@
 name: Terraform Deploy
 
-# Workflow triggers
 on:
   workflow_dispatch:
     inputs:
@@ -11,7 +10,7 @@ on:
         options: [plan, apply, destroy]
         default: plan
 
-# Environment variables
+
 env:
   AWS_REGION: eu-west-2
   TF_VERSION: 1.13.3
@@ -70,6 +69,21 @@ jobs:
       - name: Terraform Format Check
         working-directory: ./terraform
         run: terraform fmt -check -recursive
+      
+      - name: Run Checkov action
+        uses: bridgecrewio/checkov-action@v12
+        with:
+         output_format: cli,sarif
+         output_file_path: console,results.sarif
+         soft_fail: true
+         check: HIGH,CRITICAL
+        
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
 
       
       - name: Terraform Plan

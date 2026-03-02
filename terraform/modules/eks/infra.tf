@@ -224,13 +224,13 @@ resource "aws_eks_node_group" "private_node_1" {
   instance_types = ["t3.medium"]
 
   scaling_config {
-    desired_size = 2
+    desired_size = 1 ###This was 2
     max_size     = 3
     min_size     = 1
   }
 
   labels = {
-    workload = "apps" ##Label for  Node affinity
+    workload = "app" ##Label for  Node affinity
   }
 
 
@@ -264,14 +264,13 @@ resource "aws_eks_node_group" "private_node_2" {
   instance_types = ["t3.medium"]
 
   scaling_config {
-    desired_size = 2
+    desired_size = 1 ##This was 2 
     max_size     = 3
     min_size     = 1
   }
 
   labels = {
-    workload = "database"
-    app      = "blue" ##Label for Node affinity
+    workload = "app"
   }
 
 
@@ -286,22 +285,8 @@ resource "aws_eks_node_group" "private_node_2" {
   }
 
 
-
   depends_on = [var.nodegroup_role_arn]
 
 }
-
-
-
-#resource "null_resource" "wait_for_nodes" {
-#depends_on = [
-#module.eks.node_groups["private_node_1"],
-#module.eks.node_groups["private_node_2"]
-#]
-
-#provisioner "local-exec" {
-#command = "kubectl wait --for=condition=ready nodes --all --timeout=10m"
-#}
-#}
 
 

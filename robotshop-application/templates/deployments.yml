@@ -538,6 +538,44 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: load-gen
+  namespace: {{ .Values.appNamespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: load-gen
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: load-gen
+        version: v1
+    spec:
+      containers: 
+        - name: load-gen
+          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/loadgen
+          imagePullPolicy: Always
+      ports:
+        - containerPort: 8080
+      env:
+        - name: HOST
+          value: "http://web.app-space.svc.cluster.local:8080,http://web-2.app-space.svc.cluster.local:8080"
+
+        - name: NUM_CLIENTS
+          value: 10
+      resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: {{ .Values.webappName }}
   namespace: {{ .Values.appNamespace }}
 spec:

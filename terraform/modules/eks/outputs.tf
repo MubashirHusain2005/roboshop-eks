@@ -29,3 +29,6 @@ output "private_node_2_name" {
   value = aws_eks_node_group.private_node_2.node_group_name
 }
 
+output "cluster_id" {
+  value = aws_eks_cluster.eks_cluster.id
+}

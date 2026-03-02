@@ -2,8 +2,7 @@ name: Build Scan and Push Docker Images to ECR
 
 on:
   workflow_dispatch:
-  
-    
+   
 permissions:
   id-token: write
   contents: write

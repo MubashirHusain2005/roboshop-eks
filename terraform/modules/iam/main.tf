@@ -57,7 +57,6 @@ resource "aws_iam_role_policy_attachment" "cluster_AmazonEKSClusterPolicy" {
 
 #IAM role for nodes
 
-
 resource "aws_iam_instance_profile" "nodes" {
   name = "eks-node-group-profile"
   role = aws_iam_role.nodes.name
@@ -94,6 +93,12 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.nodes.name
 }
+
+resource "aws_iam_role_policy_attachment" "AmazonSSMManagedInstanceCore" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.nodes.name
+}
+
 
 resource "aws_iam_role_policy_attachment" "node_group_elb_policy" {
   policy_arn = "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"

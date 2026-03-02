@@ -62,6 +62,16 @@ EOF
   depends_on = [var.cluster_endpoint]
 }
 
+resource "kubectl_manifest" "karpenter_namespace" {
+  yaml_body  = <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: karpenter
+EOF
+  depends_on = [var.cluster_endpoint]
+}
+
 ##Creates the container to store secrets
 resource "aws_secretsmanager_secret" "secrets" {
   name = "db-creds"
@@ -260,29 +270,6 @@ EOF
 #}
 
 
-#resource "kubernetes_config_map" "aws_auth" {
-# metadata {
-# name      = "aws-auth"
-# namespace = "kube-system"
-#}
-## FOR Github OIDC
-# data = {
-#  mapRoles = <<YAML
-#- rolearn: arn:aws:iam::038774803581:role/github.to.aws.oidc
-# username: github-actions
-#groups:
-#- system:masters
-#YAML
-##For IAM USER
-# mapUsers = <<YAML
-#- userarn: arn:aws:iam::038774803581:user/terraform-test
-#username: terraform-test
-#groups:
-#   # - system:masters
-#YAML
-#}
-#depends_on = [aws_eks_cluster.eks_cluster]
 
-#}
 
 

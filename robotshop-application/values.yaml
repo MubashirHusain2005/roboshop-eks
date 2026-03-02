@@ -242,9 +242,4 @@ volumes:
        name: web-nginx-config
 
 
-{{ - toYaml .Values.name | nindent 10 }}
-
-{{ - toYaml .Values.configmap | nindent 10 }}
-
-{{ - toYaml .Values.configmap.name | nindent 10 }}
 

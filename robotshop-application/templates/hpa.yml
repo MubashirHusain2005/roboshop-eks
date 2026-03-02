@@ -1,4 +1,3 @@
-##Horizontal Pod Autoscaler for web traffic
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -42,7 +41,7 @@ spec:
           value: 50
           periodSeconds: 60
 ---
-#Horizontal Pod Autoscaler for User
+
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -85,4 +84,5 @@ spec:
         - type: Percent
           value: 50
           periodSeconds: 60
+
 

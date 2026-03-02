@@ -15,8 +15,6 @@ variable "cluster_endpoint" {
   type = string
 }
 
-
-
 variable "oidc_issuer_url" {
   type = string
 }

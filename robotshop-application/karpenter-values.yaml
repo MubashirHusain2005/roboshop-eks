@@ -1,0 +1,8 @@
+clusterName: "my-cluster"
+
+settings:
+  aws:
+    interruptionQueueName: karpenter-spot-events
+
+aws:
+  defaultInstanceProfile: eks-node-group-profile

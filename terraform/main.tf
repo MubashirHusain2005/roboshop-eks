@@ -70,6 +70,20 @@ module "security-group" {
   vpc_id = module.vpc.vpc_id
 }
 
+module "karpenter" {
+
+  source                = "./modules/karpenter"
+  node_instance_profile = module.iam.node_instance_profile.name
+  cluster_id            = module.eks.cluster_id
+  oidc_provider_arn     = module.eks.oidc_provider_arn
+  oidc_issuer_url       = module.eks.oidc_issuer_url
+  private_node_1_name   = module.eks.private_node_1_name
+  private_node_2_name   = module.eks.private_node_2_name
+  karpenter_values_file = "${path.root}/../robotshop-application/karpenter-values.yaml"
+
+  depends_on = [module.eks, module.iam]
+}
+
 
 
 provider "kubernetes" {

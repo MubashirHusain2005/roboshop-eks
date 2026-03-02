@@ -12,3 +12,6 @@ output "vpc_flow_logs_role" {
 }
 
 
+output "node_instance_profile" {
+  value = aws_iam_instance_profile.nodes
+}
