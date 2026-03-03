@@ -74,15 +74,15 @@ spec:
       labels:
         app: mongo
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
+      #affinity:
+        #nodeAffinity:
+          #requiredDuringSchedulingIgnoredDuringExecution:
+            #nodeSelectorTerms:
+            #- matchExpressions:
+              #- key: workload
+               # operator: In
+                #values:
+                #- app
       containers:
       - name: mongo
         image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mongo:v1

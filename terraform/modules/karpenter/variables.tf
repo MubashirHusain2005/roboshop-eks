@@ -26,3 +26,7 @@ variable "node_instance_profile" {
 variable "karpenter_values_file" {
   type = string
 }
+
+variable "cluster_endpoint" {
+  type = string
+}

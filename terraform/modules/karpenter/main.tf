@@ -40,7 +40,7 @@ resource "aws_sqs_queue" "karpenter_interruption_dlq" {
     "karpenter.sh/discovery" = var.cluster_id
   }
 
-  depends_on = [ var.cluster_id ]
+  depends_on = [var.cluster_id]
 
 }
 
@@ -61,7 +61,7 @@ resource "aws_sqs_queue" "karpenter_interruption" {
     "karpenter.sh/discovery" = var.cluster_id
   }
 
-  depends_on = [ var.cluster_id ]
+  depends_on = [var.cluster_id]
 }
 
 ##This policy ensres that only EventBridge is allowed to send messages,without this spot interruption events cant reach the SQS queue
@@ -135,8 +135,6 @@ resource "aws_cloudwatch_event_target" "spot_to_sqs" {
   target_id = "KarpenterSpotInterruption"
   arn       = aws_sqs_queue.karpenter_interruption.arn
 }
-
-
 
 
 
@@ -227,8 +225,17 @@ resource "kubernetes_service_account_v1" "karpenter_serviceaact" {
   ]
 }
 
+#resource "kubectl_manifest" "karpenter_namespace" {
+  #yaml_body  = <<EOF
+#apiVersion: v1
+#kind: Namespace
+#metadata:
+  #name: karpenter
+#EOF
+  #depends_on = [var.cluster_id]
+#}
 
-###Karpenter Helm Chart- temporary
+#Karpenter Helm Chart- temporary
 
 #resource "helm_release" "karpenter" {
   #name       = "karpenter"
@@ -239,18 +246,18 @@ resource "kubernetes_service_account_v1" "karpenter_serviceaact" {
 
   #create_namespace = false
 
-  #set = [
- # {
-  #  name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-   # value = aws_iam_role.karpenter_controller_role.arn
-  #}
+ # set = [
+   # {
+   #   name  = "settings.clusterEndpoint"
+    #  value = var.cluster_endpoint
+    #}
  # ]
 
-  #values = [
+ # values = [
    # templatefile("${path.root}/${var.karpenter_values_file}", {})
- # ]
+  #]
 
-  #depends_on = [ var.cluster_id, var.private_node_1_name, var.private_node_2_name]
+ # depends_on = [var.cluster_id, var.private_node_1_name, var.private_node_2_name, kubectl_manifest.karpenter_namespace]
 #}
 
 

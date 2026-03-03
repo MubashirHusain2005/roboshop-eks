@@ -79,6 +79,7 @@ module "karpenter" {
   oidc_issuer_url       = module.eks.oidc_issuer_url
   private_node_1_name   = module.eks.private_node_1_name
   private_node_2_name   = module.eks.private_node_2_name
+  cluster_endpoint      = module.eks.cluster_endpoint
   karpenter_values_file = "${path.root}/../robotshop-application/karpenter-values.yaml"
 
   depends_on = [module.eks, module.iam]

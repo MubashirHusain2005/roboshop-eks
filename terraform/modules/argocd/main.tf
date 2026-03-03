@@ -86,39 +86,34 @@ resource "helm_release" "argocd_deploy" {
 
 }
 
-resource "kubectl_manifest" "robot_app" {
-  yaml_body = <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: robotshop-app
-  namespace: argo-cd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
-    path: argocd
-    targetRevision: master
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-EOF
+#resource "kubectl_manifest" "robot_app" {
+#yaml_body = <<EOF
+#apiVersion: argoproj.io/v1alpha1
+#kind: Application
+#metadata:
+#name: robotshop-app
+# namespace: argo-cd
+#spec:
+#project: default
+#source:
+#repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
+#path: argocd
+# targetRevision: master
+#destination:
+#server: https://kubernetes.default.svc
+# namespace: default
+#syncPolicy:
+# automated:
+#    prune: true
+#     selfHeal: true
+#EOF
 
-  depends_on = [
-    helm_release.argocd_deploy,
-    var.private_node_1_name,
-    var.private_node_2_name
-  ]
-}
-
-
-
-
-
+#depends_on = [
+#helm_release.argocd_deploy,
+#var.private_node_1_name,
+# var.private_node_2_name
+#]
+#}
 
 
 

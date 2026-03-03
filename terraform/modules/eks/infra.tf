@@ -274,7 +274,6 @@ resource "aws_eks_node_group" "private_node_2" {
   }
 
 
-
   update_config {
     max_unavailable = 1
   }

@@ -1,5 +1,5 @@
 clusterName: "eks-cluster"
-clusterEndpoint: "https://2165A1B3E8CD9D12403AA13AA737B2D1.gr7.eu-west-2.eks.amazonaws.com"
+clusterEndpoint: "https://D140E5E7B502874375D0422E806CA076.yl4.eu-west-2.eks.amazonaws.com"
 
 serviceAccount:
   annotations:

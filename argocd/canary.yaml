@@ -17,21 +17,22 @@ spec:
         app: web
         version: v2
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: web
-              topologyKey: kubernetes.io/hostname
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #         - matchExpressions:
+      #             - key: workload
+      #               operator: In
+      #               values:
+      #                 - app
+      #   podAntiAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       - labelSelector:
+      #           matchLabels:
+      #             app: web
+      #         topologyKey: kubernetes.io/hostname
+
       containers:
         # ===============================
         # NGINX FRONT PROXY (SIDE CAR)
@@ -50,7 +51,6 @@ spec:
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
-
 
         # ===============================
         # EXISTING WEB CONTAINER

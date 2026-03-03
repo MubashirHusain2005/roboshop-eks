@@ -62,15 +62,7 @@ EOF
   depends_on = [var.cluster_endpoint]
 }
 
-resource "kubectl_manifest" "karpenter_namespace" {
-  yaml_body  = <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: karpenter
-EOF
-  depends_on = [var.cluster_endpoint]
-}
+
 
 ##Creates the container to store secrets
 resource "aws_secretsmanager_secret" "secrets" {
