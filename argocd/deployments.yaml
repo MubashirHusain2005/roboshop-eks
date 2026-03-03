@@ -1,3 +1,4 @@
+
 ############################################
 # NAMESPACES
 ############################################
@@ -64,7 +65,7 @@ metadata:
   namespace: data-space
 spec:
   serviceName: mongo
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: mongo
@@ -82,12 +83,6 @@ spec:
                 operator: In
                 values:
                 - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: mongo
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: mongo
         image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mongo:v1
@@ -122,7 +117,7 @@ metadata:
   namespace: app-space   
 spec:
   serviceName: mysql
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: mysql
@@ -131,21 +126,6 @@ spec:
       labels:
         app: mysql
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: mysql
-              topologyKey: kubernetes.io/hostname
       containers:
         - name: mysql
           image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
@@ -210,7 +190,7 @@ metadata:
   namespace: data-space
 spec:
   serviceName: "redis"
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: redis
@@ -219,21 +199,6 @@ spec:
       labels:
         app: redis
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: redis
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: redis
         image: redis:6.2
@@ -284,7 +249,7 @@ metadata:
   name: rabbitmq
   namespace: data-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: rabbitmq
@@ -293,21 +258,6 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: rabbitmq
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: rabbitmq
         image: rabbitmq:3.8-management-alpine
@@ -336,7 +286,7 @@ metadata:
   name: robotshop-cart
   namespace: app-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: cart
@@ -345,21 +295,6 @@ spec:
       labels:
         app: cart
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: cart
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: robot-app-cart
         image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/cart:v1
@@ -401,7 +336,7 @@ metadata:
   name: robotshop-catalogue
   namespace: app-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: catalogue
@@ -410,21 +345,6 @@ spec:
       labels:
         app: catalogue
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: catalogue
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: robot-app-catalogue
         image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/catalogue:v1
@@ -460,7 +380,7 @@ metadata:
   name: robotshop-dispatch
   namespace: app-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: dispatch
@@ -469,21 +389,6 @@ spec:
       labels:
         app: dispatch
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: dispatch
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: robot-app-dispatch
         image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/dispatch:v1
@@ -502,7 +407,7 @@ metadata:
   name: robotshop-shipping
   namespace: app-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: shipping
@@ -511,21 +416,6 @@ spec:
       labels:
         app: shipping
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: shipping
-              topologyKey: kubernetes.io/hostname
       containers:
         - name: robot-app-shipping
           image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/shipping:v1
@@ -575,7 +465,7 @@ metadata:
   name: robotshop-payment
   namespace: app-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: robotshop-payment
@@ -584,21 +474,6 @@ spec:
       labels:
         app: robotshop-payment
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: robotshop-payment
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: robot-app-payment
         image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/payment:v1
@@ -640,7 +515,7 @@ metadata:
   name: robotshop-ratings
   namespace: app-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: robotshop-ratings
@@ -649,21 +524,6 @@ spec:
       labels:
         app: robotshop-ratings
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: robotshop-ratings
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: robot-app-ratings
         image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/ratings:v1
@@ -689,7 +549,7 @@ metadata:
   name: robotshop-user
   namespace: app-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: user
@@ -698,21 +558,6 @@ spec:
       labels:
         app: user
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: user
-              topologyKey: kubernetes.io/hostname
       containers:
       - name: robot-app-user
         image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/user:v1
@@ -749,59 +594,10 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: loadgen
-  namespace: app-space
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: loadgen
-  template:
-    metadata:
-      labels:
-        app: loadgen
-    spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: loadgen
-              topologyKey: kubernetes.io/hostname
-      containers:
-      - name: loadgen
-        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/loadgen
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8080
-        env:
-           - name: HOST
-             value: "web.app-space.svc.cluster.local,web-2.app-space.svc.cluster.local"
-           - name: NUM_CLIENTS
-             value: "15"
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "256Mi"
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: web
   namespace: app-space
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: web
@@ -812,21 +608,6 @@ spec:
         app: web
         version: v1
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: workload
-                operator: In
-                values:
-                - app
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: web
-              topologyKey: kubernetes.io/hostname
       containers:
         # ===============================
         # NGINX FRONT PROXY (SIDE CAR)

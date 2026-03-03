@@ -165,7 +165,7 @@ resource "aws_iam_role" "karpenter_controller_role" {
 
   })
 }
-
+###Policy needs fixing 
 resource "aws_iam_policy" "iam_karpenter_policy" {
   name = "iampolicy-karpenter"
 
