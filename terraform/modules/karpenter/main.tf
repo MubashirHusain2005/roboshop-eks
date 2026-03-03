@@ -195,7 +195,8 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes",
-          "sqs:GetQueueUrl"
+          "sqs:GetQueueUrl",
+          "eks:DescribeCluster"
         ],
         Resource = "*"
       },
@@ -204,7 +205,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
 }
 
 
-resource "aws_iam_role_policy_attachment" "iampolicyattach-karpenter" {
+resource "aws_iam_role_policy_attachment" "iampolicyattach_karpenter" {
   role       = aws_iam_role.karpenter_controller_role.arn
   policy_arn = aws_iam_policy.iam_karpenter_policy.arn
 }
@@ -221,36 +222,36 @@ resource "kubernetes_service_account_v1" "karpenter_serviceaact" {
     }
   }
   depends_on = [
-    aws_iam_role_policy_attachment.iampolicyattach-karpenter,
+    aws_iam_role_policy_attachment.iampolicyattach_karpenter,
     aws_iam_role.karpenter_controller_role
   ]
 }
 
 
-###Karpenter Helm Chart 
+###Karpenter Helm Chart- temporary
 
-resource "helm_release" "karpenter" {
-  name       = "karpenter"
-  repository = "https://charts.karpenter.sh"
-  chart      = "karpenter"
-  namespace  = "karpenter"
-  version    = "v0.13.1"
+#resource "helm_release" "karpenter" {
+  #name       = "karpenter"
+  #repository = "https://charts.karpenter.sh"
+  #chart      = "karpenter"
+  #namespace  = "karpenter"
+  #version    = "v0.13.1"
 
-  create_namespace = false
+  #create_namespace = false
 
-  set = [
-  {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.karpenter_controller_role.arn
-  }
-  ]
+  #set = [
+ # {
+  #  name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+   # value = aws_iam_role.karpenter_controller_role.arn
+  #}
+ # ]
 
-  values = [
-    templatefile("${path.root}/${var.karpenter_values_file}", {})
-  ]
+  #values = [
+   # templatefile("${path.root}/${var.karpenter_values_file}", {})
+ # ]
 
-  depends_on = [ var.cluster_id, var.private_node_1_name, var.private_node_2_name]
-}
+  #depends_on = [ var.cluster_id, var.private_node_1_name, var.private_node_2_name]
+#}
 
 
 

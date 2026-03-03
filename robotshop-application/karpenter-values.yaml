@@ -1,8 +1,13 @@
-clusterName: "my-cluster"
+clusterName: "eks-cluster"
+clusterEndpoint: "https://2165A1B3E8CD9D12403AA13AA737B2D1.gr7.eu-west-2.eks.amazonaws.com"
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::038774803581:role/karpenter-controller-role"
 
 settings:
   aws:
-    interruptionQueueName: karpenter-spot-events
+    interruptionQueueName: "karpenter-spot-events"
 
 aws:
-  defaultInstanceProfile: eks-node-group-profile
+  defaultInstanceProfile: "eks-node-group-profile"

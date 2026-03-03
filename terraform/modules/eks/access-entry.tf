@@ -17,12 +17,12 @@ data "aws_iam_user" "terraform_user" {
   user_name = "terraform-test"
 }
 
-resource "aws_eks_access_entry" "terraform_user" {
-  cluster_name      = var.cluster_name
-  principal_arn     = data.aws_iam_user.terraform_user.arn
-  kubernetes_groups = ["dev-admins"]
-  type              = "STANDARD"
-}
+#resource "aws_eks_access_entry" "terraform_user" {
+  #cluster_name      = var.cluster_name
+  #principal_arn     = data.aws_iam_user.terraform_user.arn
+  #kubernetes_groups = ["dev-admins"]
+  #type              = "STANDARD"
+#}
 
 ###RBAC
 
