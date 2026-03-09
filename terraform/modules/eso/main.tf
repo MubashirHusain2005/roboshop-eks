@@ -34,6 +34,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: app-space
+  labels:
+    istio-injection: enabled
 EOF
 
   depends_on = [var.cluster_endpoint
