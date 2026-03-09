@@ -84,6 +84,7 @@ spec:
         ingress:
           class: istio
 EOF
+depends_on = [helm_release.cert_manager]
 }
 
 

@@ -86,6 +86,7 @@ resource "helm_release" "argocd_deploy" {
 
 }
 
+
 ##Only apply this after the cluster is ready
 resource "kubectl_manifest" "robot_app" {
   yaml_body = <<EOF

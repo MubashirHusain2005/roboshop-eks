@@ -112,7 +112,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql
-  namespace: data-space   
+  namespace: app-space   
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
