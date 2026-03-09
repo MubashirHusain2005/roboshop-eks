@@ -50,7 +50,6 @@ EOF
   depends_on = [var.cluster_endpoint]
 }
 
-
 resource "kubectl_manifest" "external_secrets_namespace" {
   yaml_body = <<EOF
 apiVersion: v1

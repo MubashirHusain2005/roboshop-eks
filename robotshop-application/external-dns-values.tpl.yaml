@@ -2,9 +2,19 @@ provider: aws
 aws:
   region: eu-west-2
 
-provider: aws
-aws:
-  region: eu-west-2
+policy: sync
+
+registry: txt
+
+txtOwnerId: mubashir-cluster
+
+sources:
+  - service
+  - istio-gateway
+
+domainFilters:
+  - mubashir.site
+
 
 serviceAccount:
   create: false

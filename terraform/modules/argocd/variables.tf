@@ -2,9 +2,9 @@ variable "cluster_name" {
   type = string
 }
 
-variable "helm_release_nginx" {
-  type = string
-}
+#variable "helm_release_nginx" {
+#type = string
+#}
 
 variable "pass" {
   type    = string

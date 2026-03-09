@@ -1,0 +1,21 @@
+# istiod values.yaml for external Prometheus
+telemetry:
+  enabled: true
+
+prometheus:
+  enabled: false  # Let external Prometheus scrape instead using pod/svc monitors
+
+pilot:
+  env:
+    PILOT_ENABLE_METRICS: "true"
+
+global:
+  proxy:
+    autoInject: enabled
+
+meshConfig:
+  defaultConfig:
+    tracing:
+      sampling: 100
+      zipkin:
+        address: "jaeger-collector.jaeger.svc.cluster.local:9411"

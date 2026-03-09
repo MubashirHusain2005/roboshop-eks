@@ -998,3 +998,448 @@ resource "aws_eks_node_group" "private_node_2" {
 depends_on = [var.nodegroup_role_arn]
 
 }
+
+
+---
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 6.2.0"
+    }
+
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.23.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.12.0"
+    }
+
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.7.0"
+    }
+
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
+  }
+}
+
+data "aws_route53_zone" "domain" {
+  name         = "mubashir.site"
+  private_zone = false
+}
+
+locals {
+  istio_charts_url = "https://istio-release.storage.googleapis.com/charts"
+}
+
+resource "kubectl_manifest" "istio_namespace" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-system
+EOF
+}
+
+resource "helm_release" "istio_base" {
+  name             = "istio-base"
+  repository       = local.istio_charts_url
+  chart            = "base"
+  namespace        = "istio-system"
+  create_namespace = false
+  version          = ">=1.12.1"
+  timeout          = 120
+  cleanup_on_fail  = true
+  force_update     = false
+
+}
+
+resource "helm_release" "istiod" {
+
+  name            = "istiod"
+  chart           = "istiod"
+  repository      = local.istio_charts_url
+  namespace       = "istio-system"
+  version         = ">=1.12.1"
+  timeout         = 120
+  cleanup_on_fail = true
+  force_update    = false
+
+  values = [
+    file(var.istiod_values_file)
+  ]
+
+
+  depends_on = [helm_release.istio_base]
+
+}
+
+resource "helm_release" "istio_ingress" {
+  name            = "istio-ingress"
+  chart           = "gateway"
+  namespace       = "istio-system"
+  repository      = local.istio_charts_url
+  version         = ">=1.12.1"
+  timeout         = 500
+  cleanup_on_fail = true
+  force_update    = false
+
+  depends_on = [helm_release.istiod]
+}
+
+##Addons
+##UI to see service mesh 
+resource "helm_release" "kiali" {
+  name             = "kiali-server"
+  chart            = "kiali-server"
+  repository       = "https://kiali.org/helm-charts"
+  namespace        = "istio-system"
+  create_namespace = true
+
+  set = [
+    {
+      name  = "auth.strategy"
+      value = "login"
+    },
+    {
+      name  = "deployment.metrics.enabled"
+      value = "true"
+    },
+    {
+      name  = "external_services.prometheus.url"
+      value = "http://prometheus-server.monitoring.svc.cluster.local:9090"
+    },
+    {
+      name  = "rbac.clusterRole"
+      value = true
+    },
+    {
+      name  = "external_services.tracing.url"
+      value = "http://my-jaeger-query.jaeger.svc.cluster.local:16686"
+    }
+  ]
+
+}
+
+
+###Jaeger for Latency Monitoring between Microservices
+
+resource "kubectl_manifest" "jaeger_namespace" {
+  yaml_body = <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jaeger
+EOF
+}
+
+
+resource "helm_release" "jaeger_operator" {
+  name             = "jaegertracing"
+  chart            = "jaeger-operator"
+  repository       = "https://jaegertracing.github.io/helm-charts"
+  version          = "2.25.0"
+  create_namespace = false
+  namespace        = "jaeger"
+
+  set = [
+    {
+      name  = "rbac.clusterRole"
+      value = true
+    }
+  ]
+}
+
+resource "kubectl_manifest" "jaeger" {
+  yaml_body = <<EOF
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: my-jaeger
+  namespace: jaeger
+spec:
+  strategy: allInOne
+  allInOne:
+    image: jaegertracing/all-in-one:1.54
+    options:
+      log-level: info
+  storage:
+    type: memory
+    options:
+      memory:
+        max-traces: 100000
+  ingress:
+    enabled: false
+EOF
+
+  depends_on = [helm_release.jaeger_operator]
+}
+
+resource "kubectl_manifest" "istio_gateway" {
+  yaml_body = <<EOF
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: web-gateway
+  namespace: app-space
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "*.mubashir.site"
+spec:
+  selector:
+    istio: ingress
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.mubashir.site"
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: mubashir-tls
+    hosts:
+    - "*.mubashir.site"
+EOF
+}
+
+
+resource "kubectl_manifest" "istio_web_virtualservice" {
+  yaml_body = <<EOF
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: web
+  namespace: app-space
+spec:
+  hosts:
+  - mubashir.site
+  gateways:
+  - app-space/web-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/catalogue
+    route:
+    - destination:
+        host: catalogue
+        port:
+          number: 8080
+
+  - match:
+    - uri:
+        prefix: /api/user
+    route:
+    - destination:
+        host: user
+        port:
+          number: 8080
+
+  - match:
+    - uri:
+        prefix: /api/cart
+    route:
+    - destination:
+        host: cart
+        port:
+          number: 8080
+
+  - match:
+    - uri:
+        prefix: /api/shipping
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: shipping
+        port:
+          number: 8080
+
+  - match:
+    - uri:
+        prefix: /api/payment
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: payment
+        port:
+          number: 8080
+  - match:
+    - uri:
+        prefix: /api/ratings
+    route:
+    - destination:
+        host: ratings
+        port:
+          number: 80
+  - match:
+    - uri:
+        prefix: /images
+    route:
+    - destination:
+        host: web
+        port:
+          number: 3000
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: web
+        port:
+          number: 3000
+EOF
+}
+resource "kubectl_manifest" "istio_webv2_virtualservice" {
+  yaml_body = <<EOF
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: web-canary
+  namespace: app-space
+spec:
+  hosts:
+  - "mubashir.site"
+  gateways:
+  - app-space/web-gateway
+  http:
+  - route:
+    - destination:
+        host: web
+        port:
+          number: 8080
+      weight: 50
+    - destination:
+        host: web-2
+        port:
+          number: 8080
+      weight: 50
+
+EOF
+}
+
+resource "kubectl_manifest" "jaeger_virtualservice" {
+  yaml_body = <<EOF
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: jaeger
+  namespace: jaeger
+spec:
+  hosts:
+  - "jaeger.mubashir.site"
+  gateways:
+  - app-space/web-gateway
+  http:
+  - route:
+    - destination:
+        host: my-jaeger-query
+        port:
+          number: 16686
+EOF
+}
+
+resource "kubectl_manifest" "kiali_virtualservice" {
+  yaml_body = <<EOF
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: jaeger
+  namespace: istio-system
+spec:
+  hosts:
+  - "kiali.mubashir.site"
+  gateways:
+  - istio-system/web-gateway
+  http:
+  - route:
+    - destination:
+        host: kiali-server
+        port:
+          number: 20001
+EOF
+}
+
+#resource "kubectl_manifest" "jaeger-ingress" {
+#yaml_body = <<EOF
+
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+# name: Jaeger
+# namespace: "istio-system"
+# annotations:
+#  cert-manager.io/cluster-issuer: letsencrypt-staging
+#  cert-manager.io/acme-challenge-type: http01
+#  nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+# acme.cert-manager.io/http01-edit-in-place: "true"
+# nginx.ingress.kubernetes.io/ssl-redirect: "true"
+#external-dns.alpha.kubernetes.io/hostname: jaeger.mubashir.site
+#spec:
+# ingressClassName: nginx
+# rules:
+# - host: jaeger.mubashir.site
+#  http:
+#  paths:
+# - path: /
+# pathType: Prefix
+#  backend: 
+#  service:
+#   name: jaeger-server
+#   port:
+#   number: 16686
+# tls:
+# - hosts:
+#- jaeger.mubashir.site
+#secretName: kiali-tls
+#EOF
+#}
+
+
+#resource "kubectl_manifest" "kiali-ingress" {
+#yaml_body = <<EOF
+
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+# name: kiali
+#namespace: "istio-system"
+#annotations:
+# cert-manager.io/cluster-issuer: letsencrypt-staging
+# cert-manager.io/acme-challenge-type: http01
+# nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+# acme.cert-manager.io/http01-edit-in-place: "true"
+# nginx.ingress.kubernetes.io/ssl-redirect: "true"
+#  external-dns.alpha.kubernetes.io/hostname: kiali.mubashir.site
+#spec:
+#ingressClassName: nginx
+#rules:
+# - host: kiali.mubashir.site
+# http:
+#  paths:
+# - path: /
+#  pathType: Prefix
+#  backend: 
+#  service:
+#    name: kiali-server
+#    port:
+#     number: 20001
+# tls:
+# - hosts:
+#- kiali.mubashir.site
+# secretName: kiali-tls
+#EOF
+#}

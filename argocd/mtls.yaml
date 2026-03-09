@@ -1,0 +1,10 @@
+##Encryption between services,ensures all service-service encyrption is encrypted
+
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: app-space
+spec:
+  mtls:
+    mode: STRICT

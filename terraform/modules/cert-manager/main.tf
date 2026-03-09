@@ -28,51 +28,111 @@ terraform {
   }
 }
 
-
 resource "helm_release" "cert_manager" {
-  name       = "cert-manager"
-  repository = "https://charts.jetstack.io"
-  chart      = "cert-manager"
-  namespace  = "cert-manager"
-  version    = "1.16.1"
-
+  name             = "cert-manager"
+  repository       = "https://charts.jetstack.io"
+  chart            = "cert-manager"
+  namespace        = "cert-manager"
+  version          = "1.16.1"
   create_namespace = true
   wait             = true
   timeout          = 600
 
-
-
   values = [templatefile(var.cert_manager_values_file, {})]
-
-
 
   depends_on = [var.cluster_endpoint]
 }
 
 
-#3  Cluster_issuer yaml file
-resource "kubectl_manifest" "letsencrypt_staging" {
+resource "kubectl_manifest" "istio_clusterissuer_staging" {
   yaml_body = <<EOF
+
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-staging
 spec:
   acme:
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
     email: stokemubashir@gmail.com
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
-      name: letsencrypt-nginx-cert-staging
+      name: letsencrypt-staging-cluster
     solvers:
     - http01:
         ingress:
-          class: nginx
+          class: istio
 EOF
 
-  depends_on = [
-    helm_release.cert_manager
-  ]
+depends_on = [helm_release.cert_manager]
 }
+
+resource "kubectl_manifest" "istio_clusterissuer_prod" {
+  yaml_body = <<EOF
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    email: stokemubashir@gmail.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: istio
+EOF
+}
+
+
+#resource "kubectl_manifest" "certificate_prod" {
+  #yaml_body = <<EOF
+#apiVersion: cert-manager.io/v1
+#kind: Certificate
+#metadata:
+ # name: mubashir-site-cert
+ # namespace: istio-system
+#spec:
+ # secretName: mubashir-tls
+ # issuerRef:
+  #  name: letsencrypt-prod
+  #  kind: ClusterIssuer
+  #dnsNames:
+   # - mubashir.site
+   # - argocd.mubashir.site
+   # - grafana.mubashir.site
+   # - prometheus.mubashir.site
+   # - jaeger.mubashir.site
+   # - kiali.mubashir.site
+#EOF
+#}
+
+
+#3  Cluster_issuer yaml file
+#resource "kubectl_manifest" "letsencrypt_staging" {
+#yaml_body = <<EOF
+#apiVersion: cert-manager.io/v1
+#kind: ClusterIssuer
+#metadata:
+#name: letsencrypt-staging
+#spec:
+#acme:
+#server: https://acme-staging-v02.api.letsencrypt.org/directory
+#email: stokemubashir@gmail.com
+#privateKeySecretRef:
+#name: letsencrypt-nginx-cert-staging
+#solvers:
+#- http01:
+#ingress:
+#class: nginx
+#EOF
+
+#depends_on = [
+#helm_release.cert_manager
+#]
+#}
 
 ##For time being
 #resource "kubectl_manifest" "letsencrypt_prod" {

@@ -86,32 +86,53 @@ resource "helm_release" "argocd_deploy" {
 
 }
 
-resource "kubectl_manifest" "robot_app" {
-  yaml_body = <<EOF
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: robotshop-app
-  namespace: argo-cd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
-    path: argocd
-    targetRevision: master
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-EOF
+##Only apply this after the cluster is ready
+#resource "kubectl_manifest" "robot_app" {
+  #yaml_body = <<EOF
+#apiVersion: argoproj.io/v1alpha1
+#kind: Application
+#metadata:
+  #name: robotshop-app
+  #namespace: argo-cd
+#spec:
+  #project: default
+  #source:
+    #repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
+    #path: argocd
+   # targetRevision: master
+  #destination:
+    #server: https://kubernetes.default.svc
+   # namespace: default
+ # syncPolicy:
+    #automated:
+    #  prune: true
+     # selfHeal: true
+#EOF
 
-  depends_on = [
-    helm_release.argocd_deploy
-  ]
-}
+  #depends_on = [
+    #helm_release.argocd_deploy
+  #]
+#}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -160,38 +181,37 @@ EOF
 
 
 
-resource "kubectl_manifest" "argocd-ingress" {
-  yaml_body = <<EOF
+#resource "kubectl_manifest" "argocd-ingress" {
+#yaml_body = <<EOF
 
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: argocd
-  namespace: argo-cd
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-staging
-    cert-manager.io/acme-challenge-type: http01
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    acme.cert-manager.io/http01-edit-in-place: "true"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    external-dns.alpha.kubernetes.io/hostname: argocd.mubashir.site
-
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: argocd.mubashir.site
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend: 
-          service:
-            name: argocd-server
-            port:
-              number: 80
-  tls:
-  - hosts:
-    - argocd.mubashir.site
-    secretName: argocd-tls
-EOF
-}
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#name: argocd
+#namespace: argo-cd
+#annotations:
+#cert-manager.io/cluster-issuer: letsencrypt-staging
+#cert-manager.io/acme-challenge-type: http01
+# nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+#acme.cert-manager.io/http01-edit-in-place: "true"
+#nginx.ingress.kubernetes.io/ssl-redirect: "true"
+#external-dns.alpha.kubernetes.io/hostname: argocd.mubashir.site
+#spec:
+#ingressClassName: nginx
+#rules:
+#- host: argocd.mubashir.site
+#http:
+#paths:
+#- path: /
+#pathType: Prefix
+#backend: 
+#service:
+#name: argocd-server
+#port:
+#number: 80
+#tls:
+# - hosts:
+#- argocd.mubashir.site
+# secretName: argocd-tls
+#EOF
+#}

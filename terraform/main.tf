@@ -157,22 +157,22 @@ module "cert-manager" {
 
   depends_on = [
     module.eks,
-    module.nginx-ingress
+    #module.nginx-ingress
   ]
 }
 
-module "nginx-ingress" {
-  source = "./modules/nginx-ingress"
+#module "nginx-ingress" {
+#source = "./modules/nginx-ingress"
 
-  cluster_endpoint    = module.eks.cluster_endpoint
-  private_node_1_name = module.eks.private_node_1_name
-  private_node_2_name = module.eks.private_node_2_name
-  nginx_values_file   = "${path.root}/../robotshop-application/nginx-values.yaml"
+#cluster_endpoint    = module.eks.cluster_endpoint
+#private_node_1_name = module.eks.private_node_1_name
+#private_node_2_name = module.eks.private_node_2_name
+#nginx_values_file   = "${path.root}/../robotshop-application/nginx-values.yaml"
 
-  depends_on = [
-    module.eks
-  ]
-}
+#depends_on = [
+#module.eks
+#]
+#}
 
 module "external-dns" {
   source = "./modules/external-dns"
@@ -183,22 +183,22 @@ module "external-dns" {
   external_dns_name        = var.external_dns_name
   external_dns_ns          = var.external_dns_ns
   external_dns_rolename    = var.external_dns_rolename
-  helm_release_nginx       = module.nginx-ingress.helm_release_nginx
+  #helm_release_nginx       = module.nginx-ingress.helm_release_nginx
   private_node_1_name      = module.eks.private_node_1_name
   private_node_2_name      = module.eks.private_node_2_name
   external_dns_values_file = "${path.root}/../robotshop-application/external-dns-values.tpl.yaml"
 
   depends_on = [
     module.eks,
-    module.nginx-ingress
+    #module.nginx-ingress
   ]
 }
 
 module "argocd" {
   source = "./modules/argocd"
 
-  cluster_name        = module.eks.cluster_name
-  helm_release_nginx  = module.nginx-ingress.helm_release_nginx
+  cluster_name = module.eks.cluster_name
+  #helm_release_nginx  = module.nginx-ingress.helm_release_nginx
   private_node_1_name = module.eks.private_node_1_name
   private_node_2_name = module.eks.private_node_2_name
 
@@ -214,7 +214,7 @@ module "prometheus" {
   private_node_2_name    = module.eks.private_node_2_name
   prometheus_values_file = "${path.root}/../robotshop-application/prometheus-values.yaml"
 
-  depends_on = [module.eks]
+  depends_on = [module.eks,module.istio]
 }
 
 module "grafana" {
@@ -227,6 +227,12 @@ module "grafana" {
   private_node_2_name  = module.eks.private_node_2_name
 
   depends_on = [module.prometheus]
+}
+
+module "istio" {
+  source             = "./modules/istio"
+  istiod_values_file = "${path.root}/../robotshop-application/istiod-values.yaml"
+  cluster_id         = module.eks.cluster_id
 }
 
 module "eso" {

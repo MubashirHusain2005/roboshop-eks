@@ -5,6 +5,7 @@ variable "cluster_name" {
 variable "monitoring_namespace" {
   description = "Namespace to deploy observability charts"
   type        = string
+  default     = "monitoring"
 }
 
 variable "prometheus_helmchart" {

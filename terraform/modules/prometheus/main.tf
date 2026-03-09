@@ -29,6 +29,27 @@ terraform {
 }
 
 
+##Storage to save prometheus metrics
+
+#resource "kubectl_manifest" "prometheus_volumeclaim" {
+#yaml_body = <<EOF
+#apiVersion: v1
+#kind: PersistentVolumeClaim
+#metadata:
+#name: prometheus-pvc
+#namespace: monitoring
+#spec:
+#storageClassName: gp3
+#accessModes:
+# - ReadWriteOnce
+#resources:
+# requests:
+# storage: 30Gi
+#EOF
+
+#depends_on = [kubectl_manifest.monitoring_namespace]
+#}
+
 resource "kubectl_manifest" "monitoring_namespace" {
   yaml_body = <<EOF
 apiVersion: v1
@@ -236,62 +257,118 @@ EOF
 }
 
 
-##Service Monitors for Deployments to scrape metrics
+##Service Monitors to scrape metrics from the istiod control plane
 
-#resource "kubectl_manifest" "user_service_monitor" {
-#yaml_body = <<EOF
+resource "kubectl_manifest" "istio_service_monitor" {
+  yaml_body = <<EOF
 
-#apiVersion: monitoring.coreos.com/v1
-#kind: ServiceMonitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: istio-proxy-metrics
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - istio-system
+  selector:
+    matchLabels:
+      app: istiod
+  endpoints:
+  - port: http-monitoring
+    path: /metrics
+    interval: 15s
+EOF
+
+depends_on = [helm_release.prometheus]
+}
+
+
+##Pod Monitor to scrape the metrics from the envoy sidecar from all injected pods
+
+resource "kubectl_manifest" "istio_sidecar_podmonitor" {
+  yaml_body = <<EOF
+
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: istio-sidecar-metrics
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      security.istio.io/tlsMode: 'istio'
+  podMetricsEndpoints:
+    - port: http-envoy-prom
+      path: /stats/prometheus
+      interval: 15s
+EOF
+
+depends_on = [helm_release.prometheus]
+}
+
+##Scraped Envoy metrics from the ingress gateway pods
+resource "kubectl_manifest" "istio_gateway_podmonitor" {
+  yaml_body = <<EOF
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: istio-gateway-metrics
+  namespace: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - istio-system
+  selector:
+    matchLabels:
+      app: istio-ingressgateway
+  podMetricsEndpoints:
+  - port: http-envoy-prom
+    path: /stats/prometheus
+    interval: 15s
+EOF
+
+  depends_on = [
+    helm_release.prometheus
+  ]
+}
+
+
+#resource "kubectl_manifest" "prometheus_ingress" {
+#yaml_body  = <<EOF
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
 #metadata:
-#name: servicemonitor-user
+#name: prometheus
 #namespace: monitoring
-#labels:
-##release: prometheus
+#annotations:
+#cert-manager.io/cluster-issuer: letsencrypt-staging
+#nginx.ingress.kubernetes.io/ssl-redirect: "true"
+#external-dns.alpha.kubernetes.io/hostname: prometheus.mubashir.site
 #spec:
-#selector:
-#matchLabels:
-# app: user
-#endpoints:
-# - port: metrics
-# interval: 15s
+#ingressClassName: nginx
+#tls:
+# - hosts:
+#    - prometheus.mubashir.site 
+# secretName: prometheus-prometheus-tls
+#rules:
+# - host: prometheus.mubashir.site
+# http:
+#  paths:
+# - path: /
+#  pathType: Prefix
+#  backend:
+#   service:
+#   name: prometheus-kube-prometheus-prometheus
+#   port:
+#   number: 9090
 
 #EOF
+#depends_on = [helm_release.prometheus]
+
 #}
-
-resource "kubectl_manifest" "prometheus_ingress" {
-  yaml_body  = <<EOF
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: prometheus
-  namespace: monitoring
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-staging
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    external-dns.alpha.kubernetes.io/hostname: prometheus.mubashir.site
-spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
-        - prometheus.mubashir.site 
-      secretName: prometheus-prometheus-tls
-  rules:
-  - host: prometheus.mubashir.site
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: prometheus-kube-prometheus-prometheus
-            port:
-              number: 9090
-
-EOF
-  depends_on = [helm_release.prometheus]
-
-}
 
 
 resource "kubectl_manifest" "prometheus_rule" {
@@ -322,6 +399,15 @@ spec:
         severity: critical
       annotations:
         description: "Node memory usage above 85%"
+    
+    - alert: PodRestart
+      expr: kube_pod_container_status_restarts_totals > 2
+      for: 0m
+      labels:
+        severity: critical
+      annotations:
+        description: "Pod restart detected"
+
 
 EOF
 

@@ -122,7 +122,7 @@ resource "helm_release" "external_dns" {
     kubernetes_service_account_v1.external_dns,
     aws_iam_role.external_dns,
     aws_iam_role_policy.external_dns_route53,
-    var.helm_release_nginx
+    #var.helm_release_nginx
   ]
 }
 

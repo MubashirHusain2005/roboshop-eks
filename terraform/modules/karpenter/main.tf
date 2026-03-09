@@ -225,39 +225,39 @@ resource "kubernetes_service_account_v1" "karpenter_serviceaact" {
   ]
 }
 
-#resource "kubectl_manifest" "karpenter_namespace" {
-  #yaml_body  = <<EOF
-#apiVersion: v1
-#kind: Namespace
-#metadata:
-  #name: karpenter
-#EOF
-  #depends_on = [var.cluster_id]
-#}
+resource "kubectl_manifest" "karpenter_namespace" {
+  yaml_body  = <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: karpenter
+EOF
+  depends_on = [var.cluster_id]
+}
 
 #Karpenter Helm Chart- temporary
 
 #resource "helm_release" "karpenter" {
-  #name       = "karpenter"
-  #repository = "https://charts.karpenter.sh"
-  #chart      = "karpenter"
-  #namespace  = "karpenter"
-  #version    = "v0.13.1"
+#name       = "karpenter"
+#repository = "https://charts.karpenter.sh"
+#chart      = "karpenter"
+#namespace  = "karpenter"
+#version    = "v0.13.1"
 
-  #create_namespace = false
+#create_namespace = false
 
- # set = [
-   # {
-   #   name  = "settings.clusterEndpoint"
-    #  value = var.cluster_endpoint
-    #}
- # ]
+# set = [
+# {
+#   name  = "settings.clusterEndpoint"
+#  value = var.cluster_endpoint
+#}
+# ]
 
- # values = [
-   # templatefile("${path.root}/${var.karpenter_values_file}", {})
-  #]
+# values = [
+# templatefile("${path.root}/${var.karpenter_values_file}", {})
+#]
 
- # depends_on = [var.cluster_id, var.private_node_1_name, var.private_node_2_name, kubectl_manifest.karpenter_namespace]
+# depends_on = [var.cluster_id, var.private_node_1_name, var.private_node_2_name, kubectl_manifest.karpenter_namespace]
 #}
 
 
