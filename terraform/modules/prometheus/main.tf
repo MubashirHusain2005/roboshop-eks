@@ -259,82 +259,85 @@ EOF
 
 ##Service Monitors to scrape metrics from the istiod control plane
 
-resource "kubectl_manifest" "istio_service_monitor" {
-  yaml_body = <<EOF
+#resource "kubectl_manifest" "istio_service_monitor" {
+# yaml_body = <<EOF
+#apiVersion: monitoring.coreos.com/v1
+#kind: ServiceMonitor
+#metadata:
+# name: istiod-metrics
+# namespace: monitoring
+# labels:
+#   release: prometheus    # ✅ must match Prometheus serviceMonitorSelector
+#spec:
+# namespaceSelector:
+# matchNames:
+#   - istio-system
+# selector:
+# matchLabels:
+#   app: istiod
+# endpoints:
+# - port: http-monitoring
+# path: /metrics
+#  interval: 15s
+#EOF
 
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: istio-proxy-metrics
-  namespace: monitoring
-spec:
-  namespaceSelector:
-    matchNames:
-      - istio-system
-  selector:
-    matchLabels:
-      app: istiod
-  endpoints:
-  - port: http-monitoring
-    path: /metrics
-    interval: 15s
-EOF
+# depends_on = [
+#  helm_release.prometheus
+# ]
+#}
 
-depends_on = [helm_release.prometheus]
-}
+#resource "kubectl_manifest" "istio_sidecar_podmonitor" {
+#yaml_body = <<EOF
+#apiVersion: monitoring.coreos.com/v1
+#kind: PodMonitor
+#metadata:
+# name: istio-sidecar-metrics
+# namespace: monitoring
+# labels:
+# release: prometheus    # ✅
+#spec:
+# namespaceSelector:
+# any: true
+# selector:
+# matchLabels:
+#   security.istio.io/tlsMode: istio
+# podMetricsEndpoints:
+# - port: http-envoy-prom
+#  path: /stats/prometheus
+#  interval: 15s
+#EOF
 
+# depends_on = [
+# helm_release.prometheus
+#]
+#}
 
-##Pod Monitor to scrape the metrics from the envoy sidecar from all injected pods
+#resource "kubectl_manifest" "istio_gateway_podmonitor" {
+# yaml_body = <<EOF
+#apiVersion: monitoring.coreos.com/v1
+#kind: PodMonitor
+#metadata:
+# name: istio-gateway-metrics
+#namespace: monitoring
+#labels:
+#  release: prometheus    # ✅
+#spec:
+# namespaceSelector:
+# matchNames:
+#   - istio-system
+# selector:
+# matchLabels:
+#app: istio-ingressgateway
+# podMetricsEndpoints:
+# - port: http-envoy-prom
+# path: /stats/prometheus
+#interval: 15s
+#EOF
 
-resource "kubectl_manifest" "istio_sidecar_podmonitor" {
-  yaml_body = <<EOF
-
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: istio-sidecar-metrics
-  namespace: monitoring
-spec:
-  namespaceSelector:
-    any: true
-  selector:
-    matchLabels:
-      security.istio.io/tlsMode: 'istio'
-  podMetricsEndpoints:
-    - port: http-envoy-prom
-      path: /stats/prometheus
-      interval: 15s
-EOF
-
-depends_on = [helm_release.prometheus]
-}
-
-##Scraped Envoy metrics from the ingress gateway pods
-resource "kubectl_manifest" "istio_gateway_podmonitor" {
-  yaml_body = <<EOF
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: istio-gateway-metrics
-  namespace: monitoring
-spec:
-  namespaceSelector:
-    matchNames:
-      - istio-system
-  selector:
-    matchLabels:
-      app: istio-ingressgateway
-  podMetricsEndpoints:
-  - port: http-envoy-prom
-    path: /stats/prometheus
-    interval: 15s
-EOF
-
-  depends_on = [
-    helm_release.prometheus
-  ]
-}
-
+# depends_on = [
+# helm_release.prometheus
+#]
+#}
 
 #resource "kubectl_manifest" "prometheus_ingress" {
 #yaml_body  = <<EOF

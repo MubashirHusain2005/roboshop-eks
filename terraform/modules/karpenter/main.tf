@@ -138,6 +138,155 @@ resource "aws_cloudwatch_event_target" "spot_to_sqs" {
 
 
 
+
+##IAM Instance Profile
+
+resource "aws_iam_instance_profile" "karpenter" {
+  name = "karpenter-controller"
+  role = aws_iam_role.karpenter_profile_instance_role.name
+}
+
+resource "aws_iam_policy" "instance_profile_policy" {
+  name        = "instance_profile-karpenter-policy"
+  description = "instance profile for karpenter policy"
+
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:DescribeInstances",
+          "ec2:DescribeInstanceTypes",
+          "ec2:DescribeRouteTables",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeVolumesModifications",
+          "ec2:DescribeVpcs",
+          "eks:DescribeCluster"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:AssignPrivateIpAddresses",
+          "ec2:AttachNetworkInterface",
+          "ec2:CreateNetworkInterface",
+          "ec2:DeleteNetworkInterface",
+          "ec2:DescribeInstances",
+          "ec2:DescribeTags",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeInstanceTypes",
+          "ec2:DetachNetworkInterface",
+          "ec2:ModifyNetworkInterfaceAttribute",
+          "ec2:UnassignPrivateIpAddresses"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateTags"
+        ],
+        "Resource" : [
+          "arn:aws:ec2:*:*:network-interface/*"
+        ]
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetRepositoryPolicy",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages",
+          "ecr:BatchGetImage",
+          "ecr:GetLifecyclePolicy",
+          "ecr:GetLifecyclePolicyPreview",
+          "ecr:ListTagsForResource",
+          "ecr:DescribeImageScanFindings"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ssm:DescribeAssociation",
+          "ssm:GetDeployablePatchSnapshotForInstance",
+          "ssm:GetDocument",
+          "ssm:DescribeDocument",
+          "ssm:GetManifest",
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:ListAssociations",
+          "ssm:ListInstanceAssociations",
+          "ssm:PutInventory",
+          "ssm:PutComplianceItems",
+          "ssm:PutConfigurePackageResult",
+          "ssm:UpdateAssociationStatus",
+          "ssm:UpdateInstanceAssociationStatus",
+          "ssm:UpdateInstanceInformation"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2messages:AcknowledgeMessage",
+          "ec2messages:DeleteMessage",
+          "ec2messages:FailMessage",
+          "ec2messages:GetEndpoint",
+          "ec2messages:GetMessages",
+          "ec2messages:SendReply"
+        ],
+        "Resource" : "*"
+      }
+    ]
+  })
+}
+
+##IAM Instance Profile Role
+
+resource "aws_iam_role" "karpenter_profile_instance_role" {
+  name = "karpenter-profile-instance"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          "Service" : "ec2.amazonaws.com"
+        },
+      }
+    ]
+  })
+}
+
+##IAM Policy attachment
+
+resource "aws_iam_role_policy_attachment" "instance-profile-attach" {
+  role       = aws_iam_role.karpenter_profile_instance_role.name
+  policy_arn = aws_iam_policy.instance_profile_policy.arn
+}
+
+
 #Iam Role for Karpenter Controller
 
 resource "aws_iam_role" "karpenter_controller_role" {
@@ -175,6 +324,12 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Action = [
           "ssm:GetParameter",
           "iam:PassRole",
+          "iam:CreateInstanceProfile",
+          "iam:DeleteInstanceProfile",
+          "iam:GetInstanceProfile",
+          "iam:AddRoleToInstanceProfile",
+          "iam:RemoveRoleFromInstanceProfile",
+          "iam:TagInstanceProfile",
           "ec2:DescribeImages",
           "ec2:RunInstances",
           "ec2:DescribeSubnets",
@@ -185,6 +340,8 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           "ec2:DescribeInstanceTypeOfferings",
           "ec2:DeleteLaunchTemplate",
           "ec2:CreateTags",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:TerminateInstances",
           "ec2:CreateLaunchTemplate",
           "ec2:CreateFleet",
           "ec2:DescribeSpotPriceHistory",
@@ -204,7 +361,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
 
 
 resource "aws_iam_role_policy_attachment" "iampolicyattach_karpenter" {
-  role       = aws_iam_role.karpenter_controller_role.arn
+  role       = aws_iam_role.karpenter_controller_role.name
   policy_arn = aws_iam_policy.iam_karpenter_policy.arn
 }
 
@@ -221,7 +378,8 @@ resource "kubernetes_service_account_v1" "karpenter_serviceaact" {
   }
   depends_on = [
     aws_iam_role_policy_attachment.iampolicyattach_karpenter,
-    aws_iam_role.karpenter_controller_role
+    aws_iam_role.karpenter_controller_role,
+    kubectl_manifest.karpenter_namespace
   ]
 }
 
@@ -237,30 +395,133 @@ EOF
 
 #Karpenter Helm Chart- temporary
 
-#resource "helm_release" "karpenter" {
-#name       = "karpenter"
-#repository = "https://charts.karpenter.sh"
-#chart      = "karpenter"
-#namespace  = "karpenter"
-#version    = "v0.13.1"
+resource "helm_release" "karpenter" {
+  name       = "karpenter"
+  repository = "oci://public.ecr.aws/karpenter"
+  chart      = "karpenter"
+  namespace  = "karpenter"
+  version    = "1.1.1"
 
-#create_namespace = false
+  create_namespace = false
 
-# set = [
-# {
-#   name  = "settings.clusterEndpoint"
-#  value = var.cluster_endpoint
-#}
-# ]
+  set = [
+    {
+      name  = "settings.clusterName"
+      value = var.cluster_name
+    },
 
-# values = [
-# templatefile("${path.root}/${var.karpenter_values_file}", {})
-#]
+    {
+      name  = "settings.clusterEndpoint"
+      value = var.cluster_endpoint
+    },
 
-# depends_on = [var.cluster_id, var.private_node_1_name, var.private_node_2_name, kubectl_manifest.karpenter_namespace]
-#}
+    {
+      name  = "settings.interruptionQueue"
+      value = aws_sqs_queue.karpenter_interruption.name # ✅ links your SQS queue
+    },
 
+    {
+      name  = "serviceAccount.create"
+      value = "false" # ✅ use the one Terraform created
+    },
 
+    {
+      name  = "serviceAccount.name"
+      value = "karpenter" # ✅ matches your k8s service account
+    },
+
+    {
+      name  = "controller.resources.requests.cpu"
+      value = "250m"
+    },
+
+    {
+      name  = "controller.resources.requests.memory"
+      value = "256Mi"
+    },
+
+    {
+      name  = "controller.resources.limits.cpu"
+      value = "1"
+    },
+
+    {
+      name  = "controller.resources.limits.memory"
+      value = "1Gi"
+    },
+  ]
+  depends_on = [
+    var.cluster_id,
+    kubectl_manifest.karpenter_namespace,
+    kubernetes_service_account_v1.karpenter_serviceaact,
+    aws_sqs_queue.karpenter_interruption,
+    aws_iam_role_policy_attachment.iampolicyattach_karpenter
+  ]
+}
+
+resource "kubectl_manifest" "karpenter_node_class" {
+  yaml_body = <<EOF
+
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiSelectorTerms:
+    - alias: al2023@latest
+  role: "${aws_iam_role.karpenter_profile_instance_role.name}"
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "${var.cluster_id}"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "${var.cluster_id}"
+  tags:
+    karpenter.sh/discovery: "${var.cluster_id}"
+EOF
+
+  depends_on = [helm_release.karpenter]
+}
+
+resource "kubectl_manifest" "karpenter_nodepool" {
+  yaml_body = <<EOF
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: default
+spec:
+  template:
+    spec:
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: default
+      requirements:
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot", "on-demand"]
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64"]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["c", "m", "r"]
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gt
+          values: ["2"]
+  limits:
+    cpu: 1000
+    memory: 1000Gi
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 1m
+EOF
+
+  depends_on = [
+    helm_release.karpenter,
+    kubectl_manifest.karpenter_node_class  # ✅ node class must exist first
+  ]
+}
 
 ##Karpenter Workflow
 

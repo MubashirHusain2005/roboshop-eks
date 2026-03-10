@@ -10,6 +10,10 @@ variable "cluster_id" {
   type = string
 }
 
+variable "cluster_name" {
+  type    = string
+  default = "eks-cluster"
+}
 
 variable "private_node_1_name" {
   type = string
@@ -23,9 +27,9 @@ variable "node_instance_profile" {
   type = string
 }
 
-variable "karpenter_values_file" {
-  type = string
-}
+#variable "karpenter_values_file" {
+  #type = string
+#}
 
 variable "cluster_endpoint" {
   type = string

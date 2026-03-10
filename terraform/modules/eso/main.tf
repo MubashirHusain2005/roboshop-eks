@@ -38,7 +38,7 @@ metadata:
     istio-injection: enabled
 EOF
 
-depends_on = [var.cluster_endpoint]
+  depends_on = [var.cluster_endpoint]
 }
 
 resource "kubectl_manifest" "databases_namespace" {

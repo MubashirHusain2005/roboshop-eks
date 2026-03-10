@@ -63,11 +63,11 @@ spec:
           class: istio
 EOF
 
-depends_on = [helm_release.cert_manager]
+  depends_on = [helm_release.cert_manager]
 }
 
 resource "kubectl_manifest" "istio_clusterissuer_prod" {
-  yaml_body = <<EOF
+  yaml_body  = <<EOF
 
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -84,29 +84,29 @@ spec:
         ingress:
           class: istio
 EOF
-depends_on = [helm_release.cert_manager]
+  depends_on = [helm_release.cert_manager]
 }
 
 
 #resource "kubectl_manifest" "certificate_prod" {
-  #yaml_body = <<EOF
+#yaml_body = <<EOF
 #apiVersion: cert-manager.io/v1
 #kind: Certificate
 #metadata:
- # name: mubashir-site-cert
- # namespace: istio-system
+# name: mubashir-site-cert
+# namespace: istio-system
 #spec:
- # secretName: mubashir-tls
- # issuerRef:
-  #  name: letsencrypt-prod
-  #  kind: ClusterIssuer
-  #dnsNames:
-   # - mubashir.site
-   # - argocd.mubashir.site
-   # - grafana.mubashir.site
-   # - prometheus.mubashir.site
-   # - jaeger.mubashir.site
-   # - kiali.mubashir.site
+# secretName: mubashir-tls
+# issuerRef:
+#  name: letsencrypt-prod
+#  kind: ClusterIssuer
+#dnsNames:
+# - mubashir.site
+# - argocd.mubashir.site
+# - grafana.mubashir.site
+# - prometheus.mubashir.site
+# - jaeger.mubashir.site
+# - kiali.mubashir.site
 #EOF
 #}
 

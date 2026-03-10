@@ -68,6 +68,7 @@ module "eks" {
 module "security-group" {
   source = "./modules/security-group"
   vpc_id = module.vpc.vpc_id
+  cluster_id = module.eks.cluster_id
 }
 
 module "karpenter" {
@@ -80,7 +81,7 @@ module "karpenter" {
   private_node_1_name   = module.eks.private_node_1_name
   private_node_2_name   = module.eks.private_node_2_name
   cluster_endpoint      = module.eks.cluster_endpoint
-  karpenter_values_file = "${path.root}/../robotshop-application/karpenter-values.yaml"
+  #karpenter_values_file = "${path.root}/../robotshop-application/karpenter-values.yaml"
 
   depends_on = [module.eks, module.iam]
 }
@@ -214,7 +215,7 @@ module "prometheus" {
   private_node_2_name    = module.eks.private_node_2_name
   prometheus_values_file = "${path.root}/../robotshop-application/prometheus-values.yaml"
 
-  depends_on = [module.eks,module.istio]
+  depends_on = [module.eks, module.istio]
 }
 
 module "grafana" {

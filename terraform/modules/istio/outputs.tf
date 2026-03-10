@@ -3,5 +3,5 @@ output "istiobase_helmchart" {
 }
 
 output "istiod_helmchart" {
-    value = helm_release.istiod
+  value = helm_release.istiod
 }

@@ -77,7 +77,7 @@ resource "helm_release" "istiod" {
 
 
   depends_on = [helm_release.istio_base, helm_release.jaeger_operator,
-    kubectl_manifest.jaeger,kubectl_manifest.istio_namespace
+    kubectl_manifest.jaeger, kubectl_manifest.istio_namespace
   ]
 
 }
@@ -92,7 +92,7 @@ resource "helm_release" "istio_ingress" {
   cleanup_on_fail = true
   force_update    = false
 
-  depends_on = [helm_release.istiod,kubectl_manifest.istio_namespace]
+  depends_on = [helm_release.istiod, kubectl_manifest.istio_namespace]
 }
 
 ##Addons
@@ -116,7 +116,7 @@ resource "helm_release" "kiali" {
     },
     {
       name  = "external_services.prometheus.url"
-      value = "http://prometheus-server.monitoring.svc.cluster.local:9090"
+      value = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
     },
     {
       name  = "rbac.clusterRole"
@@ -128,7 +128,7 @@ resource "helm_release" "kiali" {
     }
   ]
 
-  depends_on = [ helm_release.istiod,helm_release.jaeger_operator,kubectl_manifest.jaeger]
+  depends_on = [helm_release.istiod, helm_release.jaeger_operator, kubectl_manifest.jaeger]
 
 }
 

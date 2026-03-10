@@ -40,6 +40,10 @@ resource "aws_security_group" "eks-cluster" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "cluster-sg"
+  }
 }
 
 resource "aws_security_group" "nodes" {
@@ -56,7 +60,7 @@ resource "aws_security_group" "nodes" {
   }
 
   egress {
-    description = "Allow node all egress"
+    description = "Allow all outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -66,12 +70,17 @@ resource "aws_security_group" "nodes" {
 
 
   ingress {
-    description = "Allow SSH traffic from VPC"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow SSH traffic from VPC only"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr_block]
 
+  }
+
+  tags = {
+      Name = "node-sg"
+      "karpenter.sh/discovery" = var.cluster_id
   }
 
 }
@@ -99,6 +108,14 @@ resource "aws_security_group_rule" "node_ingress_from_cluster" {
 
 }
 
-
+resource "aws_security_group_rule" "node_ingress_webhook" {
+  description              = "Allow cluster to reach node webhooks"
+  type                     = "ingress"
+  from_port                = 8443
+  to_port                  = 8443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.eks-cluster.id
+  security_group_id        = aws_security_group.nodes.id
+}
 
 

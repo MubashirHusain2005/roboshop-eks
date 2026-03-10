@@ -15,7 +15,7 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "*.mubashir.site"
+  #  - "*.mubashir.site"
     - "mubashir.site"
   - port:
       number: 443
@@ -25,7 +25,7 @@ spec:
       mode: SIMPLE
       credentialName: mubashir-tls
     hosts:
-    - "*.mubashir.site"
+ #   - "*.mubashir.site"
     - "mubashir.site"
 ---
 apiVersion: cert-manager.io/v1

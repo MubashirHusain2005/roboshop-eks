@@ -126,7 +126,7 @@ spec:
       labels:
         app: mysql
     spec:
-      #serviceAccountName: mysql-sa    # ✅ moved here - pod spec level
+      #serviceAccountName: mysql-sa    
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -174,7 +174,7 @@ spec:
         - name: mysql-data
           mountPath: /var/lib/mysql
           subPath: mysql
-        readinessProbe:                 # ✅ now correctly inside container, not after volumeMounts misplaced
+        readinessProbe:                
           exec:
             command:
             - sh
