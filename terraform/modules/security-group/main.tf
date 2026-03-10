@@ -79,8 +79,8 @@ resource "aws_security_group" "nodes" {
   }
 
   tags = {
-      Name = "node-sg"
-      "karpenter.sh/discovery" = var.cluster_id
+    Name                     = "node-sg"
+    "karpenter.sh/discovery" = var.cluster_id
   }
 
 }
@@ -119,3 +119,12 @@ resource "aws_security_group_rule" "node_ingress_webhook" {
 }
 
 
+resource "aws_security_group_rule" "karpenter_nodes_to_cluster" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.nodes.id
+  security_group_id        = var.cluster_security_group_id
+  description              = "Allow Karpenter nodes to reach EKS API"
+}

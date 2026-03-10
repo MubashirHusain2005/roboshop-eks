@@ -28,9 +28,15 @@ variable "node_instance_profile" {
 }
 
 #variable "karpenter_values_file" {
-  #type = string
+#type = string
 #}
 
 variable "cluster_endpoint" {
   type = string
 }
+
+
+variable "nodegroup_role_arn" {
+  type = string
+}
+

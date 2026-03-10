@@ -58,9 +58,10 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-staging-cluster
     solvers:
-    - http01:
-        ingress:
-          class: istio
+      - dns01:
+          route53:
+            region: eu-west-2
+            hostedZoneID: Z09331692XTWCNAOSXR5T
 EOF
 
   depends_on = [helm_release.cert_manager]
@@ -80,9 +81,10 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-    - http01:
-        ingress:
-          class: istio
+      - dns01:
+          route53:
+            region: eu-west-2
+            hostedZoneID: Z09331692XTWCNAOSXR5T
 EOF
   depends_on = [helm_release.cert_manager]
 }
@@ -158,3 +160,69 @@ EOF
 # helm_release.cert_manager
 # ]
 #}
+
+# Reuse the same policy by creating a separate role for cert-manager
+resource "aws_iam_role" "cert_manager" {
+  name = "cert-manager-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = var.oidc_provider_arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${replace(var.oidc_issuer_url, "https://", "")}:sub" = "system:serviceaccount:cert-manager:cert-manager"
+            "${replace(var.oidc_issuer_url, "https://", "")}:aud" = "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+# cert-manager needs GetChange + ChangeResourceRecordSets + ListHostedZonesByName
+resource "aws_iam_role_policy" "cert_manager_route53" {
+  name = "cert-manager-route53-policy"
+  role = aws_iam_role.cert_manager.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "route53:GetChange"
+        Resource = "arn:aws:route53:::change/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "route53:ChangeResourceRecordSets",
+          "route53:ListResourceRecordSets"
+        ]
+        Resource = "arn:aws:route53:::hostedzone/Z09331692XTWCNAOSXR5T"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "route53:ListHostedZonesByName"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Annotate cert-manager service account with the role
+#resource "kubernetes_service_account_v1" "cert_manager" {
+#metadata {
+#name      = "cert-manager"
+#namespace = "cert-manager"
+#annotations = {
+#   "eks.amazonaws.com/role-arn" = aws_iam_role.cert_manager.arn
+# }
+#}
+#}
+

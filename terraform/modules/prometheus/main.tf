@@ -160,7 +160,6 @@ resource "helm_release" "redis_exporter" {
 }
 
 
-
 resource "kubectl_manifest" "mysql_exporter_my_cnf" {
   yaml_body = <<EOF
 apiVersion: v1
@@ -181,67 +180,6 @@ EOF
 }
 
 
-##Temporary K8s job- this will allow the exporter to temporarily authenticate to the mysql server so we can scrape metrics
-
-#resource "kubectl_manifest" "mysql_exporter_auth" {
-#yaml_body = <<EOF
-
-#apiVersion: batch/v1
-#kind: Job
-#metadata:
-#name: mysql-exporter-authentication
-#namespace: app-space
-#spec:
-#template:
-#spec:
-#containers:
-# - name: mysql-client
-#  image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
-#  command:
-#   - sh
-#  - -c
-#  - |
-#   mysql -h mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "
-#   CREATE USER IF NOT EXISTS 'metrics_user'@'%' IDENTIFIED BY 'metrics_password';
-#  GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO 'metrics_user'@'%';
-#  FLUSH PRIVILEGES;"
-#  env:
-#   - name: MYSQL_ROOT_PASSWORD
-#  valueFrom:
-#   secretKeyRef:
-#   name:  mysql-secret
-#  key: root-password
-#  resources:
-#  requests:
-#     cpu: "100m"
-#  memory: "128Mi"
-#   limits:
-#    cpu: "200m"
-#    memory: "256Mi"
-#restartPolicy: OnFailure
-#EOF
-
-#depends_on = [kubectl_manifest.mysql_exporter_secret]
-#}
-
-
-
-#resource "kubectl_manifest" "mysql_exporter_secret" {
-##yaml_body = <<EOF
-
-#apiVersion: v1
-#kind: Secret
-#metadata:
-#name: mysql-exporter-secret
-#namespace: app-space
-#type: Opaque
-#stringData:
-#MYSQL_PASSWORD: metrics_password 
-#EOF
-#}
-
-
-
 resource "kubectl_manifest" "redis_secret" {
   yaml_body = <<EOF
 
@@ -256,122 +194,6 @@ stringData:
 EOF
 }
 
-
-##Service Monitors to scrape metrics from the istiod control plane
-
-#resource "kubectl_manifest" "istio_service_monitor" {
-# yaml_body = <<EOF
-#apiVersion: monitoring.coreos.com/v1
-#kind: ServiceMonitor
-#metadata:
-# name: istiod-metrics
-# namespace: monitoring
-# labels:
-#   release: prometheus    # ✅ must match Prometheus serviceMonitorSelector
-#spec:
-# namespaceSelector:
-# matchNames:
-#   - istio-system
-# selector:
-# matchLabels:
-#   app: istiod
-# endpoints:
-# - port: http-monitoring
-# path: /metrics
-#  interval: 15s
-#EOF
-
-# depends_on = [
-#  helm_release.prometheus
-# ]
-#}
-
-#resource "kubectl_manifest" "istio_sidecar_podmonitor" {
-#yaml_body = <<EOF
-#apiVersion: monitoring.coreos.com/v1
-#kind: PodMonitor
-#metadata:
-# name: istio-sidecar-metrics
-# namespace: monitoring
-# labels:
-# release: prometheus    # ✅
-#spec:
-# namespaceSelector:
-# any: true
-# selector:
-# matchLabels:
-#   security.istio.io/tlsMode: istio
-# podMetricsEndpoints:
-# - port: http-envoy-prom
-#  path: /stats/prometheus
-#  interval: 15s
-#EOF
-
-# depends_on = [
-# helm_release.prometheus
-#]
-#}
-
-#resource "kubectl_manifest" "istio_gateway_podmonitor" {
-# yaml_body = <<EOF
-#apiVersion: monitoring.coreos.com/v1
-#kind: PodMonitor
-#metadata:
-# name: istio-gateway-metrics
-#namespace: monitoring
-#labels:
-#  release: prometheus    # ✅
-#spec:
-# namespaceSelector:
-# matchNames:
-#   - istio-system
-# selector:
-# matchLabels:
-#app: istio-ingressgateway
-# podMetricsEndpoints:
-# - port: http-envoy-prom
-# path: /stats/prometheus
-#interval: 15s
-#EOF
-
-# depends_on = [
-# helm_release.prometheus
-#]
-#}
-
-#resource "kubectl_manifest" "prometheus_ingress" {
-#yaml_body  = <<EOF
-#apiVersion: networking.k8s.io/v1
-#kind: Ingress
-#metadata:
-#name: prometheus
-#namespace: monitoring
-#annotations:
-#cert-manager.io/cluster-issuer: letsencrypt-staging
-#nginx.ingress.kubernetes.io/ssl-redirect: "true"
-#external-dns.alpha.kubernetes.io/hostname: prometheus.mubashir.site
-#spec:
-#ingressClassName: nginx
-#tls:
-# - hosts:
-#    - prometheus.mubashir.site 
-# secretName: prometheus-prometheus-tls
-#rules:
-# - host: prometheus.mubashir.site
-# http:
-#  paths:
-# - path: /
-#  pathType: Prefix
-#  backend:
-#   service:
-#   name: prometheus-kube-prometheus-prometheus
-#   port:
-#   number: 9090
-
-#EOF
-#depends_on = [helm_release.prometheus]
-
-#}
 
 
 resource "kubectl_manifest" "prometheus_rule" {

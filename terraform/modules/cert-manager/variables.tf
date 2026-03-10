@@ -28,3 +28,11 @@ variable "cert_manager_values_file" {
   type        = string
 
 }
+
+variable "oidc_provider_arn" {
+  type = string
+}
+
+variable "oidc_issuer_url" {
+  type = string
+}

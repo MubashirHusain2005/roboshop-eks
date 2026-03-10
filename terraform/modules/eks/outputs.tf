@@ -32,3 +32,8 @@ output "private_node_2_name" {
 output "cluster_id" {
   value = aws_eks_cluster.eks_cluster.id
 }
+
+output "cluster_security_group_id" {
+  value = aws_eks_cluster.eks_cluster.vpc_config[0].cluster_security_group_id
+}
+

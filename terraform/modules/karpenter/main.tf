@@ -519,10 +519,43 @@ EOF
 
   depends_on = [
     helm_release.karpenter,
-    kubectl_manifest.karpenter_node_class  # ✅ node class must exist first
+    kubectl_manifest.karpenter_node_class # ✅ node class must exist first
   ]
 }
 
+
+resource "kubernetes_config_map_v1_data" "aws_auth" {
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  force = true
+
+  data = {
+    mapRoles = yamlencode([
+      # your existing node group role
+      {
+        rolearn  = var.nodegroup_role_arn
+        username = "system:node:{{EC2PrivateDNSName}}"
+        groups   = ["system:bootstrappers", "system:nodes"]
+      },
+      # karpenter nodes role
+      {
+        rolearn  = aws_iam_role.karpenter_profile_instance_role.arn
+        username = "system:node:{{EC2PrivateDNSName}}"
+        groups   = ["system:bootstrappers", "system:nodes"]
+      }
+    ])
+  }
+}
+
+
+resource "aws_eks_access_entry" "karpenter_node" {
+  cluster_name  = var.cluster_name
+  principal_arn = "arn:aws:iam::038774803581:role/karpenter-profile-instance"
+  type          = "EC2_LINUX"
+}
 ##Karpenter Workflow
 
 #When AWS is about to terminate a Spot instance:

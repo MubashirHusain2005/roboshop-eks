@@ -199,7 +199,7 @@ resource "aws_subnet" "private-subnet-2a" {
     Name                                        = "Private-subnet-2a"
     "kubernetes.io/role/internal-elb"           = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "karpenter.sh/discovery" = var.cluster_name
+    "karpenter.sh/discovery"                    = var.cluster_name
   }
 }
 
@@ -213,7 +213,7 @@ resource "aws_subnet" "private-subnet-2b" {
     Name                                        = "Private-subnet-2b"
     "kubernetes.io/role/internal-elb"           = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "karpenter.sh/discovery" = var.cluster_name
+    "karpenter.sh/discovery"                    = var.cluster_name
   }
 }
 

@@ -66,9 +66,10 @@ module "eks" {
 }
 
 module "security-group" {
-  source = "./modules/security-group"
-  vpc_id = module.vpc.vpc_id
-  cluster_id = module.eks.cluster_id
+  source                    = "./modules/security-group"
+  vpc_id                    = module.vpc.vpc_id
+  cluster_id                = module.eks.cluster_id
+  cluster_security_group_id = module.eks.cluster_security_group_id
 }
 
 module "karpenter" {
@@ -81,7 +82,8 @@ module "karpenter" {
   private_node_1_name   = module.eks.private_node_1_name
   private_node_2_name   = module.eks.private_node_2_name
   cluster_endpoint      = module.eks.cluster_endpoint
-  #karpenter_values_file = "${path.root}/../robotshop-application/karpenter-values.yaml"
+  nodegroup_role_arn    = module.iam.nodegroup_role_arn
+
 
   depends_on = [module.eks, module.iam]
 }
@@ -144,9 +146,6 @@ provider "kubectl" {
   }
 }
 
-# =========================================
-# Kubernetes Modules (after cluster creation)
-# =========================================
 
 module "cert-manager" {
   source = "./modules/cert-manager"
@@ -155,25 +154,14 @@ module "cert-manager" {
   private_node_1_name      = module.eks.private_node_1_name
   private_node_2_name      = module.eks.private_node_2_name
   cert_manager_values_file = "${path.root}/../robotshop-application/cert-manager-values.yaml"
+  oidc_provider_arn        = module.eks.oidc_provider_arn
+  oidc_issuer_url          = module.eks.oidc_issuer_url
 
   depends_on = [
     module.eks,
-    #module.nginx-ingress
   ]
 }
 
-#module "nginx-ingress" {
-#source = "./modules/nginx-ingress"
-
-#cluster_endpoint    = module.eks.cluster_endpoint
-#private_node_1_name = module.eks.private_node_1_name
-#private_node_2_name = module.eks.private_node_2_name
-#nginx_values_file   = "${path.root}/../robotshop-application/nginx-values.yaml"
-
-#depends_on = [
-#module.eks
-#]
-#}
 
 module "external-dns" {
   source = "./modules/external-dns"
@@ -184,26 +172,23 @@ module "external-dns" {
   external_dns_name        = var.external_dns_name
   external_dns_ns          = var.external_dns_ns
   external_dns_rolename    = var.external_dns_rolename
-  #helm_release_nginx       = module.nginx-ingress.helm_release_nginx
   private_node_1_name      = module.eks.private_node_1_name
   private_node_2_name      = module.eks.private_node_2_name
   external_dns_values_file = "${path.root}/../robotshop-application/external-dns-values.tpl.yaml"
 
   depends_on = [
     module.eks,
-    #module.nginx-ingress
   ]
 }
 
 module "argocd" {
   source = "./modules/argocd"
 
-  cluster_name = module.eks.cluster_name
-  #helm_release_nginx  = module.nginx-ingress.helm_release_nginx
+  cluster_name        = module.eks.cluster_name
   private_node_1_name = module.eks.private_node_1_name
   private_node_2_name = module.eks.private_node_2_name
 
-  depends_on = [module.eks]
+  depends_on = [module.eks, module.istio, module.security-group, module.eso, module.external-dns, module.cert-manager, module.karpenter]
 }
 
 module "prometheus" {

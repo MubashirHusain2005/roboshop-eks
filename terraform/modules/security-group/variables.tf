@@ -7,6 +7,12 @@ variable "cluster_id" {
 }
 
 variable "vpc_cidr_block" {
-  type = string
+  type    = string
   default = "10.0.0.0/16"
+}
+
+
+variable "cluster_security_group_id" {
+  type        = string
+  description = "The EKS managed cluster security group ID"
 }
