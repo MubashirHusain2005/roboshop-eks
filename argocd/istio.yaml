@@ -4,7 +4,7 @@ metadata:
   name: web-gateway
   namespace: app-space
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: "*.mubashir.site"
+    external-dns.alpha.kubernetes.io/hostname: "mubashir.site, argocd.mubashir.site, grafana.mubashir.site, prometheus.mubashir.site, jaeger.mubashir.site, kiali.mubashir.site"
     argocd.argoproj.io/sync-wave: "1"
 spec:
   selector:
@@ -16,6 +16,7 @@ spec:
       protocol: HTTP
     hosts:
     - "*.mubashir.site"
+    - "mubashir.site"
   - port:
       number: 443
       name: https
@@ -25,6 +26,7 @@ spec:
       credentialName: mubashir-tls
     hosts:
     - "*.mubashir.site"
+    - "mubashir.site"
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -32,19 +34,19 @@ metadata:
   name: mubashir-site-cert
   namespace: istio-system
   annotations:
-     argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   secretName: mubashir-tls
   issuerRef:
-    name: letsencrypt-staging    
+    name: letsencrypt-staging
     kind: ClusterIssuer
   dnsNames:
-    - mubashir.site
-    - argocd.mubashir.site
-    - grafana.mubashir.site
-    - prometheus.mubashir.site
-    - jaeger.mubashir.site
-    - kiali.mubashir.site   
+  - mubashir.site
+  - argocd.mubashir.site
+  - grafana.mubashir.site
+  - prometheus.mubashir.site
+  - jaeger.mubashir.site
+  - kiali.mubashir.site
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -52,7 +54,7 @@ metadata:
   name: web
   namespace: app-space
   annotations:
-     argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   hosts:
   - mubashir.site
@@ -61,7 +63,9 @@ spec:
   http:
   - match:
     - uri:
-        prefix: /api/catalogue
+        prefix: /api/catalogue/
+    rewrite:
+      uri: /
     route:
     - destination:
         host: catalogue
@@ -69,7 +73,19 @@ spec:
           number: 8080
   - match:
     - uri:
-        prefix: /api/user
+        exact: /api/catalogue
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: catalogue
+        port:
+          number: 8080
+  - match:
+    - uri:
+        prefix: /api/user/
+    rewrite:
+      uri: /
     route:
     - destination:
         host: user
@@ -77,7 +93,19 @@ spec:
           number: 8080
   - match:
     - uri:
-        prefix: /api/cart
+        exact: /api/user
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: user
+        port:
+          number: 8080
+  - match:
+    - uri:
+        prefix: /api/cart/
+    rewrite:
+      uri: /
     route:
     - destination:
         host: cart
@@ -85,7 +113,27 @@ spec:
           number: 8080
   - match:
     - uri:
-        prefix: /api/shipping
+        exact: /api/cart
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: cart
+        port:
+          number: 8080
+  - match:
+    - uri:
+        prefix: /api/shipping/
+    rewrite:
+      uri: /              # ✅ strip /api/shipping/ pass just remainder
+    route:
+    - destination:
+        host: shipping
+        port:
+          number: 8080
+  - match:
+    - uri:
+        exact: /api/shipping
     rewrite:
       uri: /
     route:
@@ -95,7 +143,17 @@ spec:
           number: 8080
   - match:
     - uri:
-        prefix: /api/payment
+        prefix: /api/payment/
+    rewrite:
+      uri: /              # ✅ strip /api/payment/ pass just remainder
+    route:
+    - destination:
+        host: payment
+        port:
+          number: 8080
+  - match:
+    - uri:
+        exact: /api/payment
     rewrite:
       uri: /
     route:
@@ -105,7 +163,19 @@ spec:
           number: 8080
   - match:
     - uri:
-        prefix: /api/ratings
+        prefix: /api/ratings/
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        host: ratings
+        port:
+          number: 80
+  - match:
+    - uri:
+        exact: /api/ratings
+    rewrite:
+      uri: /
     route:
     - destination:
         host: ratings
@@ -127,13 +197,7 @@ spec:
         host: web
         port:
           number: 3000
-      weight: 50
-    - destination:
-        host: web-2
-        port:
-          number: 3000
-      weight: 50
-
+      weight: 100
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -141,7 +205,7 @@ metadata:
   name: jaeger
   namespace: jaeger
   annotations:
-     argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   hosts:
   - "jaeger.mubashir.site"
@@ -153,7 +217,6 @@ spec:
         host: my-jaeger-query
         port:
           number: 16686
-
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -161,7 +224,7 @@ metadata:
   name: argocd
   namespace: argo-cd
   annotations:
-     argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   hosts:
   - "argocd.mubashir.site"
@@ -174,14 +237,13 @@ spec:
         port:
           number: 80
 ---
-
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: grafana
   namespace: monitoring
   annotations:
-     argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   hosts:
   - "grafana.mubashir.site"
@@ -203,7 +265,7 @@ metadata:
   name: prometheus
   namespace: monitoring
   annotations:
-     argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   hosts:
   - "prometheus.mubashir.site"
@@ -225,7 +287,7 @@ metadata:
   name: kiali
   namespace: istio-system
   annotations:
-     argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   hosts:
   - "kiali.mubashir.site"

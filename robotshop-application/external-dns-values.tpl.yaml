@@ -11,6 +11,7 @@ txtOwnerId: mubashir-cluster
 sources:
   - service
   - istio-gateway
+  - istio-virtualservice
 
 domainFilters:
   - mubashir.site

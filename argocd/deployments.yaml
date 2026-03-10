@@ -10,10 +10,10 @@ metadata:
     argocd.argoproj.io/sync-wave: "-2"
 spec:
   hard:
-    requests.cpu: "8"
-    requests.memory: "8Gi"
-    limits.cpu: "16"
-    limits.memory: "16Gi"
+    requests.cpu: "16"
+    requests.memory: "16Gi"
+    limits.cpu: "32"
+    limits.memory: "32Gi"
     pods: "40"
 ---
 apiVersion: v1
@@ -112,7 +112,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql
-  namespace: app-space   
+  namespace: app-space
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
@@ -126,77 +126,77 @@ spec:
       labels:
         app: mysql
     spec:
+      #serviceAccountName: mysql-sa    # ✅ moved here - pod spec level
       affinity:
-         nodeAffinity:
-           requiredDuringSchedulingIgnoredDuringExecution:
-             nodeSelectorTerms:
-               - matchExpressions:
-                   - key: workload
-                     operator: In
-                     values:
-                       - app
-         podAntiAffinity:
-           requiredDuringSchedulingIgnoredDuringExecution:
-             - labelSelector:
-                 matchLabels:
-                   app: mysql
-               topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: workload
+                operator: In
+                values:
+                - app
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: mysql
+            topologyKey: kubernetes.io/hostname
       containers:
-        - name: mysql
-          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
-          ports:
-            - containerPort: 3306
-              name: mysql
-          env:
-            - name: MYSQL_DATABASE
-              value: cities
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: root-password
-            - name: MYSQL_USER
-              value: shipping
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: user-password
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
-          volumeMounts:
-            - name: mysql-data
-              mountPath: /var/lib/mysql
-              subPath: mysql
-          serviceAccountName: mysql-sa 
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - -c
-                - |
-                  mysqladmin ping \
-                    -h 127.0.0.1 \
-                    -u root \
-                    -p"$MYSQL_ROOT_PASSWORD" \
-                    --silent
-            initialDelaySeconds: 120
-            periodSeconds: 10
-  volumeClaimTemplates:
-    - metadata:
-        name: mysql-data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: mysql-gp3
+      - name: mysql
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
+        ports:
+        - containerPort: 3306
+          name: mysql
+        env:
+        - name: MYSQL_DATABASE
+          value: cities
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: root-password
+        - name: MYSQL_USER
+          value: shipping
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: user-password
         resources:
           requests:
-            storage: 5Gi
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        readinessProbe:                 # ✅ now correctly inside container, not after volumeMounts misplaced
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              mysqladmin ping \
+                -h 127.0.0.1 \
+                -u root \
+                -p"$MYSQL_ROOT_PASSWORD" \
+                --silent
+          initialDelaySeconds: 120
+          periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: mysql-gp3
+      resources:
+        requests:
+          storage: 5Gi
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -674,52 +674,26 @@ spec:
         version: v1
     spec:
       containers:
-        # ===============================
-        # NGINX FRONT PROXY (SIDE CAR)
-        # ===============================
-        - name: web-nginx
-          image: nginx:1.21.6
-          ports:
-            - containerPort: 8080
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "50Mi"
-            limits:
-              cpu: "100m"
-              memory: "100Mi"
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx/conf.d
-
-
-        # ===============================
-        # EXISTING WEB CONTAINER
-        # ===============================
-        - name: robot-app-web
-          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web:v1
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 3000
-          env:
-            - name: SESSION_SECURE
-              value: "false"
-            - name: SESSION_SAMESITE
-              value: "lax"
-            - name: INSTANA_DISABLE_AUTO_INSTR
-              value: "true"
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "60Mi"
-            limits:
-              cpu: "200m"
-              memory: "100Mi"
-
-      volumes:
-        - name: nginx-config
-          configMap:
-            name: web-nginx-config
+      - name: robot-app-web
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: SESSION_SECURE
+          value: "false"
+        - name: SESSION_SAMESITE
+          value: "lax"
+        - name: INSTANA_DISABLE_AUTO_INSTR
+          value: "true"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "60Mi"
+          limits:
+            cpu: "200m"
+            memory: "100Mi"
+---
 
 
 
