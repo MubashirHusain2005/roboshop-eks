@@ -4,7 +4,7 @@ data "aws_iam_role" "github_oidc_role" {
 }
 
 resource "aws_eks_access_entry" "github_role" {
-  cluster_name      = var.cluster_name
+  cluster_name      = aws_eks_cluster.eks_cluster.name
   principal_arn     = data.aws_iam_role.github_oidc_role.arn
   kubernetes_groups = ["dev-admins"]
   type              = "STANDARD"

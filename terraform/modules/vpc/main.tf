@@ -29,6 +29,8 @@ terraform {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 #KMS encryption used later for EKS Cluster encryption
 
 resource "aws_kms_key" "kms_key" {
@@ -58,7 +60,7 @@ resource "aws_kms_key_policy" "kms_key_policy" {
         Effect = "Allow"
 
         Principal = {
-          AWS = "arn:aws:iam::038774803581:root"
+          AWS = "arn:aws:iam::$data.aws_caller_identity.current.account_id}:root"
         }
 
         Action   = "kms:*"
@@ -286,7 +288,6 @@ resource "aws_flow_log" "cloud_watch" {
 resource "aws_cloudwatch_log_group" "cloud_watch_logs" {
   name              = "logs_for_cloudwatch"
   retention_in_days = 7
-  #kms_key_id        = aws_kms_key.kms_key.id
-
+   kms_key_id        = aws_kms_key.kms_key.arn
 }
 

@@ -88,8 +88,6 @@ module "karpenter" {
   depends_on = [module.eks, module.iam]
 }
 
-
-
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_ca)
@@ -188,7 +186,7 @@ module "argocd" {
   private_node_1_name = module.eks.private_node_1_name
   private_node_2_name = module.eks.private_node_2_name
 
-  depends_on = [module.eks, module.istio, module.security-group, module.eso, module.external-dns, module.cert-manager, module.karpenter]
+  depends_on = [module.eks, module.istio, module.security-group, module.eso, module.external-dns, module.cert-manager, module.karpenter,module.prometheus,module.grafana]
 }
 
 module "prometheus" {

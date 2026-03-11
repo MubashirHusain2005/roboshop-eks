@@ -6,8 +6,6 @@ kind: Service
 metadata:
   name: mongo
   namespace: data-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   type: ClusterIP
   selector:
@@ -22,8 +20,6 @@ kind: Service
 metadata:
   name: mysql
   namespace: app-space    
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: mysql
@@ -36,8 +32,6 @@ kind: Service
 metadata:
   name: redis
   namespace: data-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   type: ClusterIP
   selector:
@@ -51,8 +45,6 @@ kind: Service
 metadata:
   name: rabbitmq
   namespace: data-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: rabbitmq
@@ -71,8 +63,6 @@ kind: Service
 metadata:
   name: cart
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: cart
@@ -86,8 +76,6 @@ kind: Service
 metadata:
   name: catalogue
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: catalogue
@@ -100,8 +88,6 @@ kind: Service
 metadata:
   name: dispatch
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: dispatch
@@ -114,8 +100,6 @@ kind: Service
 metadata:
   name: payment
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: robotshop-payment 
@@ -128,8 +112,6 @@ kind: Service
 metadata:
   name: ratings
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: robotshop-ratings
@@ -142,8 +124,6 @@ kind: Service
 metadata:
   name: shipping
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: shipping
@@ -157,8 +137,6 @@ kind: Service
 metadata:
   name: user
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: user
@@ -171,8 +149,6 @@ kind: Service
 metadata:
   name: web
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: web
@@ -187,8 +163,6 @@ kind: Service
 metadata:
   name: web-2
   namespace: app-space
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
   selector:
     app: web
