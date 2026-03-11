@@ -40,9 +40,9 @@ resource "helm_release" "cert_manager" {
 
   set = [
     {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.cert_manager.arn
-  }
+      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+      value = aws_iam_role.cert_manager.arn
+    }
   ]
 
   values = [templatefile(var.cert_manager_values_file, {})]
@@ -223,18 +223,18 @@ resource "aws_iam_role_policy" "cert_manager_route53" {
 }
 
 #resource "kubernetes_annotations" "cert_manager_irsa" {
- # api_version = "v1"
- # kind        = "ServiceAccount"
+# api_version = "v1"
+# kind        = "ServiceAccount"
 
-  #metadata {
-    #name      = "cert-manager"
-   # namespace = "cert-manager"
-  #}
+#metadata {
+#name      = "cert-manager"
+# namespace = "cert-manager"
+#}
 
- # annotations = {
-   # "eks.amazonaws.com/role-arn" = aws_iam_role.cert_manager.arn
- # }
+# annotations = {
+# "eks.amazonaws.com/role-arn" = aws_iam_role.cert_manager.arn
+# }
 
- # depends_on = [helm_release.cert_manager]
+# depends_on = [helm_release.cert_manager]
 #}
 
