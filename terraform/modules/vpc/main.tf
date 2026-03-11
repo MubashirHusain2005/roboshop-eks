@@ -60,7 +60,7 @@ resource "aws_kms_key_policy" "kms_key_policy" {
         Effect = "Allow"
 
         Principal = {
-          AWS = "arn:aws:iam::$data.aws_caller_identity.current.account_id}:root"
+          AWS = "arn:aws:iam::038774803581:root"
         }
 
         Action   = "kms:*"
