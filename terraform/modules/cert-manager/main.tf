@@ -38,6 +38,13 @@ resource "helm_release" "cert_manager" {
   wait             = true
   timeout          = 600
 
+  set = [
+    {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.cert_manager.arn
+  }
+  ]
+
   values = [templatefile(var.cert_manager_values_file, {})]
 
   depends_on = [var.cluster_endpoint]
@@ -215,14 +222,19 @@ resource "aws_iam_role_policy" "cert_manager_route53" {
   })
 }
 
-# Annotate cert-manager service account with the role
-#resource "kubernetes_service_account_v1" "cert_manager" {
-#metadata {
-#name      = "cert-manager"
-#namespace = "cert-manager"
-#annotations = {
-#   "eks.amazonaws.com/role-arn" = aws_iam_role.cert_manager.arn
-# }
-#}
+#resource "kubernetes_annotations" "cert_manager_irsa" {
+ # api_version = "v1"
+ # kind        = "ServiceAccount"
+
+  #metadata {
+    #name      = "cert-manager"
+   # namespace = "cert-manager"
+  #}
+
+ # annotations = {
+   # "eks.amazonaws.com/role-arn" = aws_iam_role.cert_manager.arn
+ # }
+
+ # depends_on = [helm_release.cert_manager]
 #}
 
