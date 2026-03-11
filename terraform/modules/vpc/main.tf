@@ -288,6 +288,6 @@ resource "aws_flow_log" "cloud_watch" {
 resource "aws_cloudwatch_log_group" "cloud_watch_logs" {
   name              = "logs_for_cloudwatch"
   retention_in_days = 7
-   kms_key_id        = aws_kms_key.kms_key.arn
+  kms_key_id        = aws_kms_key.kms_key.arn
 }
 

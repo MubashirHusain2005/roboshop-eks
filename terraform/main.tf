@@ -186,7 +186,7 @@ module "argocd" {
   private_node_1_name = module.eks.private_node_1_name
   private_node_2_name = module.eks.private_node_2_name
 
-  depends_on = [module.eks, module.istio, module.security-group, module.eso, module.external-dns, module.cert-manager, module.karpenter,module.prometheus,module.grafana]
+  depends_on = [module.eks, module.istio, module.security-group, module.eso, module.external-dns, module.cert-manager, module.karpenter, module.prometheus, module.grafana]
 }
 
 module "prometheus" {
@@ -271,16 +271,16 @@ resource "null_resource" "update_kubeconfig" {
 ##Clean deletion of helm charts
 
 #resource "null_resource" "cleanup_helm" {
-  #triggers = {
-   # always_run = timestamp()
-  #}
+#triggers = {
+# always_run = timestamp()
+#}
 
- # provisioner "local-exec" {
-   # command = <<EOT
-      
-   #   ./delete.sh
-   # EOT
-   # when    = destroy
-  #}
+# provisioner "local-exec" {
+# command = <<EOT
+
+#   ./delete.sh
+# EOT
+# when    = destroy
+#}
 #}
 
