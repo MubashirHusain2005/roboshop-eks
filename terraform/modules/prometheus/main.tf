@@ -29,27 +29,6 @@ terraform {
 }
 
 
-##Storage to save prometheus metrics
-
-#resource "kubectl_manifest" "prometheus_volumeclaim" {
-#yaml_body = <<EOF
-#apiVersion: v1
-#kind: PersistentVolumeClaim
-#metadata:
-#name: prometheus-pvc
-#namespace: monitoring
-#spec:
-#storageClassName: gp3
-#accessModes:
-# - ReadWriteOnce
-#resources:
-# requests:
-# storage: 30Gi
-#EOF
-
-#depends_on = [kubectl_manifest.monitoring_namespace]
-#}
-
 resource "kubectl_manifest" "monitoring_namespace" {
   yaml_body = <<EOF
 apiVersion: v1
@@ -118,7 +97,6 @@ resource "helm_release" "mysql_exporter" {
   ]
 
   depends_on = [
-    #kubectl_manifest.mysql_exporter_auth,
     kubectl_manifest.mysql_exporter_my_cnf,
     helm_release.prometheus
 
@@ -152,7 +130,6 @@ resource "helm_release" "redis_exporter" {
     })
   ]
 
-  # Make sure the release is installed after any dependencies (optional)
   depends_on = [
     helm_release.prometheus,
     kubectl_manifest.redis_secret,
@@ -195,7 +172,7 @@ EOF
 }
 
 
-
+##Alerts
 resource "kubectl_manifest" "prometheus_rule" {
   yaml_body = <<EOF
 

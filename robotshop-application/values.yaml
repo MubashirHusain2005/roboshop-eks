@@ -1,245 +1,329 @@
-mongoappName: mongo
+# ============================================
+# GLOBAL
+# ============================================
+global:
+  registry: 038774803581.dkr.ecr.eu-west-2.amazonaws.com
+  imageTag: v1
+  imagePullPolicy: Always
+  nodeAffinityKey: workload
+  nodeAffinityValue: app
 
-mysqlappName: mysql
+# ============================================
+# NAMESPACES
+# ============================================
+namespaces:
+  app: app-space
+  data: data-space
+  istio: istio-system
+  argocd: argo-cd
 
-redisappName: redis
+# ============================================
+# RESOURCE QUOTAS
+# ============================================
+quotas:
+  app:
+    requests:
+      cpu: "16"
+      memory: "16Gi"
+    limits:
+      cpu: "32"
+      memory: "32Gi"
+    pods: "40"
+  data:
+    requests:
+      cpu: "4"
+      memory: "8Gi"
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+    pods: "20"
 
-rabbitmqappName: rabbitmq
-
-cartdeploymentName: robotshop-cart
-
-cartappName: cart
-
-cataloguedeploymentName: robotshop-catalogue
-
-catalogueappName: catalogue
-
-dispatchappName: dispatch
-
-dispatchdeploymentName: robotshop-dispatch
-
-shippingappName: shipping
-
-shippingdeploymentName: robotshop-shipping
-
-paymentappName: robotshop-payment
-
-ratingsappName: robotshop-ratings
-
-userdeploymentName:  robotshop-user
-
-userappName: user
-
-webappName: web
-
-paymentsvcname: payment
-
-ratingsvcname: ratings
-
-canarywebname: web-2
-
-appNamespace: app-space
-
-databaseNamespace: data-space
-
-replicaCount: 1
-
-mongo:
-  image:
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mongo
-    tag: v1
-
-mysql:
-  image:
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql
-    tag: v1
-
+# ============================================
+# REDIS
+# ============================================
 redis:
+  replicas: 2
   image: redis:6.2
-
-rabbitmq:
-  image: rabbitmq:3.8-management-alpine
-
-cart:
-  image:
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/cart
-    tag: v1 
-
-catalogue:
-  image:
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/catalogue
-    tag: v1
-
-dispatch:
-  image:
-    name: robotshop-dispatch
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/dispatch
-    tag: v1
-    imagePullPolicy: Always
-
-shipping:
-  image:
-    name: robot-app-shipping
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/shipping
-    tag: v1
-    imagePullPolicy: Always 
-
-
-payment:
-  image:
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/payment
-    tag: v1
-    imagePullPolicy: Always 
-
-
-
-ratings:
-  image:
-    name: robot-app-ratings
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/ratings
-    tag: v1
-    imagePullPolicy: Always 
-
-
-user:
-  image:
-    name: robot-app-user
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/user
-    tag: v1
-    imagePullPolicy: Always 
-
-sidecar-web:
-  image:
-    name: web-nginx
-    repository: nginx:1.21.6
-
-web:
-  image:
-    name: robot-app-web
-    repository: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web
-    tag: v1
-    imagePullPolicy: Always 
-
-cart:
+  port: 6379
+  storageClass: redis-gp3
+  storage: 10Gi
   resources:
-    request:
-      cpu: 100m
-      memory: 128Mi
+    requests:
+      cpu: "100m"
+      memory: "190Mi"
     limits:
-      cpu: 500m
-      memory: 256Mi
-  
+      cpu: "300m"
+      memory: "256Mi"
+  config:
+    appendonly: "yes"
+    appendfsync: "everysec"
+
+# ============================================
+# MONGO
+# ============================================
 mongo:
+  replicas: 2
+  port: 27017
+  storageClass: mongo-gp3
+  storage: 5Gi
   resources:
-    request:
-      cpu: 100m
-      memory: 256Mi
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: "500m"
+      memory: "512Mi"
 
+# ============================================
+# MYSQL
+# ============================================
 mysql:
+  replicas: 2
+  port: 3306
+  database: cities
+  user: shipping
+  storageClass: mysql-gp3
+  storage: 5Gi
+  secretName: mysql-secret
+  secretKeys:
+    rootPassword: root-password
+    userPassword: user-password
   resources:
-    request:
-      cpu: 100m
-      memory: 256Mi
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: "500m"
+      memory: "512Mi"
+  readinessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 10
 
+# ============================================
+# RABBITMQ
+# ============================================
 rabbitmq:
+  replicas: 2
+  port: 5672
+  user: guest
+  password: guest
+  image: rabbitmq:3.8-management-alpine
   resources:
-    request:
-      cpu: 100m
-      memory: 128Mi
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
     limits:
-      cpu: 500m
-      memory: 256Mi
+      cpu: "500m"
+      memory: "256Mi"
 
+# ============================================
+# APP: CART
+# ============================================
+cart:
+  replicas: 1
+  port: 8080
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  probes:
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+# ============================================
+# APP: CATALOGUE
+# ============================================
 catalogue:
+  replicas: 1
+  port: 8080
   resources:
-    request:
-      cpu: 100m
-      memory: 128Mi
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
     limits:
-      cpu: 500m
-      memory: 256Mi
+      cpu: "500m"
+      memory: "256Mi"
+  probes:
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
 
+# ============================================
+# APP: DISPATCH
+# ============================================
 dispatch:
+  replicas: 1
+  port: 80
   resources:
-    request:
-      cpu: 100m
-      memory: 128Mi
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
     limits:
-      cpu: 500m
-      memory: 256Mi
+      cpu: "500m"
+      memory: "256Mi"
 
+# ============================================
+# APP: SHIPPING
+# ============================================
 shipping:
+  replicas: 1
+  port: 8080
   resources:
-    request:
-      cpu: 250m
-      memory: 512Mi
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
     limits:
-      cpu: 500m
-      memory: 1Gi
+      cpu: "500m"
+      memory: "1Gi"
+  probes:
+    path: /health
+    startup:
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      failureThreshold: 18
+    readiness:
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      failureThreshold: 6
+    liveness:
+      initialDelaySeconds: 120
+      periodSeconds: 20
+      failureThreshold: 3
 
-
-shipping:
+# ============================================
+# APP: PAYMENT
+# ============================================
+payment:
+  replicas: 1
+  port: 8080
   resources:
-    request:
-      cpu: 100m
-      memory: 128Mi
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
     limits:
-      cpu: 500m
-      memory: 256Mi
+      cpu: "500m"
+      memory: "256Mi"
+  probes:
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
 
+# ============================================
+# APP: RATINGS
+# ============================================
 ratings:
+  replicas: 1
+  port: 80
   resources:
-    request:
-      cpu: 100m
-      memory: 128Mi
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
     limits:
-      cpu: 500m
-      memory: 256Mi
+      cpu: "500m"
+      memory: "256Mi"
 
-
+# ============================================
+# APP: USER
+# ============================================
 user:
+  replicas: 1
+  port: 8080
   resources:
-    request:
-      cpu: 100m
-      memory: 128Mi
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
     limits:
-      cpu: 500m
-      memory: 256Mi
+      cpu: "500m"
+      memory: "256Mi"
 
+# ============================================
+# APP: WEB
+# ============================================
 web:
+  replicas: 1
+  port: 3000
+  stableVersion: v1
+  canaryVersion: v2
+  sessionSecure: "false"
+  sessionSamesite: "lax"
   resources:
-    request:
-      cpu: 100m
-      memory: 60Mi
+    requests:
+      cpu: "100m"
+      memory: "60Mi"
     limits:
-      cpu: 200m
-      memory: 100Mi
+      cpu: "200m"
+      memory: "100Mi"
 
-sidecar-web:
-  resources:
-    request:
-      cpu: 50m
-      memory: 50Mi
-    limits:
-      cpu: 100m
-      memory: 100Mi
+# ============================================
+# LOAD GENERATOR
+# ============================================
+loadGen:
+  port: 8080
 
+# ============================================
+# STORAGE CLASSES (shared config)
+# ============================================
 storage:
-  parmeters:
+  provisioner: ebs.csi.aws.com
+  volumeBindingMode: WaitForFirstConsumer
+  parameters:
     type: gp3
     encrypted: "true"
 
+# ============================================
+# DNS
+# ============================================
+dns:
+  root: mubashir.site
+  argocd: argocd.mubashir.site
 
-volumes:
-  - name: nginx-config
-    configMap:
-       name: web-nginx-config
+# ============================================
+# GATEWAY
+# ============================================
+gateway:
+  name: web-gateway
+  selector: ingress
+  externalDnsHostnames: "mubashir.site, argocd.mubashir.site"
+  httpHosts:
+    - "app-space/mubashir.site"
+    - "argo-cd/argocd.mubashir.site"
+  httpsHosts:
+    - "argo-cd/argocd.mubashir.site"
+    - "app-space/mubashir.site"
 
+# ============================================
+# CERTIFICATE
+# ============================================
+certificate:
+  name: mubashir-site-cert
+  secretName: mubashir-tls
+  issuer: letsencrypt-staging
+  dnsNames:
+    - mubashir.site
+    - argocd.mubashir.site
 
+# ============================================
+# ARGOCD
+# ============================================
+argocd:
+  port: 80
 
+# ============================================
+# MTLS
+# ============================================
+mtls:
+  mode: STRICT
+
+# ============================================
+# DESTINATION RULE
+# ============================================
+destinationRule:
+  loadBalancer: ROUND_ROBIN
+  outlierDetection:
+    consecutive5xxErrors: 3
+    interval: 30s
+    baseEjectionTime: 30s

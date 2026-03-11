@@ -86,8 +86,6 @@ resource "helm_release" "argocd_deploy" {
 
 }
 
-
-##Only apply this after the cluster is ready
 resource "kubectl_manifest" "robot_app" {
   yaml_body = <<EOF
 apiVersion: argoproj.io/v1alpha1
@@ -99,8 +97,11 @@ spec:
   project: default
   source:
     repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
-    path: argocd
     targetRevision: master
+    path: robotshop-application
+    helm:
+      valueFiles:
+        - values.yml
   destination:
     server: https://kubernetes.default.svc
     namespace: default

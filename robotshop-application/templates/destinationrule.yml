@@ -1,0 +1,24 @@
+############################################
+# DESTINATION RULE
+############################################
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: web
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  host: web
+  trafficPolicy:
+    loadBalancer:
+      simple: {{ .Values.destinationRule.loadBalancer }}
+    outlierDetection:
+      consecutive5xxErrors: {{ .Values.destinationRule.outlierDetection.consecutive5xxErrors }}
+      interval: {{ .Values.destinationRule.outlierDetection.interval }}
+      baseEjectionTime: {{ .Values.destinationRule.outlierDetection.baseEjectionTime }}
+  subsets:
+  - name: stable
+    labels:
+      version: {{ .Values.web.stableVersion }}
+  - name: canary
+    labels:
+      version: {{ .Values.web.canaryVersion }}

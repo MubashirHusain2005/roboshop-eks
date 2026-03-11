@@ -1,0 +1,694 @@
+############################################
+# RESOURCE QUOTAS
+############################################
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: app-quota
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  hard:
+    requests.cpu: {{ .Values.quotas.app.requests.cpu }}
+    requests.memory: {{ .Values.quotas.app.requests.memory }}
+    limits.cpu: {{ .Values.quotas.app.limits.cpu }}
+    limits.memory: {{ .Values.quotas.app.limits.memory }}
+    pods: {{ .Values.quotas.app.pods | quote }}
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: data-quota
+  namespace: {{ .Values.namespaces.data }}
+spec:
+  hard:
+    requests.cpu: {{ .Values.quotas.data.requests.cpu }}
+    requests.memory: {{ .Values.quotas.data.requests.memory }}
+    limits.cpu: {{ .Values.quotas.data.limits.cpu }}
+    limits.memory: {{ .Values.quotas.data.limits.memory }}
+    pods: {{ .Values.quotas.data.pods | quote }}
+---
+
+############################################
+# SECRETS / CONFIGMAPS
+############################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: {{ .Values.namespaces.data }}
+data:
+  redis.conf: |
+    appendonly {{ .Values.redis.config.appendonly }}
+    appendfsync {{ .Values.redis.config.appendfsync }}
+---
+
+############################################
+# DATA-SPACE: MONGO
+############################################
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  namespace: {{ .Values.namespaces.data }}
+spec:
+  serviceName: mongo
+  replicas: {{ .Values.mongo.replicas }}
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ .Values.global.nodeAffinityKey }}
+                    operator: In
+                    values:
+                      - {{ .Values.global.nodeAffinityValue }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: mongo
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: mongo
+        image: {{ .Values.global.registry }}/mongo:{{ .Values.global.imageTag }}
+        ports:
+        - containerPort: {{ .Values.mongo.port }}
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+        resources:
+          requests:
+            cpu: {{ .Values.mongo.resources.requests.cpu }}
+            memory: {{ .Values.mongo.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.mongo.resources.limits.cpu }}
+            memory: {{ .Values.mongo.resources.limits.memory }}
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: {{ .Values.mongo.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.mongo.storage }}
+---
+
+############################################
+# DATA-SPACE: MYSQL
+############################################
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  serviceName: mysql
+  replicas: {{ .Values.mysql.replicas }}
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: {{ .Values.global.nodeAffinityKey }}
+                operator: In
+                values:
+                - {{ .Values.global.nodeAffinityValue }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: mysql
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: mysql
+        image: {{ .Values.global.registry }}/mysql:{{ .Values.global.imageTag }}
+        ports:
+        - containerPort: {{ .Values.mysql.port }}
+          name: mysql
+        env:
+        - name: MYSQL_DATABASE
+          value: {{ .Values.mysql.database }}
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.mysql.secretName }}
+              key: {{ .Values.mysql.secretKeys.rootPassword }}
+        - name: MYSQL_USER
+          value: {{ .Values.mysql.user }}
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.mysql.secretName }}
+              key: {{ .Values.mysql.secretKeys.userPassword }}
+        resources:
+          requests:
+            cpu: {{ .Values.mysql.resources.requests.cpu }}
+            memory: {{ .Values.mysql.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.mysql.resources.limits.cpu }}
+            memory: {{ .Values.mysql.resources.limits.memory }}
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+          subPath: mysql
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              mysqladmin ping \
+                -h 127.0.0.1 \
+                -u root \
+                -p"$MYSQL_ROOT_PASSWORD" \
+                --silent
+          initialDelaySeconds: {{ .Values.mysql.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.mysql.readinessProbe.periodSeconds }}
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: {{ .Values.mysql.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.mysql.storage }}
+---
+
+############################################
+# DATA-SPACE: REDIS
+############################################
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: {{ .Values.namespaces.data }}
+spec:
+  serviceName: redis
+  replicas: {{ .Values.redis.replicas }}
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ .Values.global.nodeAffinityKey }}
+                    operator: In
+                    values:
+                      - {{ .Values.global.nodeAffinityValue }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: redis
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: redis
+        image: {{ .Values.redis.image }}
+        ports:
+        - containerPort: {{ .Values.redis.port }}
+        resources:
+          requests:
+            cpu: {{ .Values.redis.resources.requests.cpu }}
+            memory: {{ .Values.redis.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.redis.resources.limits.cpu }}
+            memory: {{ .Values.redis.resources.limits.memory }}
+        volumeMounts:
+        - name: redis-config
+          mountPath: /usr/local/etc/redis/redis.conf
+          subPath: redis.conf
+        - name: redis-data
+          mountPath: /data
+        command:
+        - sh
+        - -c
+        - |
+          redis-server /usr/local/etc/redis/redis.conf \
+          --appendonly yes
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-config
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: {{ .Values.redis.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.redis.storage }}
+---
+
+############################################
+# DATA-SPACE: RABBITMQ
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: {{ .Values.namespaces.data }}
+spec:
+  replicas: {{ .Values.rabbitmq.replicas }}
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ .Values.global.nodeAffinityKey }}
+                    operator: In
+                    values:
+                      - {{ .Values.global.nodeAffinityValue }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: rabbitmq
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: rabbitmq
+        image: {{ .Values.rabbitmq.image }}
+        ports:
+        - containerPort: {{ .Values.rabbitmq.port }}
+        env:
+          - name: RABBITMQ_DEFAULT_USER
+            value: {{ .Values.rabbitmq.user }}
+          - name: RABBITMQ_DEFAULT_PASS
+            value: {{ .Values.rabbitmq.password }}
+          - name: RABBITMQ_ALLOW_GUEST
+            value: "true"
+        resources:
+          requests:
+            cpu: {{ .Values.rabbitmq.resources.requests.cpu }}
+            memory: {{ .Values.rabbitmq.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.rabbitmq.resources.limits.cpu }}
+            memory: {{ .Values.rabbitmq.resources.limits.memory }}
+---
+
+############################################
+# APP-SPACE: CART
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-cart
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.cart.replicas }}
+  selector:
+    matchLabels:
+      app: cart
+  template:
+    metadata:
+      labels:
+        app: cart
+    spec:
+      containers:
+      - name: robot-app-cart
+        image: {{ .Values.global.registry }}/cart:{{ .Values.global.imageTag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.cart.port }}
+        env:
+        - name: REDIS_HOST
+          value: redis.{{ .Values.namespaces.data }}.svc.cluster.local
+        - name: REDIS_PORT
+          value: {{ .Values.redis.port | quote }}
+        - name: CATALOGUE_HOST
+          value: catalogue.{{ .Values.namespaces.app }}.svc.cluster.local
+        - name: INSTANA_DISABLE_AUTP_INSTR
+          value: "true"
+        resources:
+          requests:
+            cpu: {{ .Values.cart.resources.requests.cpu }}
+            memory: {{ .Values.cart.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.cart.resources.limits.cpu }}
+            memory: {{ .Values.cart.resources.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.cart.probes.path }}
+            port: {{ .Values.cart.port }}
+          initialDelaySeconds: {{ .Values.cart.probes.initialDelaySeconds }}
+          periodSeconds: {{ .Values.cart.probes.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.cart.probes.path }}
+            port: {{ .Values.cart.port }}
+          initialDelaySeconds: {{ .Values.cart.probes.initialDelaySeconds }}
+          periodSeconds: {{ .Values.cart.probes.periodSeconds }}
+---
+
+############################################
+# APP-SPACE: CATALOGUE
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-catalogue
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.catalogue.replicas }}
+  selector:
+    matchLabels:
+      app: catalogue
+  template:
+    metadata:
+      labels:
+        app: catalogue
+    spec:
+      containers:
+      - name: robot-app-catalogue
+        image: {{ .Values.global.registry }}/catalogue:{{ .Values.global.imageTag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.catalogue.port }}
+        env:
+        - name: MONGO_URL
+          value: mongodb://mongo.{{ .Values.namespaces.data }}.svc.cluster.local:{{ .Values.mongo.port }}/catalogue
+        resources:
+          requests:
+            cpu: {{ .Values.catalogue.resources.requests.cpu }}
+            memory: {{ .Values.catalogue.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.catalogue.resources.limits.cpu }}
+            memory: {{ .Values.catalogue.resources.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.catalogue.probes.path }}
+            port: {{ .Values.catalogue.port }}
+          initialDelaySeconds: {{ .Values.catalogue.probes.initialDelaySeconds }}
+          periodSeconds: {{ .Values.catalogue.probes.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.catalogue.probes.path }}
+            port: {{ .Values.catalogue.port }}
+          initialDelaySeconds: {{ .Values.catalogue.probes.initialDelaySeconds }}
+          periodSeconds: {{ .Values.catalogue.probes.periodSeconds }}
+---
+
+############################################
+# APP-SPACE: DISPATCH
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-dispatch
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.dispatch.replicas }}
+  selector:
+    matchLabels:
+      app: dispatch
+  template:
+    metadata:
+      labels:
+        app: dispatch
+    spec:
+      containers:
+      - name: robot-app-dispatch
+        image: {{ .Values.global.registry }}/dispatch:{{ .Values.global.imageTag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        resources:
+          requests:
+            cpu: {{ .Values.dispatch.resources.requests.cpu }}
+            memory: {{ .Values.dispatch.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.dispatch.resources.limits.cpu }}
+            memory: {{ .Values.dispatch.resources.limits.memory }}
+---
+
+############################################
+# APP-SPACE: SHIPPING
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-shipping
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.shipping.replicas }}
+  selector:
+    matchLabels:
+      app: shipping
+  template:
+    metadata:
+      labels:
+        app: shipping
+    spec:
+      containers:
+        - name: robot-app-shipping
+          image: {{ .Values.global.registry }}/shipping:{{ .Values.global.imageTag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.mysql.secretName }}
+          ports:
+            - containerPort: {{ .Values.shipping.port }}
+          resources:
+            requests:
+              cpu: {{ .Values.shipping.resources.requests.cpu }}
+              memory: {{ .Values.shipping.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.shipping.resources.limits.cpu }}
+              memory: {{ .Values.shipping.resources.limits.memory }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.shipping.probes.path }}
+              port: {{ .Values.shipping.port }}
+            initialDelaySeconds: {{ .Values.shipping.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.shipping.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.shipping.probes.startup.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.shipping.probes.path }}
+              port: {{ .Values.shipping.port }}
+            initialDelaySeconds: {{ .Values.shipping.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.shipping.probes.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.shipping.probes.readiness.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.shipping.probes.path }}
+              port: {{ .Values.shipping.port }}
+            initialDelaySeconds: {{ .Values.shipping.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.shipping.probes.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.shipping.probes.liveness.failureThreshold }}
+---
+
+############################################
+# APP-SPACE: PAYMENT
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-payment
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.payment.replicas }}
+  selector:
+    matchLabels:
+      app: robotshop-payment
+  template:
+    metadata:
+      labels:
+        app: robotshop-payment
+    spec:
+      containers:
+      - name: robot-app-payment
+        image: {{ .Values.global.registry }}/payment:{{ .Values.global.imageTag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.payment.port }}
+        env:
+          - name: AMQP_HOST
+            value: rabbitmq.{{ .Values.namespaces.data }}.svc.cluster.local
+          - name: AMQP_PORT
+            value: {{ .Values.rabbitmq.port | quote }}
+          - name: RABBITMQ_PASSWORD
+            value: {{ .Values.rabbitmq.password }}
+          - name: RABBITMQ_USER
+            value: {{ .Values.rabbitmq.user }}
+        resources:
+          requests:
+            cpu: {{ .Values.payment.resources.requests.cpu }}
+            memory: {{ .Values.payment.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.payment.resources.limits.cpu }}
+            memory: {{ .Values.payment.resources.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.payment.probes.path }}
+            port: {{ .Values.payment.port }}
+          initialDelaySeconds: {{ .Values.payment.probes.initialDelaySeconds }}
+          periodSeconds: {{ .Values.payment.probes.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.payment.probes.path }}
+            port: {{ .Values.payment.port }}
+          initialDelaySeconds: {{ .Values.payment.probes.initialDelaySeconds }}
+          periodSeconds: {{ .Values.payment.probes.periodSeconds }}
+---
+
+############################################
+# APP-SPACE: RATINGS
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-ratings
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.ratings.replicas }}
+  selector:
+    matchLabels:
+      app: robotshop-ratings
+  template:
+    metadata:
+      labels:
+        app: robotshop-ratings
+    spec:
+      containers:
+      - name: robot-app-ratings
+        image: {{ .Values.global.registry }}/ratings:{{ .Values.global.imageTag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.ratings.port }}
+        env:
+          - name: MONGO_HOST
+            value: mongo.{{ .Values.namespaces.data }}.svc.cluster.local
+          - name: MONGO_PORT
+            value: {{ .Values.mongo.port | quote }}
+        resources:
+          requests:
+            cpu: {{ .Values.ratings.resources.requests.cpu }}
+            memory: {{ .Values.ratings.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.ratings.resources.limits.cpu }}
+            memory: {{ .Values.ratings.resources.limits.memory }}
+---
+
+############################################
+# APP-SPACE: USER
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robotshop-user
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.user.replicas }}
+  selector:
+    matchLabels:
+      app: user
+  template:
+    metadata:
+      labels:
+        app: user
+    spec:
+      containers:
+      - name: robot-app-user
+        image: {{ .Values.global.registry }}/user:{{ .Values.global.imageTag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.user.port }}
+        env:
+          - name: TRUST_PROXY
+            value: "true"
+          - name: INSTANA_DISABLE_AUTO_INSTR
+            value: "true"
+          - name: REDIS_HOST
+            value: redis.{{ .Values.namespaces.data }}.svc.cluster.local
+          - name: REDIS_PORT
+            value: {{ .Values.redis.port | quote }}
+          - name: MONGO_HOST
+            value: mongo.{{ .Values.namespaces.data }}.svc.cluster.local
+          - name: MONGO_PORT
+            value: {{ .Values.mongo.port | quote }}
+          - name: MONGO_URL
+            value: mongodb://mongo.{{ .Values.namespaces.data }}.svc.cluster.local:{{ .Values.mongo.port }}/users
+        resources:
+          requests:
+            cpu: {{ .Values.user.resources.requests.cpu }}
+            memory: {{ .Values.user.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.user.resources.limits.cpu }}
+            memory: {{ .Values.user.resources.limits.memory }}
+---
+
+############################################
+# APP-SPACE: WEB
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      app: web
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: web
+        version: v1
+    spec:
+      containers:
+      - name: robot-app-web
+        image: {{ .Values.global.registry }}/web:{{ .Values.global.imageTag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.web.port }}
+        env:
+        - name: SESSION_SECURE
+          value: {{ .Values.web.sessionSecure | quote }}
+        - name: SESSION_SAMESITE
+          value: {{ .Values.web.sessionSamesite }}
+        - name: INSTANA_DISABLE_AUTO_INSTR
+          value: "true"
+        resources:
+          requests:
+            cpu: {{ .Values.web.resources.requests.cpu }}
+            memory: {{ .Values.web.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.web.resources.limits.cpu }}
+            memory: {{ .Values.web.resources.limits.memory }}

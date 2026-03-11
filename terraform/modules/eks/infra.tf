@@ -270,7 +270,7 @@ resource "aws_eks_node_group" "private_node_2" {
   }
 
   labels = {
-    workload = "app"
+    workload = "app"   ##Label for  Node affinity
   }
 
 

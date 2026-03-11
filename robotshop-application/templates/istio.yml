@@ -1,58 +1,64 @@
+############################################
+# GATEWAY
+############################################
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
-  name: web-gateway
-  namespace: app-space
+  name: {{ .Values.gateway.name }}
+  namespace: {{ .Values.namespaces.app }}
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: "mubashir.site, argocd.mubashir.site" 
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.gateway.externalDnsHostnames | quote }}
 spec:
   selector:
-    istio: ingress
+    istio: {{ .Values.gateway.selector }}
   servers:
   - port:
       number: 80
       name: http
       protocol: HTTP
     hosts:
-  #  - "*.mubashir.site"
-     - "app-space/mubashir.site"
-     - "argo-cd/argocd.mubashir.site"
+      {{- toYaml .Values.gateway.httpHosts | nindent 6 }}
   - port:
       number: 443
       name: https
       protocol: HTTPS
     tls:
       mode: SIMPLE
-      credentialName: mubashir-tls
+      credentialName: {{ .Values.certificate.secretName }}
     hosts:
- #   - "app-space/mubashir.site"
-      - "argo-cd/argocd.mubashir.site"
-      - "app-space/mubashir.site"
+      {{- toYaml .Values.gateway.httpsHosts | nindent 6 }}
 ---
+
+############################################
+# CERTIFICATE
+############################################
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: mubashir-site-cert
-  namespace: istio-system
+  name: {{ .Values.certificate.name }}
+  namespace: {{ .Values.namespaces.istio }}
 spec:
-  secretName: mubashir-tls
+  secretName: {{ .Values.certificate.secretName }}
   issuerRef:
-    name: letsencrypt-staging
+    name: {{ .Values.certificate.issuer }}
     kind: ClusterIssuer
   dnsNames:
-  - mubashir.site
-  - argocd.mubashir.site
+    {{- toYaml .Values.certificate.dnsNames | nindent 4 }}
 ---
+
+############################################
+# VIRTUAL SERVICE: WEB
+############################################
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: web
-  namespace: app-space
+  namespace: {{ .Values.namespaces.app }}
 spec:
   hosts:
-  - mubashir.site
+  - {{ .Values.dns.root }}
   gateways:
-  - app-space/web-gateway
+  - {{ .Values.namespaces.app }}/{{ .Values.gateway.name }}
   http:
   - match:
     - uri:
@@ -63,7 +69,7 @@ spec:
     - destination:
         host: catalogue
         port:
-          number: 8080
+          number: {{ .Values.catalogue.port }}
   - match:
     - uri:
         exact: /api/catalogue
@@ -73,7 +79,7 @@ spec:
     - destination:
         host: catalogue
         port:
-          number: 8080
+          number: {{ .Values.catalogue.port }}
   - match:
     - uri:
         prefix: /api/user/
@@ -83,7 +89,7 @@ spec:
     - destination:
         host: user
         port:
-          number: 8080
+          number: {{ .Values.user.port }}
   - match:
     - uri:
         exact: /api/user
@@ -93,7 +99,7 @@ spec:
     - destination:
         host: user
         port:
-          number: 8080
+          number: {{ .Values.user.port }}
   - match:
     - uri:
         prefix: /api/cart/
@@ -103,7 +109,7 @@ spec:
     - destination:
         host: cart
         port:
-          number: 8080
+          number: {{ .Values.cart.port }}
   - match:
     - uri:
         exact: /api/cart
@@ -113,17 +119,17 @@ spec:
     - destination:
         host: cart
         port:
-          number: 8080
+          number: {{ .Values.cart.port }}
   - match:
     - uri:
         prefix: /api/shipping/
     rewrite:
-      uri: /              
+      uri: /
     route:
     - destination:
         host: shipping
         port:
-          number: 8080
+          number: {{ .Values.shipping.port }}
   - match:
     - uri:
         exact: /api/shipping
@@ -133,17 +139,17 @@ spec:
     - destination:
         host: shipping
         port:
-          number: 8080
+          number: {{ .Values.shipping.port }}
   - match:
     - uri:
         prefix: /api/payment/
     rewrite:
-      uri: /             
+      uri: /
     route:
     - destination:
         host: payment
         port:
-          number: 8080
+          number: {{ .Values.payment.port }}
   - match:
     - uri:
         exact: /api/payment
@@ -153,7 +159,7 @@ spec:
     - destination:
         host: payment
         port:
-          number: 8080
+          number: {{ .Values.payment.port }}
   - match:
     - uri:
         prefix: /api/ratings/
@@ -163,7 +169,7 @@ spec:
     - destination:
         host: ratings
         port:
-          number: 80
+          number: {{ .Values.ratings.port }}
   - match:
     - uri:
         exact: /api/ratings
@@ -173,7 +179,7 @@ spec:
     - destination:
         host: ratings
         port:
-          number: 80
+          number: {{ .Values.ratings.port }}
   - match:
     - uri:
         prefix: /images
@@ -181,7 +187,7 @@ spec:
     - destination:
         host: web
         port:
-          number: 3000
+          number: {{ .Values.web.port }}
   - match:
     - uri:
         prefix: /
@@ -189,24 +195,26 @@ spec:
     - destination:
         host: web
         port:
-          number: 3000
+          number: {{ .Values.web.port }}
       weight: 100
-
 ---
+
+############################################
+# VIRTUAL SERVICE: ARGOCD
+############################################
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
   name: argocd
-  namespace: argo-cd
+  namespace: {{ .Values.namespaces.argocd }}
 spec:
   hosts:
-  - "argocd.mubashir.site"
+  - {{ .Values.dns.argocd }}
   gateways:
-  - app-space/web-gateway
+  - {{ .Values.namespaces.app }}/{{ .Values.gateway.name }}
   http:
   - route:
     - destination:
         host: argocd-server
         port:
-          number: 80
-
+          number: {{ .Values.argocd.port }}

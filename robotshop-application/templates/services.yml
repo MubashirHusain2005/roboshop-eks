@@ -1,0 +1,178 @@
+############################################
+# DATA-SPACE SERVICES
+############################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: {{ .Values.namespaces.data }}
+spec:
+  type: ClusterIP
+  selector:
+    app: mongo
+  ports:
+  - port: {{ .Values.mongo.port }}
+    targetPort: {{ .Values.mongo.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: mysql
+  ports:
+  - port: {{ .Values.mysql.port }}
+    targetPort: {{ .Values.mysql.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: {{ .Values.namespaces.data }}
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+  - port: {{ .Values.redis.port }}
+    targetPort: {{ .Values.redis.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: {{ .Values.namespaces.data }}
+spec:
+  type: ClusterIP
+  selector:
+    app: rabbitmq
+  ports:
+  - name: amqp
+    port: {{ .Values.rabbitmq.port }}
+    targetPort: {{ .Values.rabbitmq.port }}
+---
+
+############################################
+# APP-SPACE SERVICES
+############################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: cart
+  ports:
+  - port: {{ .Values.cart.port }}
+    targetPort: {{ .Values.cart.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogue
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: catalogue
+  ports:
+  - port: {{ .Values.catalogue.port }}
+    targetPort: {{ .Values.catalogue.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dispatch
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: dispatch
+  ports:
+  - port: {{ .Values.dispatch.port }}
+    targetPort: {{ .Values.dispatch.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: robotshop-payment
+  ports:
+  - port: {{ .Values.payment.port }}
+    targetPort: {{ .Values.payment.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: robotshop-ratings
+  ports:
+  - port: {{ .Values.ratings.port }}
+    targetPort: {{ .Values.ratings.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shipping
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: shipping
+  ports:
+  - port: {{ .Values.shipping.port }}
+    targetPort: {{ .Values.shipping.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: user
+  ports:
+  - port: {{ .Values.user.port }}
+    targetPort: {{ .Values.user.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+    version: {{ .Values.web.stableVersion }}
+  ports:
+  - port: {{ .Values.web.port }}
+    targetPort: {{ .Values.web.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-2
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+    version: {{ .Values.web.canaryVersion }}
+  ports:
+  - port: {{ .Values.web.port }}
+    targetPort: {{ .Values.web.port }}

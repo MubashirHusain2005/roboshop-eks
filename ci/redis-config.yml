@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: redis-config
-  namespace: data-space  
-data:
-  redis.conf: |
-    appendonly yes
-    appendfsync everysec
