@@ -239,7 +239,7 @@ module "eso" {
 resource "null_resource" "cleanup_script" {
   provisioner "local-exec" {
     command = <<EOT
-
+      aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
       kubectl delete validatingwebhookconfiguration externalsecret-validate
     EOT
     when    = destroy
@@ -251,6 +251,7 @@ resource "null_resource" "cleanup_script" {
 resource "null_resource" "cleanup_secrets" {
   provisioner "local-exec" {
     command = <<EOT
+    aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
     aws secretsmanager delete-secret --secret-id db-creds --force-delete-without-recovery
     EOT
     when    = destroy
