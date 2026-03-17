@@ -104,7 +104,7 @@ spec:
 ---
 
 ############################################
-# DATA-SPACE: MYSQL
+# APP-SPACE: MYSQL
 ############################################
 apiVersion: apps/v1
 kind: StatefulSet
@@ -132,11 +132,13 @@ spec:
                 values:
                 - {{ .Values.global.nodeAffinityValue }}
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app: mysql
-            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: mysql
+                topologyKey: kubernetes.io/hostname
       containers:
       - name: mysql
         image: {{ .Values.global.registry }}/mysql:{{ .Values.global.imageTag }}
@@ -182,6 +184,35 @@ spec:
                 --silent
           initialDelaySeconds: {{ .Values.mysql.readinessProbe.initialDelaySeconds }}
           periodSeconds: {{ .Values.mysql.readinessProbe.periodSeconds }}
+          failureThreshold: {{ .Values.mysql.readinessProbe.failureThreshold }}
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              mysqladmin ping \
+               -h 127.0.0.1 \
+               -u root \
+               -p"$MYSQL_ROOT_PASSWORD" \
+               --silent
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              mysqladmin ping \
+                -h 127.0.0.1 \
+                -u root \
+                -p"$MYSQL_ROOT_PASSWORD" \
+                --silent
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          failureThreshold: 3
   volumeClaimTemplates:
   - metadata:
       name: mysql-data
@@ -296,11 +327,13 @@ spec:
                     values:
                       - {{ .Values.global.nodeAffinityValue }}
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: rabbitmq
-              topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: rabbitmq
+               topologyKey: kubernetes.io/hostname
       containers:
       - name: rabbitmq
         image: {{ .Values.rabbitmq.image }}
@@ -308,11 +341,17 @@ spec:
         - containerPort: {{ .Values.rabbitmq.port }}
         env:
           - name: RABBITMQ_DEFAULT_USER
-            value: {{ .Values.rabbitmq.user }}
-          - name: RABBITMQ_DEFAULT_PASS
-            value: {{ .Values.rabbitmq.password }}
-          - name: RABBITMQ_ALLOW_GUEST
-            value: "true"
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.rabbitmq.secretName }}
+                key: RABBITMQ_DEFAULT_USER   
+          - name: RABBITMQ_DEFAULT_PASS                   
+            valueFrom: 
+              secretKeyRef:
+                name: {{ .Values.rabbitmq.secretName }}
+                key: RABBITMQ_DEFAULT_PASS
+          - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
+            value: "-rabbit loopback_users []"
         resources:
           requests:
             cpu: {{ .Values.rabbitmq.resources.requests.cpu }}
@@ -320,6 +359,20 @@ spec:
           limits:
             cpu: {{ .Values.rabbitmq.resources.limits.cpu }}
             memory: {{ .Values.rabbitmq.resources.limits.memory }}
+        livenessProbe:
+          exec:
+            command:
+            - rabbitmq-diagonostics
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - rabbitmq-diagonostics
+            - check_port_connectivity
+          initialDelaySeconds: 20
+          periodSeconds: 10
 ---
 
 ############################################
@@ -541,10 +594,16 @@ spec:
             value: rabbitmq.{{ .Values.namespaces.data }}.svc.cluster.local
           - name: AMQP_PORT
             value: {{ .Values.rabbitmq.port | quote }}
-          - name: RABBITMQ_PASSWORD
-            value: {{ .Values.rabbitmq.password }}
-          - name: RABBITMQ_USER
-            value: {{ .Values.rabbitmq.user }}
+          - name: RABBITMQ_DEFAULT_PASS
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.payment.secretName }}
+                key: RABBITMQ_DEFAULT_PASS
+          - name: RABBITMQ_DEFAULT_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.payment.secretName }}
+                key: RABBITMQ_DEFAULT_USER
         resources:
           requests:
             cpu: {{ .Values.payment.resources.requests.cpu }}
@@ -658,23 +717,65 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
+  name: web-stable
   namespace: {{ .Values.namespaces.app }}
 spec:
   replicas: {{ .Values.web.replicas }}
   selector:
     matchLabels:
       app: web
-      version: v1
+      version: {{ .Values.web.stableVersion }}
   template:
     metadata:
       labels:
         app: web
-        version: v1
+        version: {{ .Values.web.stableVersion }}
     spec:
       containers:
       - name: robot-app-web
         image: {{ .Values.global.registry }}/web:{{ .Values.global.imageTag }}
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.web.port }}
+        env:
+        - name: SESSION_SECURE
+          value: {{ .Values.web.sessionSecure | quote }}
+        - name: SESSION_SAMESITE
+          value: {{ .Values.web.sessionSamesite }}
+        - name: INSTANA_DISABLE_AUTO_INSTR
+          value: "true"
+        resources:
+          requests:
+            cpu: {{ .Values.web.resources.requests.cpu }}
+            memory: {{ .Values.web.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.web.resources.limits.cpu }}
+            memory: {{ .Values.web.resources.limits.memory }}
+
+--- 
+############################################
+# APP-SPACE: WEB-2
+############################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-canary
+  namespace: {{ .Values.namespaces.app }}
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      app: web
+      version: {{ .Values.web.canaryVersion }}
+  template:
+    metadata:
+      labels:
+        app: web
+        version: {{ .Values.web.canaryVersion }}
+    spec:
+      containers:
+      - name: robot-app-web-canary
+        image: {{ .Values.global.registry }}/web-canary:{{ .Values.web.canaryVersion }} 
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: {{ .Values.web.port }}

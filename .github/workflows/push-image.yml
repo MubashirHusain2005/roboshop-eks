@@ -1,6 +1,18 @@
 name: Build Scan and Push Docker Images to ECR
 
+###Add paths here
+
 on:
+  #push:
+   # branches:
+    #  - main
+   # paths:
+     # - 'app/**'
+ # pull_request:
+   # branches:
+    #  - main
+   # paths:
+   #   - 'app/**'
   workflow_dispatch:
    
 permissions:

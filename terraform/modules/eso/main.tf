@@ -77,7 +77,7 @@ resource "aws_secretsmanager_secret_version" "secrets" {
 }
 
 
-##ESO via Helm Chart
+##ESO Helm Chart
 resource "helm_release" "external_secrets" {
   name       = "external-secrets"
   namespace  = "external-secrets"
@@ -190,13 +190,13 @@ EOF
 }
 
 
-##Secret to fetch from AWS Secrets Manager and create a k8s secret so shipping pod can authenticate with mysql
-resource "kubectl_manifest" "external_secret" {
+##Secret to fetch from AWS Secrets Manager and create a k8s secret so shipping pod can authenticate to mysql
+resource "kubectl_manifest" "external_secret_mysql" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: shipping-db-secret
+  name: mysql-secrets
   namespace: app-space
 spec:
   refreshInterval: 1h
@@ -222,46 +222,72 @@ spec:
       remoteRef:
         key: db-creds
         property: user-password
+    
 EOF
-
   depends_on = [
     kubectl_manifest.cluster_secret_store,
+    kubectl_manifest.deployments_namespace
   ]
 }
 
-####Secret to fetch from AWS Secrets Manager and create a k8s secret so mysql-exporter can authenticate with mysql
+## RabbitMq secret which lives in data-space
 
-#resource "kubectl_manifest" "external_secret_mysql" {
-# yaml_body = <<EOF
-#apiVersion: external-secrets.io/v1beta1
-#kind: ExternalSecret
-#metadata:
-# name: shipping-db-secret
-#namespace: monitoring
-#spec:
-# refreshInterval: 1h
-# secretStoreRef:
-# name: secretstore
-# kind: ClusterSecretStore
-# target:
-# name: kube-secret
-#  data:
-#  - secretKey: DB_USER
-# remoteRef:
-#  key: db-creds
-# property: DB_USER
-# - secretKey: DB_PASSWORD
-#  remoteRef:
-# key: db-creds
-#property: DB_PASSWORD
-#EOF
-
-# depends_on = [
-#kubectl_manifest.cluster_secret_store
-# ]
-#}
+resource "kubectl_manifest" "external_secret_rabbitmq" {
+  yaml_body = <<EOF
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: rabbitmq-secret
+  namespace: data-space
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: secretstore
+    kind: ClusterSecretStore
+  target:
+    name: rabbitmq-secret
+  data:
+    - secretKey: RABBITMQ_DEFAULT_USER
+      remoteRef:
+        key: db-creds
+        property: RABBITMQ_DEFAULT_USER
+    - secretKey: RABBITMQ_DEFAULT_PASS
+      remoteRef:
+        key: db-creds
+        property: RABBITMQ_DEFAULT_PASS
+EOF
+  depends_on = [kubectl_manifest.cluster_secret_store,
+  kubectl_manifest.databases_namespace]
+}
 
 
+resource "kubectl_manifest" "external_secret_payment" {
+  yaml_body = <<EOF
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: payment-secret
+  namespace: app-space
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: secretstore
+    kind: ClusterSecretStore
+  target:
+    name: payment-rabbitmq-secret
+  data:
+    - secretKey: RABBITMQ_DEFAULT_USER
+      remoteRef:
+        key: db-creds
+        property: RABBITMQ_DEFAULT_USER
+    - secretKey: RABBITMQ_DEFAULT_PASS
+      remoteRef:
+        key: db-creds
+        property: RABBITMQ_DEFAULT_PASS
+EOF
+  depends_on = [kubectl_manifest.cluster_secret_store,
+  kubectl_manifest.deployments_namespace]
+}
 
 
 

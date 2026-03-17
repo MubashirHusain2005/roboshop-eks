@@ -1,15 +1,15 @@
 variable "secrets" {
   default = {
-    DB_USER       = "shipping"
-    DB_PASSWORD   = "secret"
-    root-password = "rootpass"
-    user-password = "secret"
-
+    DB_USER               = "shipping"
+    DB_PASSWORD           = "secret"
+    root-password         = "rootpass"
+    user-password         = "secret"
+    RABBITMQ_DEFAULT_PASS = "guest"
+    RABBITMQ_DEFAULT_USER = "guest"
   }
-
-  type = map(string)
+  type      = map(string)
+  sensitive = true
 }
-
 
 variable "cluster_endpoint" {
   type = string

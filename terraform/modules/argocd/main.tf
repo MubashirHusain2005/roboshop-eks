@@ -96,7 +96,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/MubashirHusain2005/gatus-eks.git
+    repoURL: https://github.com/MubashirHusain2005/roboshop-eks.git
     targetRevision: master
     path: robotshop-application
     helm:

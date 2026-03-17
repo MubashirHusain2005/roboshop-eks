@@ -22,10 +22,6 @@ variable "external_dns_rolename" {
   type = string
 }
 
-#variable "helm_release_nginx" {
-#type = string
-#}
-
 variable "private_node_1_name" {
   type = string
 }

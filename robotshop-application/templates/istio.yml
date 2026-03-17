@@ -45,10 +45,10 @@ spec:
   dnsNames:
     {{- toYaml .Values.certificate.dnsNames | nindent 4 }}
 ---
+##########################################
+# Virtual Service
+###########################################
 
-############################################
-# VIRTUAL SERVICE: WEB
-############################################
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
@@ -180,24 +180,20 @@ spec:
         host: ratings
         port:
           number: {{ .Values.ratings.port }}
-  - match:
-    - uri:
-        prefix: /images
+  - name: web-split
     route:
     - destination:
         host: web
         port:
           number: {{ .Values.web.port }}
-  - match:
-    - uri:
-        prefix: /
-    route:
+        subset: stable         
+      weight: {{ .Values.web.stableWeight }}
     - destination:
         host: web
         port:
           number: {{ .Values.web.port }}
-      weight: 100
----
+        subset: canary          
+      weight: {{ .Values.web.canaryWeight }}
 
 ############################################
 # VIRTUAL SERVICE: ARGOCD

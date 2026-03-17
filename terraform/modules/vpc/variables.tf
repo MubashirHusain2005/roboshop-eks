@@ -31,36 +31,36 @@ variable "cert_issuer" {
 }
 
 
-variable "pub_cidr_2a" {
-  type    = string
-  default = "10.0.1.0/24"
-}
+#variable "pub_cidr_2a" {
+#type    = string
+#default = "10.0.1.0/24"
+#}
 
-variable "pub_cidr_2b" {
-  type    = string
-  default = "10.0.2.0/24"
-}
+#variable "pub_cidr_2b" {
+#type    = string
+#default = "10.0.2.0/24"
+#}
 
-variable "priv_cidr_2c" {
-  type    = string
-  default = "10.0.3.0/24"
-}
+#variable "priv_cidr_2c" {
+#type    = string
+#default = "10.0.3.0/24"
+#}
 
-variable "priv_cidr_2d" {
-  type    = string
-  default = "10.0.4.0/24"
-}
+#variable "priv_cidr_2d" {
+#type    = string
+#default = "10.0.4.0/24"
+#}
 
 
-variable "avai_zone_2a" {
-  type    = string
-  default = "eu-west-2a"
-}
+#variable "avai_zone_2a" {
+#type    = string
+#default = "eu-west-2a"
+#}
 
-variable "avai_zone_2b" {
-  type    = string
-  default = "eu-west-2b"
-}
+#variable "avai_zone_2b" {
+#type    = string
+#default = "eu-west-2b"
+#}
 
 
 variable "inst_tenancy" {
@@ -72,3 +72,39 @@ variable "inst_tenancy" {
 variable "vpc_flow_logs_role" {
   type = string
 }
+
+
+variable "public_subnets" {
+  type = map(object({
+    cidr = string
+    az   = string
+  }))
+  default = {
+    "public-subnet-2a" = {
+      cidr = "10.0.1.0/24"
+      az   = "eu-west-2a"
+    }
+    "public-subnet-2b" = {
+      cidr = "10.0.2.0/24"
+      az   = "eu-west-2b"
+    }
+  }
+}
+
+variable "private_subnets" {
+  type = map(object({
+    cidr = string
+    az   = string
+  }))
+  default = {
+    "private-subnet-2a" = {
+      cidr = "10.0.3.0/24"
+      az   = "eu-west-2a"
+    }
+    "private-subnet-2b" = {
+      cidr = "10.0.4.0/24"
+      az   = "eu-west-2b"
+    }
+  }
+}
+

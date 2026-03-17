@@ -96,8 +96,9 @@ mysql:
       cpu: "500m"
       memory: "512Mi"
   readinessProbe:
-    initialDelaySeconds: 120
+    initialDelaySeconds: 0
     periodSeconds: 10
+    failureThreshold: 20  #This was not here before
 
 # ============================================
 # RABBITMQ
@@ -105,8 +106,10 @@ mysql:
 rabbitmq:
   replicas: 2
   port: 5672
-  user: guest
-  password: guest
+  secretName: rabbitmq-secret
+  secretKeys: 
+    RABBITMQ_DEFAULT_PASS: RABBITMQ_DEFAULT_PASS
+    RABBITMQ_DEFAULT_USER: RABBITMQ_DEFAULT_USER
   image: rabbitmq:3.8-management-alpine
   resources:
     requests:
@@ -199,6 +202,7 @@ shipping:
 # ============================================
 payment:
   replicas: 1
+  secretName: payment-rabbitmq-secret
   port: 8080
   resources:
     requests:
@@ -249,6 +253,8 @@ web:
   stableVersion: v1
   canaryVersion: v2
   sessionSecure: "false"
+  stableWeight: 80
+  canaryWeight: 20
   sessionSamesite: "lax"
   resources:
     requests:
@@ -258,11 +264,6 @@ web:
       cpu: "200m"
       memory: "100Mi"
 
-# ============================================
-# LOAD GENERATOR
-# ============================================
-loadGen:
-  port: 8080
 
 # ============================================
 # STORAGE CLASSES (shared config)

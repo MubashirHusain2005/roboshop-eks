@@ -149,6 +149,7 @@ spec:
   - port: {{ .Values.user.port }}
     targetPort: {{ .Values.user.port }}
 ---
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -158,21 +159,6 @@ spec:
   type: ClusterIP
   selector:
     app: web
-    version: {{ .Values.web.stableVersion }}
-  ports:
-  - port: {{ .Values.web.port }}
-    targetPort: {{ .Values.web.port }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: web-2
-  namespace: {{ .Values.namespaces.app }}
-spec:
-  type: ClusterIP
-  selector:
-    app: web
-    version: {{ .Values.web.canaryVersion }}
   ports:
   - port: {{ .Values.web.port }}
     targetPort: {{ .Values.web.port }}

@@ -1,6 +1,17 @@
 name: Terraform Deploy
 
+###Add paths here
 on:
+  #push:
+   # branches:
+   #   - main
+   # paths:
+   #   - 'terraform/**'
+  #pull_request:
+   # branches:
+   #   - main
+   # paths:
+    #  - 'terraform/**'
   workflow_dispatch:
     inputs:
       action:
@@ -66,6 +77,18 @@ jobs:
         working-directory: ./terraform
         run: terraform validate 
 
+        ##Terraform Linting
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: v0.52.0
+          cache: true
+
+      - name: Terraform Lint
+        run: |
+          tflint --init
+          tflint
+  
       - name: Terraform Format Check
         working-directory: ./terraform
         run: terraform fmt -check -recursive

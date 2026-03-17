@@ -46,7 +46,7 @@ resource "aws_kms_alias" "kms_alias" {
 
 }
 
-##This needs looking at because I cant attach it to the irsa role when it hasnt even been created.
+
 resource "aws_kms_key_policy" "kms_key_policy" {
   key_id = aws_kms_key.kms_key.id
 
@@ -119,8 +119,6 @@ resource "aws_vpc" "eks_vpc" {
   }
 }
 
-
-
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.eks_vpc.id
 
@@ -131,34 +129,26 @@ resource "aws_internet_gateway" "igw" {
   depends_on = [aws_vpc.eks_vpc]
 }
 
-resource "aws_subnet" "public-subnet-2a" {
+resource "aws_subnet" "public" {
+  for_each                = var.public_subnets
   vpc_id                  = aws_vpc.eks_vpc.id
-  cidr_block              = var.pub_cidr_2a
-  availability_zone       = var.avai_zone_2a
+  cidr_block              = each.value.cidr
+  availability_zone       = each.value.az
   map_public_ip_on_launch = true
 
   tags = {
-    Name                                        = "Public-subnet-2a"
+    Name                                        = each.key
     "kubernetes.io/role/elb"                    = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
-}
 
+  depends_on = [aws_vpc.eks_vpc]
 
-resource "aws_subnet" "public-subnet-2b" {
-  vpc_id                  = aws_vpc.eks_vpc.id
-  cidr_block              = var.pub_cidr_2b
-  availability_zone       = var.avai_zone_2b
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name                                        = "Public-subnet-2b"
-    "kubernetes.io/role/elb"                    = "1"
-    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [tags]
   }
 }
-
-
 
 resource "aws_route_table" "public-rt" {
   vpc_id = aws_vpc.eks_vpc.id
@@ -169,53 +159,44 @@ resource "aws_route_table" "public-rt" {
   }
 
   tags = {
-  Name = "public-rt" }
+    Name = "public-rt"
+  }
 
   depends_on = [aws_vpc.eks_vpc, aws_internet_gateway.igw]
 }
 
-
-
-resource "aws_route_table_association" "pub-route-association-2a" {
-
+resource "aws_route_table_association" "public" {
+  for_each       = aws_subnet.public
+  subnet_id      = each.value.id
   route_table_id = aws_route_table.public-rt.id
-  subnet_id      = aws_subnet.public-subnet-2a.id
-
 }
 
-resource "aws_route_table_association" "pub-route-association-2b" {
-  route_table_id = aws_route_table.public-rt.id
-  subnet_id      = aws_subnet.public-subnet-2b.id
-}
-
-
-
-resource "aws_subnet" "private-subnet-2a" {
+resource "aws_subnet" "private" {
+  for_each                = var.private_subnets
   vpc_id                  = aws_vpc.eks_vpc.id
-  cidr_block              = var.priv_cidr_2c
-  availability_zone       = var.avai_zone_2a
+  cidr_block              = each.value.cidr
+  availability_zone       = each.value.az
   map_public_ip_on_launch = false
 
   tags = {
-    Name                                        = "Private-subnet-2a"
+    Name                                        = each.key
     "kubernetes.io/role/internal-elb"           = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
     "karpenter.sh/discovery"                    = var.cluster_name
   }
+
+  depends_on = [aws_vpc.eks_vpc]
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = [tags]
+  }
 }
 
-resource "aws_subnet" "private-subnet-2b" {
-  vpc_id                  = aws_vpc.eks_vpc.id
-  cidr_block              = var.priv_cidr_2d
-  availability_zone       = var.avai_zone_2b
-  map_public_ip_on_launch = false
-
-  tags = {
-    Name                                        = "Private-subnet-2b"
-    "kubernetes.io/role/internal-elb"           = "1"
-    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "karpenter.sh/discovery"                    = var.cluster_name
-  }
+resource "aws_route_table_association" "private" {
+  for_each       = aws_subnet.private
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.private-rt.id
 }
 
 
@@ -229,7 +210,7 @@ resource "aws_eip" "ngw-eip" {
 }
 
 resource "aws_nat_gateway" "ngw" {
-  subnet_id     = aws_subnet.public-subnet-2b.id
+  subnet_id     = aws_subnet.public["public-subnet-2b"].id
   allocation_id = aws_eip.ngw-eip.id
 
   tags = {
@@ -258,20 +239,16 @@ resource "aws_route_table" "private-rt" {
 
 }
 
-resource "aws_route_table_association" "private-route-association-2a" {
+#resource "aws_route_table_association" "private-route-association-2a" {
 
-  route_table_id = aws_route_table.private-rt.id
-  subnet_id      = aws_subnet.private-subnet-2a.id
+#route_table_id = aws_route_table.private-rt.id
+#subnet_id      = aws_subnet.public["private-subnet-2a"].id
+#}
 
-
-}
-
-resource "aws_route_table_association" "private-route-association-2b" {
-
-  route_table_id = aws_route_table.private-rt.id
-  subnet_id      = aws_subnet.private-subnet-2b.id
-
-}
+#resource "aws_route_table_association" "private-route-association-2b" {
+#route_table_id = aws_route_table.private-rt.id
+#subnet_id      = aws_subnet.public["private-subnet-2b"].id
+#}
 
 
 ###CloudWatch for VPC logs

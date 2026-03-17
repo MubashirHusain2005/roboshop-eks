@@ -1,9 +1,10 @@
 terraform {
   backend "s3" {
-    bucket  = "terraformstatebucket00534353432534523"
-    key     = "envs/dev/eks/terraform.tfstate"
-    region  = "eu-west-2"
-    encrypt = true
+    bucket       = "terraformstatebucket00534353432534523"
+    key          = "envs/dev/eks/terraform.tfstate"
+    region       = "eu-west-2"
+    encrypt      = true
+    use_lockfile = true
   }
   required_version = "1.13.3"
 
@@ -57,12 +58,13 @@ module "eks" {
   vpc_id               = module.vpc.vpc_id
   iam_cluster_role_arn = module.iam.iam_cluster_role_arn
   nodegroup_role_arn   = module.iam.nodegroup_role_arn
-  priv_subnet2a_id     = module.vpc.priv_subnet2a_id
-  priv_subnet2b_id     = module.vpc.priv_subnet2b_id
-  kms_key_arn          = module.vpc.kms_key_arn
-  node_group_name      = var.node_group_name
-  node_group_name_2    = var.node_group_name_2
-  depends_on           = [module.iam, module.vpc]
+  private_subnet_ids   = values(module.vpc.private_subnet_ids)
+  #priv_subnet2a_id     = module.vpc.priv_subnet2a_id
+  #priv_subnet2b_id     = module.vpc.priv_subnet2b_id
+  kms_key_arn       = module.vpc.kms_key_arn
+  node_group_name   = var.node_group_name
+  node_group_name_2 = var.node_group_name_2
+  depends_on        = [module.iam, module.vpc]
 }
 
 module "security-group" {

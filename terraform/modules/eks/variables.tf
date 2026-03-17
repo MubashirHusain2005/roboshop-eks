@@ -21,23 +21,27 @@ variable "nodegroup_role_arn" {
   type = string
 }
 
-variable "priv_sub_2c" {
-  type    = string
-  default = "10.0.3.0/24"
-}
+#variable "priv_sub_2c" {
+#type    = string
+#default = "10.0.3.0/24"
+#}
 
-variable "priv_sub_2d" {
-  type    = string
-  default = "10.0.4.0/24"
-}
+#variable "priv_sub_2d" {
+#type    = string
+#default = "10.0.4.0/24"
+#}
 
 
-variable "priv_subnet2a_id" {
-  type = string
-}
+#variable "priv_subnet2a_id" {
+#type = string
+#}
 
-variable "priv_subnet2b_id" {
-  type = string
+#variable "priv_subnet2b_id" {
+#type = string
+#}
+
+variable "private_subnet_ids" {
+  type = list(string)
 }
 
 variable "kms_key_arn" {

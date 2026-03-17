@@ -28,7 +28,6 @@ terraform {
   }
 }
 
-
 resource "kubectl_manifest" "monitoring_namespace" {
   yaml_body = <<EOF
 apiVersion: v1
@@ -57,7 +56,7 @@ resource "helm_release" "prometheus" {
   ]
 
 
-  depends_on = [var.cluster_name,
+  depends_on = [
     kubectl_manifest.monitoring_namespace,
   ]
 }

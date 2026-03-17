@@ -27,7 +27,6 @@ terraform {
   }
 }
 
-
 resource "aws_security_group" "eks-cluster" {
   name        = "cluster-sg"
   description = "Controls who can talk to the EKS Control Plane"
@@ -42,7 +41,8 @@ resource "aws_security_group" "eks-cluster" {
   }
 
   tags = {
-    Name = "cluster-sg"
+    Name                                     = "cluster-sg"
+    "kubernetes.io/cluster${var.cluster_id}" = "owned"
   }
 }
 
@@ -68,7 +68,6 @@ resource "aws_security_group" "nodes" {
   }
 
 
-
   ingress {
     description = "Allow SSH traffic from VPC only"
     from_port   = 22
@@ -79,8 +78,9 @@ resource "aws_security_group" "nodes" {
   }
 
   tags = {
-    Name                     = "node-sg"
-    "karpenter.sh/discovery" = var.cluster_id
+    Name                                     = "node-sg"
+    "karpenter.sh/discovery"                 = var.cluster_id
+    "kubernetes.io/cluster${var.cluster_id}" = "owned"
   }
 
 }
@@ -107,6 +107,7 @@ resource "aws_security_group_rule" "node_ingress_from_cluster" {
   security_group_id        = aws_security_group.nodes.id
 
 }
+
 
 resource "aws_security_group_rule" "node_ingress_webhook" {
   description              = "Allow cluster to reach node webhooks"

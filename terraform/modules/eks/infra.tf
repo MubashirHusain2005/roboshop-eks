@@ -31,10 +31,10 @@ terraform {
 #EKS AWS authentication,AWS IAM trusts identity tokens issued by my EKS cluster
 
 
-data "aws_eks_cluster" "eks" {
-  name       = aws_eks_cluster.eks_cluster.name
-  depends_on = [aws_eks_cluster.eks_cluster]
-}
+#data "aws_eks_cluster" "eks" {
+#name       = aws_eks_cluster.eks_cluster.name
+#depends_on = [aws_eks_cluster.eks_cluster]
+#}
 
 data "tls_certificate" "eks" {
   url = data.aws_eks_cluster.eks.identity[0].oidc[0].issuer
@@ -45,6 +45,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
   thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
   url             = data.aws_eks_cluster.eks.identity[0].oidc[0].issuer
 }
+
 
 #EKS 
 
@@ -63,12 +64,10 @@ resource "aws_eks_cluster" "eks_cluster" {
 
   # Tells EKS which subnets to use for control-plane ENIs
   vpc_config {
-    subnet_ids = [
-      var.priv_subnet2a_id,
-      var.priv_subnet2b_id
-    ]
+    subnet_ids = var.private_subnet_ids
+
     endpoint_private_access = true
-    endpoint_public_access  = true
+    endpoint_public_access  = false ##Was true
   }
 
   encryption_config {
@@ -215,10 +214,7 @@ resource "aws_eks_node_group" "private_node_1" {
   node_role_arn   = var.nodegroup_role_arn
   node_group_name = var.node_group_name
 
-  subnet_ids = [
-    var.priv_subnet2a_id,
-    var.priv_subnet2b_id
-  ]
+  subnet_ids = var.private_subnet_ids
 
   capacity_type  = "ON_DEMAND"
   instance_types = ["t3.large"]
@@ -235,7 +231,7 @@ resource "aws_eks_node_group" "private_node_1" {
 
 
   update_config {
-    max_unavailable = 1
+    max_unavailable = 1 #Only one node should be taken offline during drainage
   }
 
 
@@ -255,10 +251,8 @@ resource "aws_eks_node_group" "private_node_2" {
   node_role_arn   = var.nodegroup_role_arn
   node_group_name = var.node_group_name_2
 
-  subnet_ids = [
-    var.priv_subnet2a_id,
-    var.priv_subnet2b_id
-  ]
+  subnet_ids = var.private_subnet_ids
+
 
   capacity_type  = "ON_DEMAND"
   instance_types = ["t3.large"]
@@ -270,7 +264,7 @@ resource "aws_eks_node_group" "private_node_2" {
   }
 
   labels = {
-    workload = "app"   ##Label for  Node affinity
+    workload = "app" ##Label for  Node affinity
   }
 
 

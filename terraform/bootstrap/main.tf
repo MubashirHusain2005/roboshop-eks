@@ -78,22 +78,23 @@ resource "aws_s3_bucket_policy" "s3_bucket_policy" {
 
 ##DynamoDB for Statelock
 
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "state-lock"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
+#resource "aws_dynamodb_table" "terraform_locks" {
+#name         = "state-lock"
+#billing_mode = "PAY_PER_REQUEST"
+#hash_key     = "LockID"
 
 
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
+#attribute {
+#name = "LockID"
+#type = "S"
+#}
 
-  tags = {
-    Name        = "terraform-lock"
-    description = "Terraform State lock for EKS"
-  }
-}
+#tags = {
+# Name        = "terraform-lock"
+#description = "Terraform State lock for EKS"
+#}
+#}
+
 
 
 #OIDC for github actions
@@ -130,7 +131,7 @@ resource "aws_iam_role" "github_oidc_role" {
             "token.actions.githubusercontent.com:aud" : "sts.amazonaws.com"
           },
           "StringLike" : {
-            "token.actions.githubusercontent.com:sub" : "repo:MubashirHusain2005/gatus-eks:*"
+            "token.actions.githubusercontent.com:sub" : "repo:MubashirHusain2005/roboshop-eks:*"
           }
         }
       },
@@ -165,18 +166,18 @@ resource "aws_iam_policy" "oidc_access_aws" {
       },
 
 
-      {
-        Sid    = "DynamoDBTableAccess"
-        Effect = "Allow"
-        Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:DescribeTable",
-          "dynamodb:UpdateItem"
-        ]
-        Resource = "arn:aws:dynamodb:eu-west-2:038774803581:table/terraform-lock"
-      },
+      #  {
+      # Sid    = "DynamoDBTableAccess"
+      #   Effect = "Allow"
+      #  Action = [
+      #    "dynamodb:GetItem",
+      #   "dynamodb:PutItem",
+      #  "dynamodb:DeleteItem",
+      #  "dynamodb:DescribeTable",
+      #  "dynamodb:UpdateItem"
+      #  ]
+      #  Resource = "arn:aws:dynamodb:eu-west-2:038774803581:table/terraform-lock"
+      # },
 
       {
         Sid    = "AccessToKMS"
@@ -538,89 +539,6 @@ resource "aws_ecr_lifecycle_policy" "ecr_policy_dispatch" {
   })
 }
 
-
-#ECR to store my fluentd Docker image
-resource "aws_ecr_repository" "fluentd" {
-  name                 = var.fluentd
-  image_tag_mutability = var.image_tag_mutability
-
-  # Scan images for vulnerabilities on push
-  image_scanning_configuration {
-    scan_on_push = var.scan_on_push
-  }
-
-  # Encryption at rest
-  encryption_configuration {
-    encryption_type = "KMS"
-    kms_key         = aws_kms_key.kms_key.arn
-  }
-
-}
-
-##ECR lifecycle policy to clean up old images to save on storage costs
-
-resource "aws_ecr_lifecycle_policy" "ecr_policy_fluentd" {
-  repository = aws_ecr_repository.fluentd.name
-
-  policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1
-        description  = "Keep only 12 most recent images"
-        selection = {
-          tagStatus   = "any"
-          countType   = "imageCountMoreThan"
-          countNumber = 12
-        }
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
-}
-
-
-#ECR to store my load-gen Docker image
-resource "aws_ecr_repository" "loadgen" {
-  name                 = var.loadgen
-  image_tag_mutability = var.image_tag_mutability
-
-  # Scan images for vulnerabilities on push
-  image_scanning_configuration {
-    scan_on_push = var.scan_on_push
-  }
-
-  # Encryption at rest
-  encryption_configuration {
-    encryption_type = "KMS"
-    kms_key         = aws_kms_key.kms_key.arn
-  }
-
-}
-
-##ECR lifecycle policy to clean up old images to save on storage costs
-
-resource "aws_ecr_lifecycle_policy" "ecr_policy_loadgen" {
-  repository = aws_ecr_repository.loadgen.name
-
-  policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1
-        description  = "Keep only 12 most recent images"
-        selection = {
-          tagStatus   = "any"
-          countType   = "imageCountMoreThan"
-          countNumber = 12
-        }
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
-}
 
 
 #ECR to store my mongo Docker image

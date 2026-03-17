@@ -46,6 +46,11 @@ resource "aws_iam_role" "cluster" {
       },
     ]
   })
+
+  tags = {
+    Name    = "iam-role-cluster"
+    Purpose = "iam-access-aws"
+  }
 }
 
 #IAM policies for the cluster
@@ -76,6 +81,11 @@ resource "aws_iam_role" "nodes" {
     }]
     Version = "2012-10-17"
   })
+
+  tags = {
+    Name    = "iam-role-nodes"
+    Purpose = "nodes-aws-access"
+  }
 }
 
 #IAM policies for the nodes
@@ -94,10 +104,10 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
   role       = aws_iam_role.nodes.name
 }
 
-resource "aws_iam_role_policy_attachment" "AmazonSSMManagedInstanceCore" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  role       = aws_iam_role.nodes.name
-}
+#resource "aws_iam_role_policy_attachment" "AmazonSSMManagedInstanceCore" {
+#policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+#role       = aws_iam_role.nodes.name
+#}
 
 
 resource "aws_iam_role_policy_attachment" "node_group_elb_policy" {
@@ -108,8 +118,9 @@ resource "aws_iam_role_policy_attachment" "node_group_elb_policy" {
 
 ###Roles for CloudWatch
 
+
 resource "aws_iam_role" "vpc_flow_logs_role" {
-  name = "cloud-watch"
+  name = "vpc-flow-logs-cloudwatch-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -125,6 +136,11 @@ resource "aws_iam_role" "vpc_flow_logs_role" {
       },
     ]
   })
+
+  tags = {
+    Name    = "vpc-flow-logs-cloudwatch-role"
+    Purpose = "vpc-flow-logs"
+  }
 }
 
 resource "aws_iam_policy" "vpc_flow_logs_policy" {
@@ -140,17 +156,23 @@ resource "aws_iam_policy" "vpc_flow_logs_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents",
           "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
+          "logs:DescribeLogStreams",
+          "logs:DeleteLogGroup"
         ]
         Resource = "*"
       }
     ]
   })
+
+  tags = {
+    Name    = "vpc-flow-logs-cloudwatch-policy"
+    Purpose = "vpc-flow-logs"
+  }
 }
 
 #IAM policy attachement for CloudWatch
 resource "aws_iam_role_policy_attachment" "vpc_flow_logs_attach" {
-  role       = aws_iam_role.vpc_flow_logs_role.id
+  role       = aws_iam_role.vpc_flow_logs_role.name
   policy_arn = aws_iam_policy.vpc_flow_logs_policy.arn
 }
 
