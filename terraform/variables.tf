@@ -8,10 +8,10 @@ variable "clus_vers" {
   type    = string
 }
 
-variable "cluster_name" {
-  type    = string
-  default = "eks-cluster"
-}
+#variable "cluster_name" {
+ # type    = string
+  #default = "eks-cluster"
+#}
 
 variable "node_group_name" {
   type    = string
@@ -45,8 +45,8 @@ variable "external_dns_rolename" {
   default = "iam-dns"
 }
 
-variable "cert_name" {
-  type    = string
-  default = "cert-manager"
-}
+#variable "cert_name" {
+  #type    = string
+  #default = "cert-manager"
+#}
 
