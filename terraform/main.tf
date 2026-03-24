@@ -67,12 +67,6 @@ module "eks" {
   depends_on        = [module.iam, module.vpc]
 }
 
-module "security-group" {
-  source                    = "./modules/security-group"
-  vpc_id                    = module.vpc.vpc_id
-  cluster_id                = module.eks.cluster_id
-  cluster_security_group_id = module.eks.cluster_security_group_id
-}
 
 module "karpenter" {
 
@@ -158,7 +152,7 @@ module "cert-manager" {
   oidc_issuer_url          = module.eks.oidc_issuer_url
 
   depends_on = [
-    module.eks,
+    module.eks
   ]
 }
 
@@ -177,7 +171,7 @@ module "external-dns" {
   external_dns_values_file = "${path.root}/../robotshop-application/external-dns-values.tpl.yaml"
 
   depends_on = [
-    module.eks,
+    module.eks
   ]
 }
 
@@ -188,37 +182,26 @@ module "argocd" {
   private_node_1_name = module.eks.private_node_1_name
   private_node_2_name = module.eks.private_node_2_name
 
-  depends_on = [module.eks, module.istio, module.security-group, module.eso, module.external-dns, module.cert-manager, module.karpenter, module.prometheus, module.grafana]
+  depends_on = [module.eks, module.istio, module.eso, module.external-dns, module.cert-manager, module.karpenter]
 }
 
-module "prometheus" {
-  source = "./modules/prometheus"
-
-  cluster_name           = module.eks.cluster_name
-  cluster_endpoint       = module.eks.cluster_endpoint
-  private_node_1_name    = module.eks.private_node_1_name
-  private_node_2_name    = module.eks.private_node_2_name
-  prometheus_values_file = "${path.root}/../robotshop-application/prometheus-values.yaml"
-
-  depends_on = [module.eks, module.istio, module.eso]
-}
-
-module "grafana" {
-  source = "./modules/grafana"
-
-  cluster_name         = module.eks.cluster_name
-  monitoring_namespace = module.prometheus.monitoring_namespace
-  prometheus_helmchart = module.prometheus.prometheus_helmchart
-  private_node_1_name  = module.eks.private_node_1_name
-  private_node_2_name  = module.eks.private_node_2_name
-
-  depends_on = [module.prometheus]
-}
 
 module "istio" {
   source             = "./modules/istio"
   istiod_values_file = "${path.root}/../robotshop-application/istiod-values.yaml"
   cluster_id         = module.eks.cluster_id
+}
+
+module "monitoring" {
+  source                 = "./modules/monitoring"
+  cluster_name           = module.eks.cluster_name
+  monitoring_namespace   = var.monitoring_namespace
+  private_node_1_name    = module.eks.private_node_1_name
+  private_node_2_name    = module.eks.private_node_2_name
+  cluster_endpoint       = module.eks.cluster_endpoint
+  prometheus_values_file = "${path.root}/../robotshop-application/prometheus-values.yaml"
+
+  depends_on = [module.eks, module.istio, module.eso]
 }
 
 module "eso" {

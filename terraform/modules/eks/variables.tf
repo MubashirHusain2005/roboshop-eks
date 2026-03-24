@@ -7,10 +7,6 @@ variable "clus_vers" {
   type = string
 }
 
-variable "vpc_id" {
-  type = string
-}
-
 
 variable "iam_cluster_role_arn" {
   type = string
@@ -82,3 +78,14 @@ variable "oidc_name" {
   type    = string
   default = "github.to.aws.oidc"
 }
+
+variable "vpc_id" {
+  type = string
+}
+
+
+variable "vpc_cidr_block" {
+  type    = string
+  default = "10.0.0.0/16"
+}
+

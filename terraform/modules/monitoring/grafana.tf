@@ -43,7 +43,6 @@ resource "helm_release" "grafana" {
 
   depends_on = [var.cluster_name,
     var.monitoring_namespace,
-    var.prometheus_helmchart
+    helm_release.prometheus
   ]
 }
-

@@ -1,6 +1,3 @@
-############################################
-# DATA-SPACE SERVICES
-############################################
 apiVersion: v1
 kind: Service
 metadata:
@@ -54,10 +51,6 @@ spec:
     port: {{ .Values.rabbitmq.port }}
     targetPort: {{ .Values.rabbitmq.port }}
 ---
-
-############################################
-# APP-SPACE SERVICES
-############################################
 apiVersion: v1
 kind: Service
 metadata:

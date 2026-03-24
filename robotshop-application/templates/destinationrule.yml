@@ -1,6 +1,3 @@
-############################################
-# DESTINATION RULE
-############################################
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
@@ -22,5 +19,5 @@ spec:
   - name: canary
     labels:
       version: {{ .Values.web.canaryVersion }}
----
+
 

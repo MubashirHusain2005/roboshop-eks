@@ -319,7 +319,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-    
+
       {
         Effect = "Allow"
         Action = [
@@ -380,7 +380,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           }
         }
       },
-     
+
       {
         Effect = "Allow"
         Action = [
@@ -394,11 +394,11 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Condition = {
           StringEquals = {
             "aws:RequestedRegion" = var.aws_region
-           
+
           }
         }
       },
-    
+
       {
         Effect = "Allow"
         Action = [
@@ -408,7 +408,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Condition = {
           StringLike = {
             "ec2:ResourceTag/karpenter.sh/discovery" = var.cluster_id
-           
+
           }
         }
       },
@@ -674,7 +674,7 @@ EOF
 
   depends_on = [
     helm_release.karpenter,
-    kubectl_manifest.karpenter_node_class 
+    kubectl_manifest.karpenter_node_class
   ]
 }
 
@@ -687,13 +687,13 @@ resource "kubernetes_config_map_v1" "aws_auth" {
 
   data = {
     mapRoles = yamlencode([
-      
+
       {
         rolearn  = var.nodegroup_role_arn
         username = "system:node:{{EC2PrivateDNSName}}"
         groups   = ["system:bootstrappers", "system:nodes"]
       },
-      
+
       {
         rolearn  = aws_iam_role.karpenter_profile_instance_role.arn
         username = "system:node:{{EC2PrivateDNSName}}"

@@ -41,4 +41,8 @@ variable "external_dns_rolename" {
   default = "iam-dns"
 }
 
-
+variable "monitoring_namespace" {
+  description = "Namespace to deploy observability charts"
+  type        = string
+  default     = "monitoring"
+}

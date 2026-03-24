@@ -1,11 +1,3 @@
-variable "cluster_name" {
-  type = string
-}
-
-variable "monitoring_namespace" {
-  type    = string
-  default = "monitoring"
-}
 
 variable "cluster_endpoint" {
   type = string
@@ -27,5 +19,17 @@ variable "prometheus_values_file" {
 variable "prometheus_secret_name" {
   type    = string
   default = "prometheus-db-creds"
+}
+
+##Grafana
+
+variable "cluster_name" {
+  type = string
+}
+
+variable "monitoring_namespace" {
+  description = "Namespace to deploy observability charts"
+  type        = string
+  default     = "monitoring"
 }
 

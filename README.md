@@ -1,4 +1,4 @@
-E-Commerce Platform — Microservice Application hosted on EKS with Istio
+#E-Commerce Platform — Microservice Application hosted on EKS with Istio
 
 ![Running app](app.PNG)
 
@@ -212,7 +212,6 @@ Consolidates underutilised nodes to reduce cost
 
 10.Istio-
 
-
 IAM and Security
 All pod-to-AWS authentication uses IRSA — no static credentials, no node-level IAM policies shared across all pods.
 ComponentIAM permissionscert-managerroute53:ChangeResourceRecordSets, route53:ListHostedZones, route53:GetChangeexternal-dnsroute53:ChangeResourceRecordSets, route53:ListHostedZones, route53:ListResourceRecordSetsExternal Secrets Operatorsecretsmanager:GetSecretValue, secretsmanager:DescribeSecretEBS CSI Driverec2:CreateVolume, ec2:AttachVolume, ec2:DeleteVolume and relatedKarpenterEC2 provisioning and SQS permissions
@@ -228,14 +227,19 @@ Envoy sidecar (every pod)
 Kiali also reads Kubernetes API and Istio config directly to surface VirtualService/DestinationRule misconfigurations alongside live traffic data.
 
 
-<Add kiali map pic here>
+<Add my kiali map pic here>
 
 
-Planned Improvements:
+Statistics
 
- Run all my containers as non-root users
+- Reduced deployment time by 20% but writing CI/CD pipelines
+- Reduced image size overall by 35% by using multi-stage builds and alpine images where possible
+
+Planned Improvements and Further Reading:
+
+ Run all my containers as non-root users to reduce attack surface
  Persistent storage for Prometheus metrics (currently lost on pod restart)
- Thanos for Prometheus high availability and long-term storage (prevents duplicate scraping across replicas)
+ Thanos for Prometheus high availability and long-term storage (prevents duplicate scraping if I were to have multiple prometheus replicas)
  PeerAuthentication: STRICT mesh-wide to enforce mTLS between all services
  AuthorizationPolicy per service to restrict which services can call which
  AWS WAF on the ALB 

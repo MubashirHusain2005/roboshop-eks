@@ -1,6 +1,3 @@
-############################################
-# GATEWAY
-############################################
 apiVersion: networking.istio.io/v1beta1
 kind: Gateway
 metadata:
@@ -28,9 +25,6 @@ spec:
     hosts:
       {{- toYaml .Values.gateway.httpsHosts | nindent 6 }}
 ---
-############################################
-# CERTIFICATE
-############################################
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -44,9 +38,6 @@ spec:
   dnsNames:
     {{- toYaml .Values.certificate.dnsNames | nindent 4 }}
 ---
-##########################################
-# Virtual Service
-###########################################
 
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -194,9 +185,7 @@ spec:
         subset: canary          
       weight: {{ .Values.web.canaryWeight }}
 
-############################################
-# VIRTUAL SERVICE: ARGOCD
-############################################
+---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:

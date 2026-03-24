@@ -1,6 +1,3 @@
-############################################
-# RESOURCE QUOTAS
-############################################
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -27,10 +24,6 @@ spec:
     limits.memory: {{ .Values.quotas.data.limits.memory }}
     pods: {{ .Values.quotas.data.pods | quote }}
 ---
-
-############################################
-# SECRETS / CONFIGMAPS
-############################################
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -41,10 +34,6 @@ data:
     appendonly {{ .Values.redis.config.appendonly }}
     appendfsync {{ .Values.redis.config.appendfsync }}
 ---
-
-############################################
-# DATA-SPACE: MONGO
-############################################
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -102,10 +91,6 @@ spec:
         requests:
           storage: {{ .Values.mongo.storage }}
 ---
-
-############################################
-# APP-SPACE: MYSQL
-############################################
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -224,10 +209,6 @@ spec:
         requests:
           storage: {{ .Values.mysql.storage }}
 ---
-
-############################################
-# DATA-SPACE: REDIS
-############################################
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -299,9 +280,6 @@ spec:
           storage: {{ .Values.redis.storage }}
 ---
 
-############################################
-# DATA-SPACE: RABBITMQ
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -374,10 +352,6 @@ spec:
           initialDelaySeconds: 20
           periodSeconds: 10
 ---
-
-############################################
-# APP-SPACE: CART
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -428,10 +402,6 @@ spec:
           initialDelaySeconds: {{ .Values.cart.probes.initialDelaySeconds }}
           periodSeconds: {{ .Values.cart.probes.periodSeconds }}
 ---
-
-############################################
-# APP-SPACE: CATALOGUE
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -476,10 +446,6 @@ spec:
           initialDelaySeconds: {{ .Values.catalogue.probes.initialDelaySeconds }}
           periodSeconds: {{ .Values.catalogue.probes.periodSeconds }}
 ---
-
-############################################
-# APP-SPACE: DISPATCH
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -507,10 +473,6 @@ spec:
             cpu: {{ .Values.dispatch.resources.limits.cpu }}
             memory: {{ .Values.dispatch.resources.limits.memory }}
 ---
-
-############################################
-# APP-SPACE: SHIPPING
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -564,10 +526,6 @@ spec:
             periodSeconds: {{ .Values.shipping.probes.liveness.periodSeconds }}
             failureThreshold: {{ .Values.shipping.probes.liveness.failureThreshold }}
 ---
-
-############################################
-# APP-SPACE: PAYMENT
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -624,10 +582,6 @@ spec:
           initialDelaySeconds: {{ .Values.payment.probes.initialDelaySeconds }}
           periodSeconds: {{ .Values.payment.probes.periodSeconds }}
 ---
-
-############################################
-# APP-SPACE: RATINGS
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -662,10 +616,6 @@ spec:
             cpu: {{ .Values.ratings.resources.limits.cpu }}
             memory: {{ .Values.ratings.resources.limits.memory }}
 ---
-
-############################################
-# APP-SPACE: USER
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -710,10 +660,6 @@ spec:
             cpu: {{ .Values.user.resources.limits.cpu }}
             memory: {{ .Values.user.resources.limits.memory }}
 ---
-
-############################################
-# APP-SPACE: WEB
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -753,9 +699,6 @@ spec:
             memory: {{ .Values.web.resources.limits.memory }}
 
 --- 
-############################################
-# APP-SPACE: WEB-2
-############################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:

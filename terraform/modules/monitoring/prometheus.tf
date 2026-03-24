@@ -1,33 +1,3 @@
-terraform {
-  required_providers {
-
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 6.2.0"
-    }
-
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = ">= 2.23.0"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = ">= 2.12.0"
-    }
-
-    kubectl = {
-      source  = "gavinbunney/kubectl"
-      version = ">= 1.7.0"
-    }
-
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.2"
-    }
-
-  }
-}
-
 ##Calls existing secret store from AWS
 data "aws_secretsmanager_secret" "prometheus_secrets" {
   name = var.prometheus_secret_name
@@ -205,7 +175,3 @@ EOF
   depends_on = [helm_release.prometheus]
 
 }
-
-
-
-
