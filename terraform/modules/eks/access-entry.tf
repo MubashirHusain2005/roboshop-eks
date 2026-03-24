@@ -10,22 +10,22 @@ data "aws_iam_role" "github_oidc_role" {
 }
 
 #resource "aws_eks_access_entry" "github_role" {
- # cluster_name      = aws_eks_cluster.eks_cluster.name
- # principal_arn     = data.aws_iam_role.github_oidc_role.arn
- # kubernetes_groups = ["dev-admins"]
- # type              = "STANDARD"
+# cluster_name      = aws_eks_cluster.eks_cluster.name
+# principal_arn     = data.aws_iam_role.github_oidc_role.arn
+# kubernetes_groups = ["dev-admins"]
+# type              = "STANDARD"
 #}
 
 #resource "aws_eks_access_policy_association" "github_role_admin" {
-  #cluster_name  = var.cluster_name
-  #principal_arn = data.aws_iam_role.github_oidc_role.arn
- # policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+#cluster_name  = var.cluster_name
+#principal_arn = data.aws_iam_role.github_oidc_role.arn
+# policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
-  #access_scope {
-   # type = "cluster"
-  #}
+#access_scope {
+# type = "cluster"
+#}
 
-  #depends_on = [aws_eks_access_entry.github_role]
+#depends_on = [aws_eks_access_entry.github_role]
 #}
 
 # Terraform IAM User
