@@ -7,25 +7,44 @@ on:
         description: 'Lock ID to force unlock'
         required: true
 
+env:
+  AWS_REGION: eu-west-2
+  TF_VERSION: 1.13.3
+  TF_STATE_KEY: envs/dev/eks/terraform.tfstate
+
 jobs:
   unlock:
+    name: "Terraform Force Unlock"
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+    defaults:
+      run:
+        working-directory: ./terraform
+    permissions:
+      id-token: write
+      contents: read
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: eu-west-2
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
 
       - name: Terraform Init
-        run: terraform init
-        working-directory: terraform/
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.S3_BUCKET }}" \
+            -backend-config="key=${{ env.TF_STATE_KEY }}" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="encrypt=true"
 
       - name: Force Unlock
         run: terraform force-unlock -force ${{ inputs.lock_id }}
-        working-directory: terraform/
