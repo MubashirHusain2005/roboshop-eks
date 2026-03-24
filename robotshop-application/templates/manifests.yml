@@ -479,7 +479,7 @@ spec:
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           envFrom:
             - secretRef:
-                name: {{ .Values.mysql.secretName }}
+                name: {{ .Values.shipping.secretName }}
           ports:
             - containerPort: {{ .Values.shipping.port }}
           resources:

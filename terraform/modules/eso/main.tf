@@ -461,3 +461,4 @@ EOF
     data.aws_secretsmanager_secret.prometheus_secrets
   ]
 }
+
