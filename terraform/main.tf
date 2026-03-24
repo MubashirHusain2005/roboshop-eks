@@ -234,9 +234,9 @@ module "eso" {
   depends_on                   = [module.eks]
 }
 
-# =========================================
+
 # Cleanup Null Resources
-# =========================================
+
 resource "null_resource" "cleanup_script" {
   provisioner "local-exec" {
     command = <<EOT

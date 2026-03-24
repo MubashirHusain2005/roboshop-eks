@@ -319,7 +319,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      # Read-only EC2 describe actions (safe to keep broad)
+    
       {
         Effect = "Allow"
         Action = [
@@ -380,7 +380,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           }
         }
       },
-      # EC2 CreateTags - only on Karpenter-tagged resources
+     
       {
         Effect = "Allow"
         Action = [
@@ -394,11 +394,11 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Condition = {
           StringEquals = {
             "aws:RequestedRegion" = var.aws_region
-            # ✅ Only in this region
+           
           }
         }
       },
-      # EC2 TerminateInstances - only tagged instances
+    
       {
         Effect = "Allow"
         Action = [
@@ -408,7 +408,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Condition = {
           StringLike = {
             "ec2:ResourceTag/karpenter.sh/discovery" = var.cluster_id
-            # ✅ Only instances tagged with cluster ID
+           
           }
         }
       },
@@ -674,7 +674,7 @@ EOF
 
   depends_on = [
     helm_release.karpenter,
-    kubectl_manifest.karpenter_node_class # ✅ node class must exist first
+    kubectl_manifest.karpenter_node_class 
   ]
 }
 
@@ -687,13 +687,13 @@ resource "kubernetes_config_map_v1" "aws_auth" {
 
   data = {
     mapRoles = yamlencode([
-      # your existing node group role
+      
       {
         rolearn  = var.nodegroup_role_arn
         username = "system:node:{{EC2PrivateDNSName}}"
         groups   = ["system:bootstrappers", "system:nodes"]
       },
-      # karpenter nodes role
+      
       {
         rolearn  = aws_iam_role.karpenter_profile_instance_role.arn
         username = "system:node:{{EC2PrivateDNSName}}"
@@ -711,37 +711,3 @@ resource "aws_eks_access_entry" "karpenter_node" {
 }
 
 
-##Karpenter Workflow
-
-#When AWS is about to terminate a Spot instance:
-
-#EventBridge captures it
-
-##EventBridge pushes it into SQS
-
-#Karpenter reads from SQS
-
-#Karpenter:
-
-#Cordon node
-
-#Drain pods
-
-#Launch replacement node
-
-#That’s graceful Spot handling.
-
-#1️⃣ AWS detects a Spot instance interruption → creates an EventBridge event
-
-#2️⃣ EventBridge rule (spot_interruption_rule or rebalance_recommendation_rule) matches the event
-
-#3️⃣ EventBridge sends the event to SQS queue (karpenter_interruption)
-
-#4️⃣ Karpenter controller (running in EKS, with IAM role) polls the SQS queue
-
-#5️⃣ Karpenter processes the message:
-# ├─ Marks Spot node for termination
-#  ├─ Launches replacement EC2 node using instance profile
-#  └─ Deletes the message from the queue
-
-#6️⃣ If a message fails 5 times, it goes to DLQ (karpenter_interruption_dlq) for debugging

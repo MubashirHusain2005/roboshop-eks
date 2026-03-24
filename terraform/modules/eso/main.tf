@@ -139,8 +139,8 @@ resource "aws_iam_policy" "iam_eso_policy" {
           "secretsmanager:GetResourcePolicy"
         ]
         Resource = [
-          "arn:aws:secretsmanager:eu-west-2:038774803581:secret:db-creds-*",           #this was just *
-          "arn:aws:secretsmanager:eu-west-2:038774803581:secret:prometheus-db-creds-*" #this was just *
+          "arn:aws:secretsmanager:eu-west-2:038774803581:secret:db-creds-*",           #this was just * before making it specifc to my secret on AWS
+          "arn:aws:secretsmanager:eu-west-2:038774803581:secret:prometheus-db-creds-*" #this was just *   before making it specifc to my secret on AWS
         ]
       }
     ]
