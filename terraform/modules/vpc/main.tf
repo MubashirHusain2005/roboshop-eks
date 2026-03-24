@@ -1,4 +1,3 @@
-###VPC Networking
 terraform {
   required_providers {
 
@@ -240,6 +239,7 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.eks_vpc.id
 
   route {
+    cidr_block = "0.0.0.0/0"
     # Use NAT Gateway in the same AZ
     nat_gateway_id = aws_nat_gateway.ngw[[
       for key, subnet in var.public_subnets :

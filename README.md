@@ -212,11 +212,11 @@ Bridges AWS Secrets Manager with Kubernetes-native secrets. Kubernetes secrets a
 **Prometheus** collects metrics from the cluster and service mesh.
 
 - Scrapes Envoy sidecar metrics at `:15090/stats/prometheus` on every pod — no app instrumentation required
-- MySQL and Redis exporters expose database metrics at `/metrics`
+- MySQL and Redis exporters expose MySQL and Redis database metrics at `/metrics`
 - `ServiceMonitor` resources define which endpoints to scrape
 - Key Istio metrics: `istio_requests_total`, `istio_request_duration_milliseconds`, `istio_request_bytes`
 
-![MySQL Exporter](mysqlexporter.PNG)
+![MySQL Exporter](images/mysqlexporter.PNG)
 
 **Grafana** visualises metrics from Prometheus.
 
