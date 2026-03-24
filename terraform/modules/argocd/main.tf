@@ -101,14 +101,16 @@ spec:
     path: robotshop-application
     helm:
       valueFiles:
-        - values.yml
+        - values.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: app-space        # fallback namespace only - overridden by manifest namespaces
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true    # creates any namespace that doesn't exist yet
 EOF
 
   depends_on = [
