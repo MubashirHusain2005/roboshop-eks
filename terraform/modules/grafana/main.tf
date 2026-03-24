@@ -47,37 +47,3 @@ resource "helm_release" "grafana" {
   ]
 }
 
-
-#resource "kubectl_manifest" "grafana_ingress" {
-#yaml_body  = <<EOF
-#apiVersion: networking.k8s.io/v1
-#kind: Ingress
-#metadata:
-#name: grafana
-#namespace: monitoring
-#annotations:
-#cert-manager.io/cluster-issuer: letsencrypt-staging
-#nginx.ingress.kubernetes.io/ssl-redirect: "true"
-#external-dns.alpha.kubernetes.io/hostname: grafana.mubashir.site
-#spec:
-#ingressClassName: nginx
-#tls:
-#- hosts:
-#- grafana.mubashir.site 
-#secretName: grafana-grafana-tls
-# rules:
-#- host: grafana.mubashir.site
-# http:
-# paths:
-# - path: /
-# pathType: Prefix
-# backend:
-# service:
-# name: grafana
-# port:
-#   number: 80
-
-#EOF
-#depends_on = [helm_release.grafana]
-
-#}

@@ -28,6 +28,8 @@ terraform {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 
 #Acts as the dead letter queue, so if the message fails to send after 5 attempts it goes here for debugging
 resource "aws_sqs_queue" "karpenter_interruption_dlq" {
@@ -135,8 +137,6 @@ resource "aws_cloudwatch_event_target" "spot_to_sqs" {
   target_id = "KarpenterSpotInterruption"
   arn       = aws_sqs_queue.karpenter_interruption.arn
 }
-
-
 
 
 ##IAM Instance Profile
@@ -312,52 +312,207 @@ resource "aws_iam_role" "karpenter_controller_role" {
 
   })
 }
-###Policy needs fixing 
+
 resource "aws_iam_policy" "iam_karpenter_policy" {
   name = "iampolicy-karpenter"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # Read-only EC2 describe actions (safe to keep broad)
       {
         Effect = "Allow"
         Action = [
-          "ssm:GetParameter",
-          "iam:PassRole",
-          "iam:CreateInstanceProfile",
-          "iam:DeleteInstanceProfile",
-          "iam:GetInstanceProfile",
-          "iam:AddRoleToInstanceProfile",
-          "iam:RemoveRoleFromInstanceProfile",
-          "iam:TagInstanceProfile",
           "ec2:DescribeImages",
-          "ec2:RunInstances",
           "ec2:DescribeSubnets",
           "ec2:DescribeSecurityGroups",
           "ec2:DescribeLaunchTemplates",
           "ec2:DescribeInstances",
           "ec2:DescribeInstanceTypes",
           "ec2:DescribeInstanceTypeOfferings",
-          "ec2:DeleteLaunchTemplate",
-          "ec2:CreateTags",
           "ec2:DescribeAvailabilityZones",
-          "ec2:TerminateInstances",
-          "ec2:CreateLaunchTemplate",
-          "ec2:CreateFleet",
           "ec2:DescribeSpotPriceHistory",
           "pricing:GetProducts",
+          "eks:DescribeCluster"
+        ]
+        Resource = "*"  
+      },
+      # IAM PassRole - only for specific Karpenter role
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = aws_iam_role.karpenter_profile_instance_role.arn
+       
+      },
+      # IAM Instance Profile management - scoped to Karpenter resources
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:CreateInstanceProfile",
+          "iam:DeleteInstanceProfile",
+          "iam:GetInstanceProfile",
+          "iam:AddRoleToInstanceProfile",
+          "iam:RemoveRoleFromInstanceProfile",
+          "iam:TagInstanceProfile"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/karpenter-*"
+      },
+  
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:RunInstances"
+        ]
+        Resource = [
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:instance/*",
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:volume/*",
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:network-interface/*",
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:security-group/*",
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:subnet/*",
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:launch-template/*"
+        ]
+        Condition = {
+          StringLike = {
+            "ec2:InstanceProfile" = aws_iam_role.karpenter_profile_instance_role.arn
+            
+          }
+        }
+      },
+      # EC2 CreateTags - only on Karpenter-tagged resources
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateTags"
+        ]
+        Resource = [
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:instance/*",
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:volume/*",
+          "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:network-interface/*"
+        ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = var.aws_region
+            # ✅ Only in this region
+          }
+        }
+      },
+      # EC2 TerminateInstances - only tagged instances
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:TerminateInstances"
+        ]
+        Resource = "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:instance/*"
+        Condition = {
+          StringLike = {
+            "ec2:ResourceTag/karpenter.sh/discovery" = var.cluster_id
+            # ✅ Only instances tagged with cluster ID
+          }
+        }
+      },
+      # EC2 DeleteLaunchTemplate
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DeleteLaunchTemplate"
+        ]
+        Resource = "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:launch-template/*"
+        Condition = {
+          StringLike = {
+            "ec2:ResourceTag/karpenter.sh/discovery" = var.cluster_id
+            
+          }
+        }
+      },
+      # EC2 CreateLaunchTemplate
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateLaunchTemplate"
+        ]
+        Resource = "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:launch-template/*"
+      },
+      # EC2 CreateFleet
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateFleet"
+        ]
+        Resource = "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:fleet/*"
+      },
+      # SQS - only specific queue
+      {
+        Effect = "Allow"
+        Action = [
           "sqs:SendMessage",
           "sqs:ReceiveMessage",
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes",
-          "sqs:GetQueueUrl",
-          "eks:DescribeCluster"
-        ],
-        Resource = "*"
+          "sqs:GetQueueUrl"
+        ]
+        Resource = aws_sqs_queue.karpenter_interruption.arn
+       
       },
+     
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter"
+        ]
+        Resource = "arn:aws:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/karpenter/*"
+      }
     ]
   })
 }
+
+###Policy needs fixing 
+#resource "aws_iam_policy" "iam_karpenter_policy" {
+ # name = "iampolicy-karpenter"
+
+ # policy = jsonencode({
+  #  Version = "2012-10-17"
+    #Statement = [
+    #  {
+     #   Effect = "Allow"
+      #  Action = [
+     #     "ssm:GetParameter",
+      #    "iam:PassRole",
+      #    "iam:CreateInstanceProfile",
+      #    "iam:DeleteInstanceProfile",
+       #   "iam:GetInstanceProfile",
+       #   "iam:AddRoleToInstanceProfile",
+       #   "iam:RemoveRoleFromInstanceProfile",
+        #  "iam:TagInstanceProfile",
+        #  "ec2:DescribeImages",
+        #  "ec2:RunInstances",
+       #   "ec2:DescribeSubnets",
+        #  "ec2:DescribeSecurityGroups",
+        #  "ec2:DescribeLaunchTemplates",
+        #  "ec2:DescribeInstances",
+       #   "ec2:DescribeInstanceTypes",
+       #   "ec2:DescribeInstanceTypeOfferings",
+        #  "ec2:DeleteLaunchTemplate",
+        #  "ec2:CreateTags",
+      #    "ec2:DescribeAvailabilityZones",
+       #   "ec2:TerminateInstances",
+       #   "ec2:CreateLaunchTemplate",
+        #  "ec2:CreateFleet",
+        #  "ec2:DescribeSpotPriceHistory",
+       #   "pricing:GetProducts",
+        #  "sqs:SendMessage",
+        #  "sqs:ReceiveMessage",
+        #  "sqs:DeleteMessage",
+        #  "sqs:GetQueueAttributes",
+        #  "sqs:GetQueueUrl",
+         # "eks:DescribeCluster"
+      #  ],
+      #  Resource = "*"
+      #},
+   # ]
+  #})
+#}
 
 
 resource "aws_iam_role_policy_attachment" "iampolicyattach_karpenter" {
@@ -393,7 +548,7 @@ EOF
   depends_on = [var.cluster_id]
 }
 
-#Karpenter Helm Chart- temporary
+#Karpenter Helm Chart
 
 resource "helm_release" "karpenter" {
   name       = "karpenter"
@@ -417,17 +572,17 @@ resource "helm_release" "karpenter" {
 
     {
       name  = "settings.interruptionQueue"
-      value = aws_sqs_queue.karpenter_interruption.name # ✅ links your SQS queue
+      value = aws_sqs_queue.karpenter_interruption.name 
     },
 
     {
       name  = "serviceAccount.create"
-      value = "false" # ✅ use the one Terraform created
+      value = "false" 
     },
 
     {
       name  = "serviceAccount.name"
-      value = "karpenter" # ✅ matches your k8s service account
+      value = "karpenter" 
     },
 
     {
@@ -514,7 +669,7 @@ spec:
     memory: 1000Gi
   disruption:
     consolidationPolicy: WhenEmptyOrUnderutilized
-    consolidateAfter: 1m
+    consolidateAfter: 2m
 EOF
 
   depends_on = [
@@ -554,6 +709,8 @@ resource "aws_eks_access_entry" "karpenter_node" {
   principal_arn = "arn:aws:iam::038774803581:role/karpenter-profile-instance"
   type          = "EC2_LINUX"
 }
+
+
 ##Karpenter Workflow
 
 #When AWS is about to terminate a Spot instance:

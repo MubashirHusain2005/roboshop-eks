@@ -177,3 +177,55 @@ resource "aws_iam_role_policy_attachment" "vpc_flow_logs_attach" {
 }
 
 
+##IAM Role for CloudTrail
+
+resource "aws_iam_role" "cloud_trail_role" {
+  name = "cloudtrail-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "sts:AssumeRole",
+          "sts:TagSession"
+        ]
+        Effect = "Allow"
+        Principal = {
+          Service = "vpc-flow-logs.amazonaws.com"
+        }
+      },
+    ]
+  })
+
+  tags = {
+    Name    = "cloudtrail-role"
+    Purpose = "monitor-aws-api"
+  }
+}
+
+resource "aws_iam_policy" "cloud_trail_policy" {
+  name = "cloudtrail-policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:DeleteLogGroup"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = {
+    Name    = "vpc-flow-logs-cloudwatch-policy"
+    Purpose = "vpc-flow-logs"
+  }
+}

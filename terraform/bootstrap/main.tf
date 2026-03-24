@@ -59,11 +59,35 @@ resource "aws_s3_bucket_policy" "s3_bucket_policy" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "AWSCloudTrailAclCheck"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+        Action   = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.terraform_state_bucket.arn
+      },
+      {
+        Sid    = "AWSCloudTrailWrite"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.terraform_state_bucket.arn}/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      },
+      {
         Sid       = "EnforceTLS"
         Effect    = "Deny"
         Principal = "*"
         Action    = "s3:*"
         Resource = [
+          aws_s3_bucket.terraform_state_bucket.arn,
           "${aws_s3_bucket.terraform_state_bucket.arn}/*"
         ]
         Condition = {
@@ -75,25 +99,6 @@ resource "aws_s3_bucket_policy" "s3_bucket_policy" {
     ]
   })
 }
-
-##DynamoDB for Statelock
-
-#resource "aws_dynamodb_table" "terraform_locks" {
-#name         = "state-lock"
-#billing_mode = "PAY_PER_REQUEST"
-#hash_key     = "LockID"
-
-
-#attribute {
-#name = "LockID"
-#type = "S"
-#}
-
-#tags = {
-# Name        = "terraform-lock"
-#description = "Terraform State lock for EKS"
-#}
-#}
 
 
 

@@ -28,7 +28,6 @@ spec:
     hosts:
       {{- toYaml .Values.gateway.httpsHosts | nindent 6 }}
 ---
-
 ############################################
 # CERTIFICATE
 ############################################

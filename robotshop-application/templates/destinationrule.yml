@@ -22,3 +22,5 @@ spec:
   - name: canary
     labels:
       version: {{ .Values.web.canaryVersion }}
+---
+

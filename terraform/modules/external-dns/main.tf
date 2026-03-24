@@ -27,6 +27,15 @@ terraform {
   }
 }
 
+data "aws_s3_bucket" "s3_bucket" {
+  bucket = "terraformstatebucket00534353432534523"
+}
+
+
+data "aws_route53_zone" "hosted_zone" {
+  name         = "mubashir.site"
+  private_zone = true
+}
 
 
 resource "kubectl_manifest" "external_dns_namespace" {
@@ -48,7 +57,7 @@ resource "aws_iam_role" "external_dns" {
         Effect = "Allow"
         Principal = {
           Federated = var.oidc_provider_arn
-        } #original-var.oidc_provider_arn  new-"${aws_iam_openid_connect_provider.eks.arn}"
+        }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
@@ -73,7 +82,7 @@ resource "aws_iam_role_policy" "external_dns_route53" {
         Action = [
           "route53:ChangeResourceRecordSets"
         ]
-        Resource = "arn:aws:route53:::hostedzone/*"
+        Resource = "arn:aws:route53:::hostedzone/Z09331692XTWCNAOSXR5T"
       },
       {
         Effect = "Allow"
@@ -81,7 +90,7 @@ resource "aws_iam_role_policy" "external_dns_route53" {
           "route53:ListHostedZones",
           "route53:ListResourceRecordSets"
         ]
-        Resource = "*"
+        Resource = "arn:aws:route53:::hostedzone/Z09331692XTWCNAOSXR5T"
       }
     ]
   })
@@ -98,7 +107,6 @@ resource "kubernetes_service_account_v1" "external_dns" {
   }
   depends_on = [kubectl_manifest.external_dns_namespace]
 }
-
 
 
 resource "helm_release" "external_dns" {
@@ -122,7 +130,73 @@ resource "helm_release" "external_dns" {
     kubernetes_service_account_v1.external_dns,
     aws_iam_role.external_dns,
     aws_iam_role_policy.external_dns_route53,
+    kubectl_manifest.externaldns_rbac,
+    kubectl_manifest.externaldns_cluster_role_binding,
   ]
 }
 
+##RBAC RULE to allow External-dns to read gateways and services
 
+
+##The cluster role is the set of permissions of what can be done
+resource "kubectl_manifest" "externaldns_rbac" {
+  yaml_body = <<EOF
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: external-dns
+rules:
+- apiGroups: ["networking.istio.io"]
+  resources: ["gateways"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["virtualservices"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch"]
+EOF
+}
+
+
+#Clusterrolebinding is who gets those permissions serviceaccount/user
+resource "kubectl_manifest" "externaldns_cluster_role_binding" {
+  yaml_body = <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: external-dns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: external-dns
+subjects:
+- kind: ServiceAccount
+  name: external-dns
+  namespace: external-dns
+EOF
+
+  depends_on = [
+    kubectl_manifest.externaldns_rbac,
+    kubernetes_service_account_v1.external_dns
+  ]
+}
+
+##CloudTrail to monitor Route53 activity/auditing
+
+resource "aws_cloudtrail" "route_53_access" {
+  name                          = "route53-access-monitoring"
+  s3_bucket_name                = data.aws_s3_bucket.s3_bucket.id
+  include_global_service_events = true
+  is_multi_region_trail         = false
+  enable_log_file_validation    = true
+
+  event_selector {
+    read_write_type           = "All"
+    include_management_events = true
+  
+    }
+  
+  depends_on = [ data.aws_s3_bucket.s3_bucket ]
+}

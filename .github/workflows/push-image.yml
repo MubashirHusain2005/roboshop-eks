@@ -1,7 +1,6 @@
 name: Build Scan and Push Docker Images to ECR
 
 ###Add paths here
-
 on:
   #push:
    # branches:
@@ -20,15 +19,12 @@ permissions:
   contents: write
   security-events: write
 
-
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
-  
 
 jobs:
-  build-scan-push:
+  build:
     runs-on: ubuntu-latest
-
 
     strategy:
       fail-fast: false
@@ -45,95 +41,54 @@ jobs:
           - web
           - dispatch
 
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SERVICE: ${{ matrix.service }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd app/$SERVICE
+          docker build -t $ECR_REGISTRY/$SERVICE:$IMAGE_TAG .
+          echo "image-ref=$ECR_REGISTRY/$SERVICE:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Save Docker Image
+        run: docker save -o ${{ matrix.service }}.tar ${{ steps.build-image.outputs.image-ref }}
+
+      - name: Scan with Clair
+        uses: quay/clair-action@main
+        with:
+          image-path: ${{ matrix.service }}.tar
+          format: sarif
+          output: clair_results_${{ matrix.service }}.sarif
+
+      - name: Upload SARIF Report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          category: "clair-${{ matrix.service }}"
+          sarif_file: clair_results_${{ matrix.service }}.sarif
+
+      - name: Push Docker Image to ECR
+        run: docker push ${{ steps.build-image.outputs.image-ref }}
+
+
 
 
     
-# Configure AWS credentials using OIDC
 
-    - name: Configure AWS credentials using OIDC
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        aws-region: ${{ env.AWS_REGION }}
-
-## Login to ECR
-
-    - name: Login to Amazon ECR
-      id: login-ecr 
-      uses: aws-actions/amazon-ecr-login@v2
-
-
-##Creating an auto incrementing version system
-
-    - name: Auto-increment version
-      id: version
-      run: |
-        git fetch --tags
-        LAST_TAG=$(git tag --list "v*" --sort=-v:refname | head -n 1 )
-        
-        if [ -z "$LAST_TAG" ]; then
-          NEXT_TAG="v1"
-        else
-          NUM=${LAST_TAG#v}
-          NEXT_TAG="v$((NUM + 1))"
-        fi
-
-        echo "tag=$NEXT_TAG" >> $GITHUB_OUTPUT
-
-#Build Docker images 
-
-    - name: Build Docker Images 
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        SERVICE: ${{ matrix.service }}
-        IMAGE_TAG: ${{ steps.version.outputs.tag }}
-      run: |
-        cd app/$SERVICE
-        IMAGE_REF="$ECR_REGISTRY/$SERVICE:$IMAGE_TAG"
-        docker build -t $IMAGE_REF .
-        echo "image-ref=$IMAGE_REF" >> $GITHUB_OUTPUT
-
-#Trivy Scan
-    - name: Scan Image with Trivy
-      id: trivy
-      uses: aquasecurity/trivy-action@0.33.1
-      with:
-          image-ref: ${{ steps.build-image.outputs.image-ref }}
-          format: sarif
-          output: trivy-${{ matrix.service }}.sarif
-          ignore-unfixed: true
-          exit-code: "0"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-
-# Upload image report to GitHub Security
-    - name: Upload Trivy image scan results
-      if: always()
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        category: "trivy-${{ matrix.service }}"
-        sarif_file: "trivy-${{ matrix.service }}.sarif"
-
-
-#Push image only if Trivy Scan is successfull   
-
-    -  name: Push Docker Images to Amazon ECR 
-       if: steps.trivy.outcome == 'success'
-       run: |
-         docker push ${{ steps.build-image.outputs.image-ref }}
-
-
-##Ensure all images use the same version
-
-    - name: Create the Git tag
-      if: steps.trivy.outcome == 'success'
-      run: |
-        git tag ${{ steps.version.outputs.tag }}
-        git push origin ${{ steps.version.outputs.tag }}
-
+  
   

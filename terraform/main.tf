@@ -200,7 +200,7 @@ module "prometheus" {
   private_node_2_name    = module.eks.private_node_2_name
   prometheus_values_file = "${path.root}/../robotshop-application/prometheus-values.yaml"
 
-  depends_on = [module.eks, module.istio]
+  depends_on = [module.eks, module.istio, module.eso]
 }
 
 module "grafana" {
@@ -230,6 +230,7 @@ module "eso" {
   private_node_1_name          = module.eks.private_node_1_name
   private_node_2_name          = module.eks.private_node_2_name
   external_secrets_values_file = "${path.root}/../robotshop-application/eso-values.yaml"
+  kms_key_id                   = module.vpc.kms_key_id
   depends_on                   = [module.eks]
 }
 
@@ -247,16 +248,6 @@ resource "null_resource" "cleanup_script" {
 }
 #aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
 
-##Will only work in local terraform not github actions
-resource "null_resource" "cleanup_secrets" {
-  provisioner "local-exec" {
-    command = <<EOT
-    aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
-    aws secretsmanager delete-secret --secret-id db-creds --force-delete-without-recovery
-    EOT
-    when    = destroy
-  }
-}
 
 ###Null resource to update my kubeconfig file-has to run seperately if using github actions
 

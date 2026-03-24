@@ -205,7 +205,6 @@ resource "aws_eks_addon" "vpc_cni" {
     aws_eks_node_group.private_node_2
 
   ]
-
 }
 
 ##Node Group 1

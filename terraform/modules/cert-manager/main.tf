@@ -60,7 +60,7 @@ metadata:
   name: letsencrypt-staging
 spec:
   acme:
-    email: stokemubashir@gmail.com
+    email: ${var.acme_email}
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-staging-cluster
@@ -68,7 +68,7 @@ spec:
       - dns01:
           route53:
             region: eu-west-2
-            hostedZoneID: Z09331692XTWCNAOSXR5T
+            hostedZoneID: ${var.hosted_zone_id}
 EOF
 
   depends_on = [helm_release.cert_manager]
@@ -83,7 +83,7 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: stokemubashir@gmail.com
+    email: ${var.acme_email}
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-prod
@@ -91,7 +91,7 @@ spec:
       - dns01:
           route53:
             region: eu-west-2
-            hostedZoneID: Z09331692XTWCNAOSXR5T
+            hostedZoneID: ${var.hosted_zone_id}
 EOF
   depends_on = [helm_release.cert_manager]
 }

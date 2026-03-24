@@ -24,5 +24,8 @@ variable "prometheus_values_file" {
   description = "Path to Prometheus Helm values file (from root where terraform is run)"
 }
 
-
+variable "prometheus_secret_name" {
+  type    = string
+  default = "prometheus-db-creds"
+}
 

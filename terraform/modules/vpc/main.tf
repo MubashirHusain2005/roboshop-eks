@@ -193,51 +193,103 @@ resource "aws_subnet" "private" {
   }
 }
 
-resource "aws_route_table_association" "private" {
-  for_each       = aws_subnet.private
-  subnet_id      = each.value.id
-  route_table_id = aws_route_table.private-rt.id
-}
+#resource "aws_route_table_association" "private" {
+  #for_each       = aws_subnet.private
+  #subnet_id      = each.value.id
+  #route_table_id = aws_route_table.private-rt.id
+#}
 
 
-resource "aws_eip" "ngw-eip" {
+#resource "aws_eip" "ngw-eip" {
+  #domain = "vpc"
+
+  #tags = {
+    #Name = "eip"
+  #}
+
+#}
+
+resource "aws_eip" "ngw_eip" {
+  for_each = var.public_subnets
+  
   domain = "vpc"
-
+  
   tags = {
-    Name = "eip"
+    Name = "nat-eip-${each.value.az}"
   }
-
+  
+  depends_on = [aws_internet_gateway.igw]
 }
 
 resource "aws_nat_gateway" "ngw" {
-  subnet_id     = aws_subnet.public["public-subnet-2b"].id
-  allocation_id = aws_eip.ngw-eip.id
-
+  for_each = var.public_subnets
+  
+  subnet_id     = aws_subnet.public[each.key].id
+  allocation_id = aws_eip.ngw_eip[each.key].id
+  
   tags = {
-    Name = "igw-nat"
+    Name = "nat-${each.value.az}"
   }
-
-  depends_on = [aws_internet_gateway.igw, aws_eip.ngw-eip]
+  
+  depends_on = [aws_internet_gateway.igw]
 }
 
-
-
-resource "aws_route_table" "private-rt" {
+resource "aws_route_table" "private" {
+  for_each = var.private_subnets
+  
   vpc_id = aws_vpc.eks_vpc.id
-
+  
   route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.ngw.id
+    # Use NAT Gateway in the same AZ
+    nat_gateway_id = aws_nat_gateway.ngw[[
+      for key, subnet in var.public_subnets : 
+      key if subnet.az == each.value.az
+    ][0]].id
   }
-
+  
   tags = {
-    Name = "private-rt"
-
+    Name = "rt-private-${each.key}"
   }
 
   depends_on = [aws_nat_gateway.ngw]
-
 }
+
+resource "aws_route_table_association" "private" {
+  for_each = var.private_subnets
+  
+  subnet_id      = aws_subnet.private[each.key].id
+  route_table_id = aws_route_table.private[each.key].id
+}
+
+#resource "aws_nat_gateway" "ngw" {
+  #subnet_id     = aws_subnet.public["public-subnet-2b"].id
+  #allocation_id = aws_eip.ngw-eip.id
+
+ # tags = {
+   # Name = "igw-nat"
+  #}
+
+ # depends_on = [aws_internet_gateway.igw, aws_eip.ngw-eip]
+#}
+
+
+
+#resource "aws_route_table" "private-rt" {
+  #vpc_id = aws_vpc.eks_vpc.id
+
+  #route {
+    #cidr_block     = "0.0.0.0/0"
+    #nat_gateway_id = aws_nat_gateway.ngw.id
+ # }
+
+ # tags = {
+   # Name = "private-rt"
+
+  #}
+
+  #depends_on = [aws_nat_gateway.ngw]
+
+#}
 
 #resource "aws_route_table_association" "private-route-association-2a" {
 

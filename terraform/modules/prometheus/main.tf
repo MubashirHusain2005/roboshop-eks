@@ -28,14 +28,11 @@ terraform {
   }
 }
 
-resource "kubectl_manifest" "monitoring_namespace" {
-  yaml_body = <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: monitoring
-EOF
+##Calls existing secret store from AWS
+data "aws_secretsmanager_secret" "prometheus_secrets" {
+  name = var.prometheus_secret_name
 }
+
 
 ##Promethues to collect core Kubernetes metrics
 resource "helm_release" "prometheus" {
@@ -55,10 +52,6 @@ resource "helm_release" "prometheus" {
     file(var.prometheus_values_file)
   ]
 
-
-  depends_on = [
-    kubectl_manifest.monitoring_namespace,
-  ]
 }
 
 
@@ -96,12 +89,9 @@ resource "helm_release" "mysql_exporter" {
   ]
 
   depends_on = [
-    kubectl_manifest.mysql_exporter_my_cnf,
     helm_release.prometheus
-
   ]
 }
-
 
 ###Redis exporter to collect redis metrics
 resource "helm_release" "redis_exporter" {
@@ -131,44 +121,44 @@ resource "helm_release" "redis_exporter" {
 
   depends_on = [
     helm_release.prometheus,
-    kubectl_manifest.redis_secret,
+    #kubectl_manifest.redis_secret,
   ]
 }
 
 
-resource "kubectl_manifest" "mysql_exporter_my_cnf" {
-  yaml_body = <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysql-exporter-mycnf
-  namespace: monitoring
-type: Opaque
-stringData:
-  .my.cnf: |
-    [client]
-    user=metrics_user
-    password=metrics_password
-    host=mysql.app-space.svc.cluster.local
-EOF
+#resource "kubectl_manifest" "mysql_exporter_my_cnf" {
+#yaml_body = <<EOF
+#apiVersion: v1
+#kind: Secret
+#metadata:
+#name: mysql-exporter-mycnf
+#namespace: monitoring
+#type: Opaque
+#stringData:
+# .my.cnf: |
+#  [client]
+# user=metrics_user
+#password=metrics_password
+#host=mysql.app-space.svc.cluster.local
+#EOF
 
-  depends_on = [var.cluster_endpoint]
-}
+# depends_on = [var.cluster_endpoint]
+#}
 
 
-resource "kubectl_manifest" "redis_secret" {
-  yaml_body = <<EOF
+#resource "kubectl_manifest" "redis_secret" {
+#yaml_body = <<EOF
 
-apiVersion: v1
-kind: Secret
-metadata:
-  name: redis-secret
-  namespace: data-space
-type: Opaque
-stringData:
-  REDIS_PASSWORD: redispassword 
-EOF
-}
+#apiVersion: v1
+#kind: Secret
+#metadata:
+# name: redis-secret
+#namespace: monitoring  ##was data-space 
+#type: Opaque
+#stringData:
+#REDIS_PASSWORD: redispassword 
+#EOF
+#}
 
 
 ##Alerts
@@ -186,26 +176,26 @@ spec:
     rules:
 
     - alert: HighNodeCPU
-      expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
-      for: 2m
+      expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 50
+      for: 5m
       labels:
-        severity: critical
+        severity: warning
       annotations:
-        description: "Node CPU usage above 80%"
+        description: "Node CPU usage above 50%"
 
     - alert: HighNodeMemory
-      expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+      expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 70
       for: 2m
       labels:
         severity: critical
       annotations:
-        description: "Node memory usage above 85%"
+        description: "Node memory usage above 70%"
     
     - alert: PodRestart
-      expr: kube_pod_container_status_restarts_totals > 2
-      for: 0m
+      expr: kube_pod_container_status_restarts_total > 2
+      for: 5m
       labels:
-        severity: critical
+        severity: warning
       annotations:
         description: "Pod restart detected"
 
@@ -215,3 +205,83 @@ EOF
   depends_on = [helm_release.prometheus]
 
 }
+
+
+#1. Create MySQL user: metrics_user
+#2. Store credentials in AWS Secret
+#3. ESO syncs to K8s Secret
+#4. Mount as /home/.my.cnf
+#5. Exporter reads credentials
+#6. Exporter authenticates to MySQL
+##7. MySQL gives exporter its internal metrics
+#8. Exporter exposes on /metrics endpoint
+#9. Prometheus scrapes
+#10. You see what's happening in MySQL!
+
+
+#Complete Redis Metric Collection Flow
+
+#Stage 1: Infrastructure Setup
+
+##Redis StatefulSet deployed in data-space namespace
+#Redis Service created (registers in K8s DNS as redis.data-space.svc.cluster.local)
+#Service points to Redis pods via selector labels
+
+#Stage 2: Exporter Secrets
+
+#ESO syncs Redis password from AWS Secrets Manager
+#Creates K8s Secret redis-exporter-credentials in monitoring namespace
+#Exporter mounts this secret as a volume
+
+#Stage 3: Redis Exporter Deployment
+
+#Redis Exporter Helm chart deployed in monitoring namespace
+#Exporter configured with redisAddress = "redis://redis.data-space.svc.cluster.local:6379"
+#Exporter mounts the K8s Secret containing Redis password
+#Exporter pod starts running
+
+#Stage 4: DNS Resolution & Connection
+
+#Exporter makes network call to redis://redis.data-space.svc.cluster.local:6379
+#Kubernetes DNS server intercepts the request
+#DNS resolves the FQDN to the Redis Service IP (e.g., 10.0.5.123)
+#Network traffic sent to that IP:6379
+#Redis Service forwards traffic to Redis pod
+#Exporter authenticates using password from mounted secret ✅
+
+#Stage 5: Metric Collection
+
+#Exporter connects to Redis
+#Exporter queries Redis for metrics (commands like INFO, CONFIG GET, etc.)
+#Redis responds with internal metrics
+#Exporter converts to Prometheus format (text format with HELP and TYPE)
+#Exporter exposes metrics on /metrics endpoint (port 9121)
+
+#Stage 6: ServiceMonitor Discovery
+
+#ServiceMonitor created by redis-exporter Helm chart
+#ServiceMonitor has label: release: prometheus
+#Prometheus looks for ServiceMonitors matching its selector labels
+#Prometheus finds the ServiceMonitor (labels match!)
+
+#Stage 7: Prometheus Scraping
+
+#Prometheus discovers the redis-exporter service via ServiceMonitor
+#Prometheus scrapes the /metrics endpoint every 15 seconds (your interval)
+#Prometheus receives metrics in text format
+
+##Stage 8: Storage
+
+#Prometheus stores metrics in its Time-Series Database (TSDB)
+#Metrics stored with labels (e.g., redis instance, metric name, timestamp)
+#Data persists on attached storage (if configured with PVC)
+
+#Stage 9: Querying & Alerting
+
+#Alert rules continuously evaluate metrics stored in TSDB
+#If alert conditions met → Alert fires
+#AlertManager routes alert (e.g., to email)
+
+#Password protects Redis from unauthorized access. 
+#Any pod (even malicious ones) needs the correct credentials to connect. 
+#It's a basic security requirement.
