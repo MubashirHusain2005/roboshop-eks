@@ -119,25 +119,6 @@ EOF
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #resource "aws_secretsmanager_secret" "argocd_admin" {
 #name        = "argocd-admin"
 #description = "Argocd admin password"
