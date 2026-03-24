@@ -145,24 +145,22 @@ resource "helm_release" "external_dns" {
 ##The cluster role is the set of permissions of what can be done
 resource "kubectl_manifest" "externaldns_rbac" {
   yaml_body = <<EOF
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: external-dns
 rules:
-- apiGroups: ["networking.istio.io"]
-  resources: ["gateways"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["networking.istio.io"]
-  resources: ["virtualservices"]
-  verbs: ["get", "list", "watch"]
 - apiGroups: [""]
-  resources: ["services"]
+  resources: ["services", "endpoints", "pods", "nodes"]    # ← add endpoints, pods, nodes
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions", "networking.k8s.io"]
+  resources: ["ingresses"]                                  # ← add ingresses
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["gateways", "virtualservices"]
   verbs: ["get", "list", "watch"]
 EOF
 }
-
 
 #Clusterrolebinding is who gets those permissions serviceaccount/user
 resource "kubectl_manifest" "externaldns_cluster_role_binding" {
