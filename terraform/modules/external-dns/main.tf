@@ -118,6 +118,7 @@ resource "helm_release" "external_dns" {
   version          = "1.14.0"
   force_update     = true
   recreate_pods    = true
+  cleanup_on_fail = true
 
 
   wait    = true
