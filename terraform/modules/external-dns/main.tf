@@ -116,6 +116,9 @@ resource "helm_release" "external_dns" {
   repository       = "https://kubernetes-sigs.github.io/external-dns/"
   chart            = "external-dns"
   version          = "1.14.0"
+  force_update     = true
+  recreate_pods    = true
+
 
   wait    = true
   timeout = 600
