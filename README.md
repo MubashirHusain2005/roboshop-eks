@@ -47,47 +47,48 @@ The platform runs seven microservices (web, payment, user, cart, catalogue, ship
 
 ```
 roboshop-eks/
-├── .github\workflows
-     ├── push-image.yml         #Pipeline to push images to ECR
-     ├── terraform.yml          # Pipeline to run terraform plan/apply/destroy
+├── .github/
+│   └── workflows/
+│       ├── push-image.yml          # Pipeline to push images to ECR
+│       └── terraform.yml           # Pipeline to run terraform plan/apply/destroy
 ├── README.md
-├── app/                    # Dockerfiles and docker-compose for local deployment
-├── images/ 
-├── robotshop-application/ 
-    ├── charts/                
-    ├── templates/ 
-        ├── destinationrule.yaml
-        ├── istio.yml
-        ├── manifests.yml
-        ├── mtls.yml
-        ├── services.yml
-        ├── storage.yml                 
-    ├── .helmignore/                
-    ├── cert-manager-values.yaml               
-    ├── eso-values.yaml         
-    ├── istiod-values.yaml       
-    ├── karpenter-values.yaml       
-    ├── nginx-values.yaml          
-    ├── prometheus-values.yaml             
-├── terraform/
-    └── bootstrap/
-        ├── main.tf
-        ├── variables.tf
-        ├── outputs.tf
-    └── modules/
-        ├── vpc/                # VPC, subnets, IGW, NAT Gateway, route tables
-        ├── istio/              # Cluster and node security group rules
-        ├── eks/                # EKS cluster, node groups, OIDC, add-ons
-        ├── eso/                # External Secrets Operator + SecretStore config
-        ├── monitoring/         # Prometheus + Grafana configuration for observability
-        ├── external-dns/       # Route 53 DNS automation
-        ├── cert-manager/       # Let's Encrypt certificate provisioning
-        ├── karpenter/          # Node autoscaling with SQS interruption handling
-        ├── iam/                # Roles and policies for cluster and nodes
-        └── argocd/             # GitOps deployment configuration
-├── main.tf                     # Root Terraform configuration
-├── variables.tf
-├── outputs.tf
+├── app/                            # Dockerfiles and docker-compose for local deployment
+├── images/
+├── robotshop-application/
+│   ├── charts/
+│   ├── templates/
+│   │   ├── destinationrule.yaml
+│   │   ├── istio.yml
+│   │   ├── manifests.yml
+│   │   ├── mtls.yml
+│   │   ├── services.yml
+│   │   └── storage.yml
+│   ├── .helmignore
+│   ├── cert-manager-values.yaml
+│   ├── eso-values.yaml
+│   ├── istiod-values.yaml
+│   ├── karpenter-values.yaml
+│   ├── nginx-values.yaml
+│   └── prometheus-values.yaml
+└── terraform/
+    ├── bootstrap/
+    │   ├── main.tf                 #ECR Repos, KMS Keys, OIDC 
+    │   ├── variables.tf
+    │   └── outputs.tf
+    ├── modules/
+    │   ├── vpc/                    # VPC, subnets, IGW, NAT Gateway, route tables
+    │   ├── istio/                  # Cluster and node security group rules
+    │   ├── eks/                    # EKS cluster, node groups, OIDC, add-ons
+    │   ├── eso/                    # External Secrets Operator + SecretStore config
+    │   ├── monitoring/             # Prometheus + Grafana configuration
+    │   ├── external-dns/           # Route 53 DNS automation
+    │   ├── cert-manager/           # Let's Encrypt certificate provisioning
+    │   ├── karpenter/              # Node autoscaling with SQS interruption handling
+    │   ├── iam/                    # Roles and policies for cluster and nodes
+    │   └── argocd/                 # GitOps deployment configuration
+    ├── main.tf                     # Root Terraform configuration
+    ├── variables.tf
+    └── outputs.tf
 ```
 
 ---
@@ -221,7 +222,7 @@ Bridges AWS Secrets Manager with Kubernetes-native secrets. Kubernetes secrets a
 **Grafana** visualises metrics from Prometheus.
 
 - Pre-built Istio dashboards for mesh-wide, per-service, and per-workload views
-- Kiali renders a live service topology map with traffic health indicators
+- Kiali renders a live service topology map with traffic health indicators and helps us to see mtls live on the graph 
 
 ---
 
@@ -252,7 +253,7 @@ Replaces the Cluster Autoscaler with faster, more cost-efficient node provisioni
 
 GitOps controller that acts as the source of truth for cluster state. Continuously syncs manifests from the Git repository to the Kubernetes cluster.
 
-![ArgoCD](argo-cd.PNG)
+![ArgoCD](images/argo-cd.PNG)
 
 ---
 
@@ -288,7 +289,6 @@ Kiali also reads the Kubernetes API and Istio config directly to surface `Virtua
 - [ ] Run all containers as non-root users to reduce attack surface
 - [ ] Persistent storage for Prometheus metrics (currently lost on pod restart)
 - [ ] Thanos for Prometheus HA and long-term storage
-- [ ] `PeerAuthentication: STRICT` mesh-wide to enforce mTLS between all services
 - [ ] `AuthorizationPolicy` per service to restrict inter-service calls
 - [ ] AWS WAF on the ALB
 

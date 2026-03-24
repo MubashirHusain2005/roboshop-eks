@@ -240,7 +240,6 @@ resource "aws_route_table" "private" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    # Use NAT Gateway in the same AZ
     nat_gateway_id = aws_nat_gateway.ngw[[
       for key, subnet in var.public_subnets :
       key if subnet.az == each.value.az
