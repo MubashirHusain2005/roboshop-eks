@@ -357,76 +357,85 @@ EOF
 resource "kubectl_manifest" "mysql_exporter_secret" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
-   kind: ExternalSecret
-   metadata:
-     name: mysql-metrics-credentials
-     namespace: monitoring
-   spec:
-     refreshInterval: 5m
-     secretStoreRef:
-       name: aws-secrets
-       kind: SecretStore
-     target:
-       name: mysql-exporter-mycnf
-     data:
-       - secretKey: .my.cnf
-         remoteRef:
-           key: prometheus-db-creds
-           property: mycnf_content
-   EOF
-  depends_on = [kubectl_manifest.secret_store_monitoring,
+kind: ExternalSecret
+metadata:
+  name: mysql-metrics-credentials
+  namespace: monitoring
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    name: aws-secrets
+    kind: SecretStore
+  target:
+    name: mysql-exporter-mycnf
+  data:
+    - secretKey: .my.cnf
+      remoteRef:
+        key: prometheus-db-creds
+        property: mycnf_content
+EOF
+
+  depends_on = [
+    kubectl_manifest.secret_store_monitoring,
     kubectl_manifest.monitoring_namespace,
-  data.aws_secretsmanager_secret.prometheus_secrets]
+    data.aws_secretsmanager_secret.prometheus_secrets
+  ]
 }
 
 
 resource "kubectl_manifest" "redis_exporter_secret" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
-   kind: ExternalSecret
-   metadata:
-     name: redis-exporter-credentials
-     namespace: monitoring
-   spec:
-     refreshInterval: 5m
-     secretStoreRef:
-       name: aws-secrets
-       kind: SecretStore
-     target:
-       name: redis-secret
-     data:
-       - secretKey: REDIS_PASSWORD
-         remoteRef:
-           key: prometheus-db-creds
-           property: REDIS_PASSWORD
-   EOF
-  depends_on = [kubectl_manifest.secret_store_monitoring,
+kind: ExternalSecret
+metadata:
+  name: redis-exporter-credentials
+  namespace: monitoring
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    name: aws-secrets
+    kind: SecretStore
+  target:
+    name: redis-secret
+  data:
+    - secretKey: REDIS_PASSWORD
+      remoteRef:
+        key: prometheus-db-creds
+        property: REDIS_PASSWORD
+EOF
+
+  depends_on = [
+    kubectl_manifest.secret_store_monitoring,
     kubectl_manifest.monitoring_namespace,
-  data.aws_secretsmanager_secret.prometheus_secrets]
+    data.aws_secretsmanager_secret.prometheus_secrets
+  ]
 }
 
 
 resource "kubectl_manifest" "gmail_password_alertmanager" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
-   kind: ExternalSecret
-   metadata:
-     name: alertmanager-config
-     namespace: monitoring
-   spec:
-     refreshInterval: 5m
-     secretStoreRef:
-       name: aws-secrets
-       kind: SecretStore
-     target:
-       name: alertmanager-gmail-secret
-     data:
-       - secretKey: gmail_password
-         remoteRef:
-           key: prometheus-db-creds
-           property: gmail_password
-   EOF
-  depends_on = [kubectl_manifest.secret_store_monitoring,
+kind: ExternalSecret
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    name: aws-secrets
+    kind: SecretStore
+  target:
+    name: alertmanager-gmail-secret
+  data:
+    - secretKey: gmail_password
+      remoteRef:
+        key: prometheus-db-creds
+        property: gmail_password
+EOF
+
+  depends_on = [
+    kubectl_manifest.secret_store_monitoring,
     kubectl_manifest.monitoring_namespace,
-  data.aws_secretsmanager_secret.prometheus_secrets]
+    data.aws_secretsmanager_secret.prometheus_secrets
+  ]
 }
