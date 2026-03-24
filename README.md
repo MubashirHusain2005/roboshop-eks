@@ -5,9 +5,11 @@ E-Commerce Platform — Microservice Application hosted on EKS with Istio
 Overview:
 A production-grade deployment of a three-tier e-commerce application on AWS EKS. The platform runs seven microservices (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline, with a service mesh for traffic management and zero-trust security, GitOps-driven deployments, and a complete observability stack.
 
+Live Loom Demo Link: (https://www.loom.com/share/6a9283a627ac4616a5780a99c53f7aa7)
+
 Architecture
 
-Architecture diagram to be added.
+![Running mysqlexporter](roboshop.drawio.png)
 
 
 Networking
@@ -21,8 +23,18 @@ EKS control plane is AWS-managed and communicates with nodes via an ENI injected
 
 Technology Stack
 
-
-CategoryTechnologyCloudAWS (EKS, ECR, Route 53, Secrets Manager, KMS, CloudTrail, SQS)Infrastructure as CodeTerraformContainer orchestrationKubernetes 1.28+Package managementHelmService meshIstioGitOpsArgoCDObservabilityPrometheus, Grafana, KialiAutoscalingKarpenterCertificate managementcert-manager (Let's Encrypt)DNS managementexternal-dnsSecrets managementExternal Secrets Operator + AWS Secrets ManagerAuthIRSA (IAM Roles for Service Accounts) via OIDCImage registryAmazon ECR
+CloudAWS (EKS, ECR, Route 53, Secrets Manager, KMS, CloudTrail, SQS)
+Infrastructure as Code:Terraform
+Container orchestration:Kubernetes 1.28+
+Package management:Helm
+Service mesh:Istio
+GitOps:ArgoCD
+Observability:Prometheus, Grafana, Kiali, Jaeger
+NodeAutoscaling:Karpenter
+Certificate management:cert-manager (Let's Encrypt)
+DNS management:external-dns
+Secrets managements:External Secrets Operator + AWS Secrets Manager
+AuthIRSA (IAM Roles for Service Accounts) via OIDCImage registryAmazon ECR
 
 Project Structure
 roboshop-eks/
@@ -82,7 +94,8 @@ kubectl get nodes
 kubectl get namespaces
 kubectl get pods -A
 
-Module Reference
+Modules
+
 1.VPC:Provisions the network foundation for the cluster.
 
 Internet Gateway for inbound public traffic to the ALB
@@ -106,7 +119,7 @@ Control plane ↔ node rules
 Nodes → control plane: port 443 (HTTPS to the API server)
 Control plane → nodes: ephemeral ports 1024–65535 (API server-initiated connections back to kubelets)
 
-EKS
+2.EKS
 Manages the Kubernetes cluster configuration.
 
 Two node groups across availability zones 2a and 2b, each with a desired size of 2 nodes
@@ -126,7 +139,7 @@ VPC CNI: assigns VPC-native IPs directly to pods
 
 aws-auth ConfigMap includes the Terraform IAM user and GitHub Actions role so both kubectl access and CI pipeline deployments work without being locked out.Definitely didnt learn this the hard way!!
 
-External Secrets Operator (ESO)
+3.External Secrets Operator (ESO)
 Bridges AWS Secrets Manager and Kubernetes native secrets.
 Kubernetes secrets are only base64-encoded, not encrypted, and hardcoding secret values in Terraform would expose them in source control. ESO solves this by treating AWS Secrets Manager as the source of truth.
 Flow:
@@ -136,7 +149,8 @@ An ExternalSecret resource references a specific secret in Secrets Manager
 ESO fetches the value and creates a native Kubernetes Secret object in the target namespace
 ESO continuously reconciles — if the secret changes in Secrets Manager, it is automatically synced into the cluster on the next refresh interval
 
-Prometheus
+4.Prometheus
+
 Collects metrics from the cluster and service mesh.
 
 Scrapes Envoy sidecar metrics endpoints (:15090/stats/prometheus) on every pod automatically — no application instrumentation required
@@ -147,7 +161,10 @@ ServiceMonitor resources tell Prometheus which endpoints to scrape
 
 Key Istio metrics collected: istio_requests_total, istio_request_duration_milliseconds, istio_request_bytes, istio_response_bytes
 
-Grafana
+![Running mysqlexporter](mysqlexporter.PNG)
+
+
+5.Grafana
 Visualises metrics stored in Prometheus.
 
 
@@ -155,21 +172,21 @@ Pre-built Istio dashboards provide mesh-wide, per-service, and per-workload view
 Kiali connects to Prometheus to render a live service topology map with traffic health indicators
 
 
-cert-manager
+6.Cert-manager
 Automates TLS certificate provisioning from Let's Encrypt.
 
 Uses DNS-01 ACME challenge: creates a acme-challenge TXT record in Route 53 to prove domain ownership, then deletes it after the certificate is issued
 Requires Route 53 write permissions via IRSA
 Certificates are automatically renewed before expiry
 
-external-dns
+7.External-dns
 Automates Route 53 record management.
 
 Watches for Ingress and Service resources in the cluster
 Automatically creates, updates, and deletes Route 53 A records to match — when the ALB Ingress comes up, external-dns creates the DNS record pointing to it
 Requires Route 53 write permissions via IRSA
 
-Karpenter
+8.Karpenter
 Replaces the Cluster Autoscaler with faster, more flexible node provisioning.
 
 Watches for pods stuck in Pending state due to insufficient capacity
@@ -178,9 +195,20 @@ Uses Amazon SQS to receive EC2 spot interruption notices and drain nodes gracefu
 Consolidates underutilised nodes to reduce cost
 
 
+9.ArgoCD: Gitops tool which acts as the source of truth and has the main task of continously syncing the manifests to the k8s cluster.
+
+
+![Running argocd](argo-cd.PNG)
+
+
+10.Istio-
+
+
+
 IAM and Security
 All pod-to-AWS authentication uses IRSA — no static credentials, no node-level IAM policies shared across all pods.
 ComponentIAM permissionscert-managerroute53:ChangeResourceRecordSets, route53:ListHostedZones, route53:GetChangeexternal-dnsroute53:ChangeResourceRecordSets, route53:ListHostedZones, route53:ListResourceRecordSetsExternal Secrets Operatorsecretsmanager:GetSecretValue, secretsmanager:DescribeSecretEBS CSI Driverec2:CreateVolume, ec2:AttachVolume, ec2:DeleteVolume and relatedKarpenterEC2 provisioning and SQS permissions
+
 
 Observability
 The observability stack is built on data emitted by Istio's Envoy sidecars — no application code changes needed.
@@ -191,24 +219,23 @@ Envoy sidecar (every pod)
            └── Kiali queries Prometheus → live service map and traffic health
 Kiali also reads Kubernetes API and Istio config directly to surface VirtualService/DestinationRule misconfigurations alongside live traffic data.
 
-Planned Improvements
 
- Run all containers as non-root users
+<Add kiali map pic here>
+
+Planned Improvements:
+
+ Run all my containers as non-root users
  Persistent storage for Prometheus metrics (currently lost on pod restart)
  Thanos for Prometheus high availability and long-term storage (prevents duplicate scraping across replicas)
  PeerAuthentication: STRICT mesh-wide to enforce mTLS between all services
  AuthorizationPolicy per service to restrict which services can call which
- AWS WAF on the ALB (OWASP rules, rate limiting)
+ AWS WAF on the ALB 
 
 
 
-This project is a production ready cloud native application deployed on EKS AWS.I specifically used the robot-shop microservices application as it mirrors industry standards use cases in this day and age where Microservices working together which are written in different languages communicte with each other to host the application. 
 
 
 
-Attach a video of how the application works- Please use the loom video for a small presentation to see the application running on local host.
-
-(https://www.loom.com/share/6a9283a627ac4616a5780a99c53f7aa7)
 
 
 
