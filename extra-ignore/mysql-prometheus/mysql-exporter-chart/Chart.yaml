@@ -1,6 +1,0 @@
-apiVersion: v2
-name: mysql-exporter
-description: Helm chart for Prometheus MySQL exporter
-type: application
-version: 1.0.0
-appVersion: "1.0"
