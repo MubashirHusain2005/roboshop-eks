@@ -1,6 +1,6 @@
-#E-Commerce Platform — Microservice Application hosted on EKS with Istio
+# 🚀 **E-Commerce Platform — Microservice Application hosted on EKS with Istio**
 
-![Running app](app.PNG)
+![Running app](images/app.png)
 
 Overview:
 A production-grade deployment of a three-tier e-commerce application on AWS EKS. The platform runs seven microservices (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline, with a service mesh for traffic management and zero-trust security, GitOps-driven deployments, and a complete observability stack.
