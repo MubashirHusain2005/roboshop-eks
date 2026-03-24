@@ -311,7 +311,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app: rabbitmq
-               topologyKey: kubernetes.io/hostname
+                topologyKey: kubernetes.io/hostname
       containers:
       - name: rabbitmq
         image: {{ .Values.rabbitmq.image }}
