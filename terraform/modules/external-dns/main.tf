@@ -87,7 +87,13 @@ resource "aws_iam_role_policy" "external_dns_route53" {
       {
         Effect = "Allow"
         Action = [
-          "route53:ListHostedZones",
+          "route53:ListHostedZones"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "route53:ListResourceRecordSets"
         ]
         Resource = "arn:aws:route53:::hostedzone/Z09331692XTWCNAOSXR5T"
