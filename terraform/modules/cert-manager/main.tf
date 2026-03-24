@@ -97,77 +97,6 @@ EOF
 }
 
 
-#resource "kubectl_manifest" "certificate_prod" {
-#yaml_body = <<EOF
-#apiVersion: cert-manager.io/v1
-#kind: Certificate
-#metadata:
-# name: mubashir-site-cert
-# namespace: istio-system
-#spec:
-# secretName: mubashir-tls
-# issuerRef:
-#  name: letsencrypt-prod
-#  kind: ClusterIssuer
-#dnsNames:
-# - mubashir.site
-# - argocd.mubashir.site
-# - grafana.mubashir.site
-# - prometheus.mubashir.site
-# - jaeger.mubashir.site
-# - kiali.mubashir.site
-#EOF
-#}
-
-
-#3  Cluster_issuer yaml file
-#resource "kubectl_manifest" "letsencrypt_staging" {
-#yaml_body = <<EOF
-#apiVersion: cert-manager.io/v1
-#kind: ClusterIssuer
-#metadata:
-#name: letsencrypt-staging
-#spec:
-#acme:
-#server: https://acme-staging-v02.api.letsencrypt.org/directory
-#email: stokemubashir@gmail.com
-#privateKeySecretRef:
-#name: letsencrypt-nginx-cert-staging
-#solvers:
-#- http01:
-#ingress:
-#class: nginx
-#EOF
-
-#depends_on = [
-#helm_release.cert_manager
-#]
-#}
-
-##For time being
-#resource "kubectl_manifest" "letsencrypt_prod" {
-#yaml_body = <<EOF
-#apiVersion: cert-manager.io/v1
-#kind: ClusterIssuer
-#metadata:
-# name: letsencrypt-prod
-#spec:
-#acme:
-# server:  https://acme-v02.api.letsencrypt.org/directory
-# email: stokemubashir@gmail.com
-# privateKeySecretRef:
-#  name: letsencrypt-nginx-cert
-#solvers:
-# - http01:
-#   ingress:
-#   class: nginx
-#EOF
-
-# depends_on = [
-# helm_release.cert_manager
-# ]
-#}
-
 # Reuse the same policy by creating a separate role for cert-manager
 resource "aws_iam_role" "cert_manager" {
   name = "cert-manager-role"
@@ -222,19 +151,4 @@ resource "aws_iam_role_policy" "cert_manager_route53" {
   })
 }
 
-#resource "kubernetes_annotations" "cert_manager_irsa" {
-# api_version = "v1"
-# kind        = "ServiceAccount"
-
-#metadata {
-#name      = "cert-manager"
-# namespace = "cert-manager"
-#}
-
-# annotations = {
-# "eks.amazonaws.com/role-arn" = aws_iam_role.cert_manager.arn
-# }
-
-# depends_on = [helm_release.cert_manager]
-#}
 
