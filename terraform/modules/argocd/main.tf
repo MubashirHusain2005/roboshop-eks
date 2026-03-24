@@ -104,13 +104,13 @@ spec:
         - values.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: app-space        # fallback namespace only - overridden by manifest namespaces
+    namespace: app-space        
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true    # creates any namespace that doesn't exist yet
+      - CreateNamespace=true   
 EOF
 
   depends_on = [
