@@ -46,3 +46,6 @@ readinessProbe:
     port: 8081
   initialDelaySeconds: 10
   periodSeconds: 10
+
+rbac:
+  create: false
