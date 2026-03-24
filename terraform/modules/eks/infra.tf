@@ -67,7 +67,7 @@ resource "aws_eks_cluster" "eks_cluster" {
     subnet_ids = var.private_subnet_ids
 
     endpoint_private_access = true
-    endpoint_public_access  = false ##Was true
+    endpoint_public_access  = true ##Was true
   }
 
   encryption_config {
