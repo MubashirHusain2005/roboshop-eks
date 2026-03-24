@@ -20,3 +20,15 @@ schema.json
 
 
 
+# Terraform state
+*.tfstate
+*.tfstate.*
+
+# Terraform working dir
+.terraform/
+
+# JSON files you don’t want
+*.json
+
+# Optional logs
+*.log
