@@ -27,7 +27,6 @@ terraform {
   }
 }
 
-##Calls existing secret store from AWS
 data "aws_secretsmanager_secret" "secrets" {
   name = var.secret_name
 }
@@ -35,6 +34,7 @@ data "aws_secretsmanager_secret" "secrets" {
 data "aws_secretsmanager_secret" "prometheus_secrets" {
   name = var.secret_name
 }
+
 
 resource "kubectl_manifest" "deployments_namespace" {
   yaml_body = <<EOF
@@ -45,12 +45,11 @@ metadata:
   labels:
     istio-injection: enabled
 EOF
-
   depends_on = [var.cluster_endpoint]
 }
 
 resource "kubectl_manifest" "databases_namespace" {
-  yaml_body  = <<EOF
+  yaml_body = <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -66,7 +65,6 @@ kind: Namespace
 metadata:
   name: external-secrets
 EOF
-
   depends_on = [var.cluster_endpoint]
 }
 
@@ -77,29 +75,11 @@ kind: Namespace
 metadata:
   name: monitoring
 EOF
-
   depends_on = [var.cluster_endpoint]
 }
 
 
-##ESO Helm Chart
-resource "helm_release" "external_secrets" {
-  name       = "external-secrets"
-  namespace  = "external-secrets"
-  repository = "https://charts.external-secrets.io"
-  chart      = "external-secrets"
-  version    = "0.14.0"
 
-  values = [
-    templatefile("${path.root}/${var.external_secrets_values_file}", {})
-  ]
-
-
-  depends_on = [kubernetes_service_account_v1.eso_serviceaact]
-
-}
-
-##IAM Role for eso controller
 resource "aws_iam_role" "iam_role_eso" {
   name = "iamrole-eso"
 
@@ -114,7 +94,12 @@ resource "aws_iam_role" "iam_role_eso" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${replace(var.oidc_issuer_url, "https://", "")}:sub" = "system:serviceaccount:external-secrets:eso-sa",
+            "${replace(var.oidc_issuer_url, "https://", "")}:sub" = [
+              "system:serviceaccount:external-secrets:eso-sa",
+              "system:serviceaccount:app-space:eso-sa",
+              "system:serviceaccount:data-space:eso-sa",
+              "system:serviceaccount:monitoring:eso-sa"
+            ],
             "${replace(var.oidc_issuer_url, "https://", "")}:aud" = "sts.amazonaws.com"
           }
         }
@@ -122,7 +107,6 @@ resource "aws_iam_role" "iam_role_eso" {
     ]
   })
 }
-
 
 resource "aws_iam_policy" "iam_eso_policy" {
   name = "iampolicy-eso"
@@ -139,14 +123,13 @@ resource "aws_iam_policy" "iam_eso_policy" {
           "secretsmanager:GetResourcePolicy"
         ]
         Resource = [
-          "arn:aws:secretsmanager:eu-west-2:038774803581:secret:db-creds-*",           #this was just * before making it specifc to my secret on AWS
-          "arn:aws:secretsmanager:eu-west-2:038774803581:secret:prometheus-db-creds-*" #this was just *   before making it specifc to my secret on AWS
+          "arn:aws:secretsmanager:eu-west-2:038774803581:secret:db-creds-*",
+          "arn:aws:secretsmanager:eu-west-2:038774803581:secret:prometheus-db-creds-*"
         ]
       }
     ]
   })
 }
-
 
 resource "aws_iam_role_policy_attachment" "iampolicyattach-eso" {
   role       = aws_iam_role.iam_role_eso.name
@@ -154,9 +137,8 @@ resource "aws_iam_role_policy_attachment" "iampolicyattach-eso" {
 }
 
 
-##Service Account for the shipping pod 
 
-resource "kubernetes_service_account_v1" "eso_serviceaact" {
+resource "kubernetes_service_account_v1" "eso_sa_external_secrets" {
   metadata {
     name      = "eso-sa"
     namespace = "external-secrets"
@@ -166,11 +148,70 @@ resource "kubernetes_service_account_v1" "eso_serviceaact" {
   }
   depends_on = [
     aws_iam_role_policy_attachment.iampolicyattach-eso,
-    kubectl_manifest.external_secrets_namespace,
+    kubectl_manifest.external_secrets_namespace
   ]
 }
 
-##Reference to AWS Secrets Manager and tells k8s where to fetch secrets
+resource "kubernetes_service_account_v1" "eso_sa_app_space" {
+  metadata {
+    name      = "eso-sa"
+    namespace = "app-space"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
+    }
+  }
+  depends_on = [
+    aws_iam_role_policy_attachment.iampolicyattach-eso,
+    kubectl_manifest.deployments_namespace
+  ]
+}
+
+resource "kubernetes_service_account_v1" "eso_sa_data_space" {
+  metadata {
+    name      = "eso-sa"
+    namespace = "data-space"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
+    }
+  }
+  depends_on = [
+    aws_iam_role_policy_attachment.iampolicyattach-eso,
+    kubectl_manifest.databases_namespace
+  ]
+}
+
+resource "kubernetes_service_account_v1" "eso_sa_monitoring" {
+  metadata {
+    name      = "eso-sa"
+    namespace = "monitoring"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
+    }
+  }
+  depends_on = [
+    aws_iam_role_policy_attachment.iampolicyattach-eso,
+    kubectl_manifest.monitoring_namespace
+  ]
+}
+
+#  ESO Helm Chart
+
+resource "helm_release" "external_secrets" {
+  name       = "external-secrets"
+  namespace  = "external-secrets"
+  repository = "https://charts.external-secrets.io"
+  chart      = "external-secrets"
+  version    = "0.14.0"
+
+  values = [
+    templatefile("${path.root}/${var.external_secrets_values_file}", {})
+  ]
+
+  depends_on = [kubernetes_service_account_v1.eso_sa_external_secrets]
+}
+
+#  SecretStores 
+
 resource "kubectl_manifest" "secret_store_app_space" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
@@ -187,13 +228,11 @@ spec:
         jwt:
           serviceAccountRef:
             name: eso-sa
-            namespace: external-secrets
 EOF
-
   depends_on = [
-    kubernetes_service_account_v1.eso_serviceaact,
-    data.aws_secretsmanager_secret.secrets,
-    helm_release.external_secrets
+    kubernetes_service_account_v1.eso_sa_app_space,
+    helm_release.external_secrets,
+    kubectl_manifest.deployments_namespace
   ]
 }
 
@@ -213,13 +252,11 @@ spec:
         jwt:
           serviceAccountRef:
             name: eso-sa
-            namespace: external-secrets
 EOF
-
   depends_on = [
-    kubernetes_service_account_v1.eso_serviceaact,
-    data.aws_secretsmanager_secret.secrets,
-    helm_release.external_secrets
+    kubernetes_service_account_v1.eso_sa_data_space,
+    helm_release.external_secrets,
+    kubectl_manifest.databases_namespace
   ]
 }
 
@@ -239,18 +276,16 @@ spec:
         jwt:
           serviceAccountRef:
             name: eso-sa
-            namespace: external-secrets
 EOF
-
   depends_on = [
-    kubernetes_service_account_v1.eso_serviceaact,
-    data.aws_secretsmanager_secret.prometheus_secrets,
-    helm_release.external_secrets
+    kubernetes_service_account_v1.eso_sa_monitoring,
+    helm_release.external_secrets,
+    kubectl_manifest.monitoring_namespace
   ]
 }
 
+#  ExternalSecrets 
 
-##Secret to fetch from AWS Secrets Manager and create a k8s secret so shipping pod can authenticate to mysql
 resource "kubectl_manifest" "external_secret_mysql" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
@@ -282,16 +317,12 @@ spec:
       remoteRef:
         key: db-creds
         property: user-password
-    
 EOF
   depends_on = [
     kubectl_manifest.secret_store_app_space,
-    kubectl_manifest.deployments_namespace,
     data.aws_secretsmanager_secret.secrets
   ]
 }
-
-## RabbitMq secret which lives in data-space
 
 resource "kubectl_manifest" "external_secret_rabbitmq" {
   yaml_body = <<EOF
@@ -317,11 +348,11 @@ spec:
         key: db-creds
         property: RABBITMQ_DEFAULT_PASS
 EOF
-  depends_on = [kubectl_manifest.secret_store_data_space,
-    kubectl_manifest.databases_namespace,
-  data.aws_secretsmanager_secret.secrets]
+  depends_on = [
+    kubectl_manifest.secret_store_data_space,
+    data.aws_secretsmanager_secret.secrets
+  ]
 }
-
 
 resource "kubectl_manifest" "external_secret_payment" {
   yaml_body = <<EOF
@@ -347,12 +378,11 @@ spec:
         key: db-creds
         property: RABBITMQ_DEFAULT_PASS
 EOF
-  depends_on = [kubectl_manifest.secret_store_app_space,
-    kubectl_manifest.deployments_namespace,
-  data.aws_secretsmanager_secret.secrets]
+  depends_on = [
+    kubectl_manifest.secret_store_app_space,
+    data.aws_secretsmanager_secret.secrets
+  ]
 }
-
-
 
 resource "kubectl_manifest" "mysql_exporter_secret" {
   yaml_body = <<EOF
@@ -374,14 +404,11 @@ spec:
         key: prometheus-db-creds
         property: mycnf_content
 EOF
-
   depends_on = [
     kubectl_manifest.secret_store_monitoring,
-    kubectl_manifest.monitoring_namespace,
     data.aws_secretsmanager_secret.prometheus_secrets
   ]
 }
-
 
 resource "kubectl_manifest" "redis_exporter_secret" {
   yaml_body = <<EOF
@@ -403,14 +430,11 @@ spec:
         key: prometheus-db-creds
         property: REDIS_PASSWORD
 EOF
-
   depends_on = [
     kubectl_manifest.secret_store_monitoring,
-    kubectl_manifest.monitoring_namespace,
     data.aws_secretsmanager_secret.prometheus_secrets
   ]
 }
-
 
 resource "kubectl_manifest" "gmail_password_alertmanager" {
   yaml_body = <<EOF
@@ -432,10 +456,8 @@ spec:
         key: prometheus-db-creds
         property: gmail_password
 EOF
-
   depends_on = [
     kubectl_manifest.secret_store_monitoring,
-    kubectl_manifest.monitoring_namespace,
     data.aws_secretsmanager_secret.prometheus_secrets
   ]
 }
