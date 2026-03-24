@@ -34,7 +34,8 @@ NodeAutoscaling:Karpenter
 Certificate management:cert-manager (Let's Encrypt)
 DNS management:external-dns
 Secrets managements:External Secrets Operator + AWS Secrets Manager
-AuthIRSA (IAM Roles for Service Accounts) via OIDCImage registryAmazon ECR
+AuthIRSA (IAM Roles for Service Accounts) via OIDC 
+Image registry:Amazon ECR
 
 Project Structure
 roboshop-eks/
@@ -119,6 +120,11 @@ Control plane ↔ node rules
 Nodes → control plane: port 443 (HTTPS to the API server)
 Control plane → nodes: ephemeral ports 1024–65535 (API server-initiated connections back to kubelets)
 
+2.IAM:
+
+This module plays a heavy role behind how the services interact with each other, module contains the roles for my EKS cluster, the cluster needs to be able to create/manage services like Elastic Load Balancing and EC2, so without attaching the clusterpolicy, the cluster cant carry out basic functions.
+
+
 2.EKS
 Manages the Kubernetes cluster configuration.
 
@@ -139,6 +145,7 @@ VPC CNI: assigns VPC-native IPs directly to pods
 
 aws-auth ConfigMap includes the Terraform IAM user and GitHub Actions role so both kubectl access and CI pipeline deployments work without being locked out.Definitely didnt learn this the hard way!!
 
+
 3.External Secrets Operator (ESO)
 Bridges AWS Secrets Manager and Kubernetes native secrets.
 Kubernetes secrets are only base64-encoded, not encrypted, and hardcoding secret values in Terraform would expose them in source control. ESO solves this by treating AWS Secrets Manager as the source of truth.
@@ -148,6 +155,7 @@ A SecretStore resource defines how to connect to AWS Secrets Manager (using IRSA
 An ExternalSecret resource references a specific secret in Secrets Manager
 ESO fetches the value and creates a native Kubernetes Secret object in the target namespace
 ESO continuously reconciles — if the secret changes in Secrets Manager, it is automatically synced into the cluster on the next refresh interval
+
 
 4.Prometheus
 
@@ -162,6 +170,7 @@ ServiceMonitor resources tell Prometheus which endpoints to scrape
 Key Istio metrics collected: istio_requests_total, istio_request_duration_milliseconds, istio_request_bytes, istio_response_bytes
 
 ![Running mysqlexporter](mysqlexporter.PNG)
+
 
 
 5.Grafana
@@ -179,16 +188,16 @@ Uses DNS-01 ACME challenge: creates a acme-challenge TXT record in Route 53 to p
 Requires Route 53 write permissions via IRSA
 Certificates are automatically renewed before expiry
 
+
 7.External-dns
 Automates Route 53 record management.
 
-Watches for Ingress and Service resources in the cluster
-Automatically creates, updates, and deletes Route 53 A records to match — when the ALB Ingress comes up, external-dns creates the DNS record pointing to it
+Watches for Ingress and Service resources in the cluster.Automatically creates, updates, and deletes Route 53 A records to match — when the ALB Ingress comes up, external-dns creates the DNS record pointing to it
 Requires Route 53 write permissions via IRSA
 
-8.Karpenter
-Replaces the Cluster Autoscaler with faster, more flexible node provisioning.
 
+8.Karpenter
+Replaces the Cluster Autoscaler with faster, more flexible node provisioning.This open-source tool:
 Watches for pods stuck in Pending state due to insufficient capacity
 Provisions a right-sized node within seconds rather than minutes
 Uses Amazon SQS to receive EC2 spot interruption notices and drain nodes gracefully before termination
@@ -202,7 +211,6 @@ Consolidates underutilised nodes to reduce cost
 
 
 10.Istio-
-
 
 
 IAM and Security
@@ -222,6 +230,7 @@ Kiali also reads Kubernetes API and Istio config directly to surface VirtualServ
 
 <Add kiali map pic here>
 
+
 Planned Improvements:
 
  Run all my containers as non-root users
@@ -237,29 +246,4 @@ Planned Improvements:
 
 
 
-
-
-
-
-Contanerization:
-
-Each application has been containerized using Docker principles.I used alpine and slim based images to reduce the image significantly by around a 45% and used multi stage builds where possible to further reduce image size.
-
-I finally wrote a docker compose file to bring all my containers together by creating a network.
-
-Main Keypoints:   Shipping Relies on Mysql, cart relies on redis, user relies on mongodb and redis,catalogue relies on mongodb, dispatch relies on rabbitmq, payment relies on rabbitmq,  ratings relies on mysql
-
-This is important as the services rely on the readiness of the databases to ensure the app runs effectively.Shipping relies on mysql because mysql holds the database of cities, so shipping cant run if it cant get the cities to choose which one to place the order.
-
-Cart relies on redis for user session and saving the item in cart and it doesnt require complex queries and the carts are also temporary so they dont need storage.Redis also acts as a shared persisten-enough store which survies pod crashed in k8s.
-
-
-Terraform -Bootstrapping
-
-This module is key, essentially the backbone of ensuring systems are ready before deploying the application to EKS.
-
-In this module I have created ECR IAM Roles which allows access to the ecr repositories and pull images using the polcies and a policy attachment.I then created all the ecr repositories required as this is where I will be pushing my docker images to.All the repositories have been ecrytpted using KMS 
-
-
-Terraform - Talk about each module and why I did it this way.
 

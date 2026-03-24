@@ -118,7 +118,6 @@ resource "aws_iam_role_policy_attachment" "node_group_elb_policy" {
 
 ###Roles for CloudWatch
 
-
 resource "aws_iam_role" "vpc_flow_logs_role" {
   name = "vpc-flow-logs-cloudwatch-role"
   assume_role_policy = jsonencode({
