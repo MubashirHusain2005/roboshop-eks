@@ -12,7 +12,11 @@ terraform.tfstate.*
 *.tfvars
 *.tfplan
 *.tfstate
-errored.tfstate
+*.tfstate.*
+
+# Specific files
 state.json
+schema.json
+
 
 
