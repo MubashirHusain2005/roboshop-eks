@@ -1,6 +1,6 @@
 # E-Commerce Platform on AWS EKS with Istio
 
-A production-grade deployment of a three-tier e-commerce application on AWS EKS, featuring a full GitOps pipeline, service mesh, and observability stack.
+A production-grade deployment of a three-tier e-commerce application on AWS EKS, featuring a full GitOps pipeline, service mesh, and observability stack. 
 
 > 🎥 [Watch the Loom Demo](https://www.loom.com/share/6a9283a627ac4616a5780a99c53f7aa7)
 
@@ -8,7 +8,7 @@ A production-grade deployment of a three-tier e-commerce application on AWS EKS,
 
 ## Overview
 
-The platform runs **seven microservices** (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline with:
+The platform runs seven microservices (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline with:
 
 - **Zero-trust security** via Istio service mesh and IRSA
 - **GitOps deployments** driven by ArgoCD
@@ -47,22 +47,47 @@ The platform runs **seven microservices** (web, payment, user, cart, catalogue, 
 
 ```
 roboshop-eks/
+├── .github\workflows
+     ├── push-image.yml         #Pipeline to push images to ECR
+     ├── terraform.yml          # Pipeline to run terraform plan/apply/destroy
 ├── README.md
 ├── app/                    # Dockerfiles and docker-compose for local deployment
-├── main.tf                 # Root Terraform configuration
+├── images/ 
+├── robotshop-application/ 
+    ├── charts/                
+    ├── templates/ 
+        ├── destinationrule.yaml
+        ├── istio.yml
+        ├── manifests.yml
+        ├── mtls.yml
+        ├── services.yml
+        ├── storage.yml                 
+    ├── .helmignore/                
+    ├── cert-manager-values.yaml               
+    ├── eso-values.yaml         
+    ├── istiod-values.yaml       
+    ├── karpenter-values.yaml       
+    ├── nginx-values.yaml          
+    ├── prometheus-values.yaml             
+├── terraform/
+    └── bootstrap/
+        ├── main.tf
+        ├── variables.tf
+        ├── outputs.tf
+    └── modules/
+        ├── vpc/                # VPC, subnets, IGW, NAT Gateway, route tables
+        ├── istio/              # Cluster and node security group rules
+        ├── eks/                # EKS cluster, node groups, OIDC, add-ons
+        ├── eso/                # External Secrets Operator + SecretStore config
+        ├── monitoring/         # Prometheus + Grafana configuration for observability
+        ├── external-dns/       # Route 53 DNS automation
+        ├── cert-manager/       # Let's Encrypt certificate provisioning
+        ├── karpenter/          # Node autoscaling with SQS interruption handling
+        ├── iam/                # Roles and policies for cluster and nodes
+        └── argocd/             # GitOps deployment configuration
+├── main.tf                     # Root Terraform configuration
 ├── variables.tf
 ├── outputs.tf
-└── modules/
-    ├── vpc/                # VPC, subnets, IGW, NAT Gateway, route tables
-    ├── istio/              # Cluster and node security group rules
-    ├── eks/                # EKS cluster, node groups, OIDC, add-ons
-    ├── eso/                # External Secrets Operator + SecretStore config
-    ├── monitoring/         # Prometheus + Grafana configuration
-    ├── external-dns/       # Route 53 DNS automation
-    ├── cert-manager/       # Let's Encrypt certificate provisioning
-    ├── karpenter/          # Node autoscaling with SQS interruption handling
-    ├── iam/                # Roles and policies for cluster and nodes
-    └── argocd/             # GitOps deployment configuration
 ```
 
 ---
@@ -230,6 +255,10 @@ GitOps controller that acts as the source of truth for cluster state. Continuous
 ![ArgoCD](argo-cd.PNG)
 
 ---
+
+### Istio
+
+Istio acts as a service mesh which visualizes how traffic moves in a microservice based application, using envoy proxies 
 
 ## Observability Pipeline
 
