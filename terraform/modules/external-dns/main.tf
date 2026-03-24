@@ -34,7 +34,7 @@ data "aws_s3_bucket" "s3_bucket" {
 
 data "aws_route53_zone" "hosted_zone" {
   name         = "mubashir.site"
-  private_zone = true
+  private_zone = false
 }
 
 
