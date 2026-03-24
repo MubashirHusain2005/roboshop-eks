@@ -42,6 +42,6 @@ variable "nodegroup_role_arn" {
 
 
 variable "aws_region" {
-  type = string
+  type    = string
   default = "eu-west-2"
 }

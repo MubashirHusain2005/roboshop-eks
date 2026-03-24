@@ -335,7 +335,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           "pricing:GetProducts",
           "eks:DescribeCluster"
         ]
-        Resource = "*"  
+        Resource = "*"
       },
       # IAM PassRole - only for specific Karpenter role
       {
@@ -344,7 +344,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           "iam:PassRole"
         ]
         Resource = aws_iam_role.karpenter_profile_instance_role.arn
-       
+
       },
       # IAM Instance Profile management - scoped to Karpenter resources
       {
@@ -359,7 +359,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         ]
         Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:instance-profile/karpenter-*"
       },
-  
+
       {
         Effect = "Allow"
         Action = [
@@ -376,7 +376,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Condition = {
           StringLike = {
             "ec2:InstanceProfile" = aws_iam_role.karpenter_profile_instance_role.arn
-            
+
           }
         }
       },
@@ -422,7 +422,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Condition = {
           StringLike = {
             "ec2:ResourceTag/karpenter.sh/discovery" = var.cluster_id
-            
+
           }
         }
       },
@@ -453,9 +453,9 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           "sqs:GetQueueUrl"
         ]
         Resource = aws_sqs_queue.karpenter_interruption.arn
-       
+
       },
-     
+
       {
         Effect = "Allow"
         Action = [
@@ -469,49 +469,49 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
 
 ###Policy needs fixing 
 #resource "aws_iam_policy" "iam_karpenter_policy" {
- # name = "iampolicy-karpenter"
+# name = "iampolicy-karpenter"
 
- # policy = jsonencode({
-  #  Version = "2012-10-17"
-    #Statement = [
-    #  {
-     #   Effect = "Allow"
-      #  Action = [
-     #     "ssm:GetParameter",
-      #    "iam:PassRole",
-      #    "iam:CreateInstanceProfile",
-      #    "iam:DeleteInstanceProfile",
-       #   "iam:GetInstanceProfile",
-       #   "iam:AddRoleToInstanceProfile",
-       #   "iam:RemoveRoleFromInstanceProfile",
-        #  "iam:TagInstanceProfile",
-        #  "ec2:DescribeImages",
-        #  "ec2:RunInstances",
-       #   "ec2:DescribeSubnets",
-        #  "ec2:DescribeSecurityGroups",
-        #  "ec2:DescribeLaunchTemplates",
-        #  "ec2:DescribeInstances",
-       #   "ec2:DescribeInstanceTypes",
-       #   "ec2:DescribeInstanceTypeOfferings",
-        #  "ec2:DeleteLaunchTemplate",
-        #  "ec2:CreateTags",
-      #    "ec2:DescribeAvailabilityZones",
-       #   "ec2:TerminateInstances",
-       #   "ec2:CreateLaunchTemplate",
-        #  "ec2:CreateFleet",
-        #  "ec2:DescribeSpotPriceHistory",
-       #   "pricing:GetProducts",
-        #  "sqs:SendMessage",
-        #  "sqs:ReceiveMessage",
-        #  "sqs:DeleteMessage",
-        #  "sqs:GetQueueAttributes",
-        #  "sqs:GetQueueUrl",
-         # "eks:DescribeCluster"
-      #  ],
-      #  Resource = "*"
-      #},
-   # ]
-  #})
+# policy = jsonencode({
+#  Version = "2012-10-17"
+#Statement = [
+#  {
+#   Effect = "Allow"
+#  Action = [
+#     "ssm:GetParameter",
+#    "iam:PassRole",
+#    "iam:CreateInstanceProfile",
+#    "iam:DeleteInstanceProfile",
+#   "iam:GetInstanceProfile",
+#   "iam:AddRoleToInstanceProfile",
+#   "iam:RemoveRoleFromInstanceProfile",
+#  "iam:TagInstanceProfile",
+#  "ec2:DescribeImages",
+#  "ec2:RunInstances",
+#   "ec2:DescribeSubnets",
+#  "ec2:DescribeSecurityGroups",
+#  "ec2:DescribeLaunchTemplates",
+#  "ec2:DescribeInstances",
+#   "ec2:DescribeInstanceTypes",
+#   "ec2:DescribeInstanceTypeOfferings",
+#  "ec2:DeleteLaunchTemplate",
+#  "ec2:CreateTags",
+#    "ec2:DescribeAvailabilityZones",
+#   "ec2:TerminateInstances",
+#   "ec2:CreateLaunchTemplate",
+#  "ec2:CreateFleet",
+#  "ec2:DescribeSpotPriceHistory",
+#   "pricing:GetProducts",
+#  "sqs:SendMessage",
+#  "sqs:ReceiveMessage",
+#  "sqs:DeleteMessage",
+#  "sqs:GetQueueAttributes",
+#  "sqs:GetQueueUrl",
+# "eks:DescribeCluster"
+#  ],
+#  Resource = "*"
+#},
+# ]
+#})
 #}
 
 
@@ -572,17 +572,17 @@ resource "helm_release" "karpenter" {
 
     {
       name  = "settings.interruptionQueue"
-      value = aws_sqs_queue.karpenter_interruption.name 
+      value = aws_sqs_queue.karpenter_interruption.name
     },
 
     {
       name  = "serviceAccount.create"
-      value = "false" 
+      value = "false"
     },
 
     {
       name  = "serviceAccount.name"
-      value = "karpenter" 
+      value = "karpenter"
     },
 
     {

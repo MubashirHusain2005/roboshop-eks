@@ -195,8 +195,8 @@ resource "aws_cloudtrail" "route_53_access" {
   event_selector {
     read_write_type           = "All"
     include_management_events = true
-  
-    }
-  
-  depends_on = [ data.aws_s3_bucket.s3_bucket ]
+
+  }
+
+  depends_on = [data.aws_s3_bucket.s3_bucket]
 }

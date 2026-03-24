@@ -38,15 +38,15 @@ variable "oidc_issuer_url" {
 }
 
 variable "acme_email" {
-  type = string
+  type        = string
   description = "Email for Let's Encrypt notifications"
-  default = "stokemubashir@gmail.com"
-  sensitive = true
+  default     = "stokemubashir@gmail.com"
+  sensitive   = true
 }
 
 variable "hosted_zone_id" {
-  type = string
+  type        = string
   description = "Route53 hosted zone ID for DNS validation"
-  default = "Z09331692XTWCNAOSXR5T"
-  sensitive = true
+  default     = "Z09331692XTWCNAOSXR5T"
+  sensitive   = true
 }

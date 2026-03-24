@@ -20,7 +20,7 @@ output "public_subnet_ids" {
 
 
 #output "nat_gateway_id" {
-  #value = aws_nat_gateway.ngw.id
+#value = aws_nat_gateway.ngw.id
 #}
 
 output "kms_key_id" {
