@@ -37,7 +37,7 @@ data "aws_secretsmanager_secret" "prometheus_secrets" {
 
 
 resource "kubectl_manifest" "deployments_namespace" {
-  yaml_body = <<EOF
+  yaml_body  = <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -49,7 +49,7 @@ EOF
 }
 
 resource "kubectl_manifest" "databases_namespace" {
-  yaml_body = <<EOF
+  yaml_body  = <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -59,7 +59,7 @@ EOF
 }
 
 resource "kubectl_manifest" "external_secrets_namespace" {
-  yaml_body = <<EOF
+  yaml_body  = <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -69,7 +69,7 @@ EOF
 }
 
 resource "kubectl_manifest" "monitoring_namespace" {
-  yaml_body = <<EOF
+  yaml_body  = <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
