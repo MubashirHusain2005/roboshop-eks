@@ -279,7 +279,6 @@ spec:
         requests:
           storage: {{ .Values.redis.storage }}
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -340,7 +339,7 @@ spec:
         livenessProbe:
           exec:
             command:
-            - rabbitmq-diagonostics
+            - rabbitmq-diagnostics
             - ping
           initialDelaySeconds: 30
           periodSeconds: 10
