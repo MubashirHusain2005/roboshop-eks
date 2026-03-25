@@ -78,7 +78,7 @@ mongo:
 # MYSQL
 # ============================================
 mysql:
-  replicas: 2
+  replicas: 1
   port: 3306
   database: cities
   user: shipping
@@ -96,7 +96,7 @@ mysql:
       cpu: "500m"
       memory: "512Mi"
   readinessProbe:
-    initialDelaySeconds: 0
+    initialDelaySeconds: 60
     periodSeconds: 10
     failureThreshold: 20  #This was not here before
 
