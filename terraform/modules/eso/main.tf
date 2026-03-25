@@ -27,12 +27,12 @@ terraform {
   }
 }
 
-data "aws_secretsmanager_secret" "secrets" {
-  name = var.secret_name
+data "aws_secretsmanager_secret" "app_secrets" {
+  name = var.apps_secrets
 }
 
 data "aws_secretsmanager_secret" "prometheus_secrets" {
-  name = var.secret_name
+  name = var.monitoring_secrets
 }
 
 
@@ -319,8 +319,7 @@ spec:
         property: user-password
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_app_space,
-    data.aws_secretsmanager_secret.secrets
+    kubectl_manifest.secret_store_app_space
   ]
 }
 
@@ -349,8 +348,7 @@ spec:
         property: RABBITMQ_DEFAULT_PASS
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_data_space,
-    data.aws_secretsmanager_secret.secrets
+    kubectl_manifest.secret_store_data_space
   ]
 }
 
@@ -380,7 +378,6 @@ spec:
 EOF
   depends_on = [
     kubectl_manifest.secret_store_app_space,
-    data.aws_secretsmanager_secret.secrets
   ]
 }
 
@@ -406,7 +403,6 @@ spec:
 EOF
   depends_on = [
     kubectl_manifest.secret_store_monitoring,
-    data.aws_secretsmanager_secret.prometheus_secrets
   ]
 }
 
@@ -432,7 +428,6 @@ spec:
 EOF
   depends_on = [
     kubectl_manifest.secret_store_monitoring,
-    data.aws_secretsmanager_secret.prometheus_secrets
   ]
 }
 
@@ -457,8 +452,7 @@ spec:
         property: gmail_password
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_monitoring,
-    data.aws_secretsmanager_secret.prometheus_secrets
+    kubectl_manifest.secret_store_monitoring
   ]
 }
 
