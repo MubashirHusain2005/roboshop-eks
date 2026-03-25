@@ -595,6 +595,8 @@ spec:
             value: {{ .Values.mongo.port | quote }}
           - name: MYSQL_HOST
             value: {{ .Values.ratings.mysqlHost }}
+          - name: DATABASE_URL
+            value: "mysql://shipping:secret@mysql.app-space.svc.cluster.local:3306/cities"
           - name: MYSQL_PORT
             value: {{ .Values.ratings.mysqlPort | quote }}
           - name: MYSQL_USER
