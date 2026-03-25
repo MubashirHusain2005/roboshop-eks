@@ -136,15 +136,15 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.mysql.secretName }}
-              key: {{ .Values.mysql.secretKeys.rootPassword }}
+              name: mysql-secret
+              key: root-password
         - name: MYSQL_USER
           value: {{ .Values.mysql.user }}
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
               name: {{ .Values.mysql.secretName }}
-              key: {{ .Values.mysql.secretKeys.userPassword }}
+              key: user-password
         resources:
           requests:
             cpu: {{ .Values.mysql.resources.requests.cpu }}
@@ -479,7 +479,7 @@ spec:
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           envFrom:
             - secretRef:
-                name: {{ .Values.shipping.secretName }}
+                name: mysql-secret
           ports:
             - containerPort: {{ .Values.shipping.port }}
           resources:
@@ -593,20 +593,6 @@ spec:
             value: mongo.{{ .Values.namespaces.data }}.svc.cluster.local
           - name: MONGO_PORT
             value: {{ .Values.mongo.port | quote }}
-          - name: MYSQL_HOST
-            value: mysql.{{ .Values.namespaces.app }}.svc.cluster.local
-          - name: MYSQL_PORT
-            value: 3306
-          - name: MYSQL_USER
-            valueFrom:
-              secretKeyRef:
-                name: mysql-secret
-                key: DB_USER
-          - name: MYSQL_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mysql-secret
-                key: user-password
         resources:
           requests:
             cpu: {{ .Values.ratings.resources.requests.cpu }}
