@@ -30,13 +30,13 @@ variable "kms_key_id" {
 }
 
 variable "apps_secrets" {
-  type    = string
-  default = "db-creds"
+  type      = string
+  default   = "db-creds"
   sensitive = true
 }
 
 variable "monitoring_secrets" {
-  type = string
-  default = "prometheus-db-creds"
+  type      = string
+  default   = "prometheus-db-creds"
   sensitive = true
 }
