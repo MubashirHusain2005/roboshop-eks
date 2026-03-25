@@ -411,9 +411,9 @@ spec:
         property: DB_NAME
 EOF
 
- depends_on = [
- kubectl_manifest.clustersecret_store
- ]
+  depends_on = [
+    kubectl_manifest.clustersecret_store
+  ]
 }
 
 resource "kubectl_manifest" "mysql_exporter_secret" {
