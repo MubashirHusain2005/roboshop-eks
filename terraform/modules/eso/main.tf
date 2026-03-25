@@ -382,34 +382,39 @@ EOF
 }
 
 
-#resource "kubectl_manifest" "external_secret_shipping" {
-#yaml_body = <<EOF
-#apiVersion: external-secrets.io/v1beta1
-#kind: ExternalSecret
-#metadata:
-#name: shipping-secret
-# namespace: app-space
-#spec:
-#refreshInterval: 5m
-#secretStoreRef:
-#name: aws-secrets
-#kind: ClusterSecretStore
-#target:
-#name: shipping-secret
-#data:
-# - secretKey: DB_USER
-#  remoteRef:
-#   key: db-creds
-#  property: DB_USER
-# - secretKey: DB_PASSWORD
-# remoteRef:
-# key: db-creds
-# property: DB_PASSWORD
-#EOF
-# depends_on = [
-# kubectl_manifest.clustersecret_store,
-# ]
-#}
+resource "kubectl_manifest" "external_secret_shipping" {
+  yaml_body = <<EOF
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: shipping-secret
+  namespace: app-space
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    name: aws-secrets
+    kind: ClusterSecretStore
+  target:
+    name: shipping-secret
+  data:
+    - secretKey: user
+      remoteRef:
+        key: db-creds
+        property: DB_USER
+    - secretKey: userPassword
+      remoteRef:
+        key: db-creds
+        property: DB_PASSWORD
+    - secretKey: database
+      remoteRef:
+        key: db-creds
+        property: DB_NAME
+EOF
+
+ depends_on = [
+ kubectl_manifest.clustersecret_store
+ ]
+}
 
 resource "kubectl_manifest" "mysql_exporter_secret" {
   yaml_body = <<EOF

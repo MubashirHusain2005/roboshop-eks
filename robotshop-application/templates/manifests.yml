@@ -593,6 +593,20 @@ spec:
             value: mongo.{{ .Values.namespaces.data }}.svc.cluster.local
           - name: MONGO_PORT
             value: {{ .Values.mongo.port | quote }}
+          - name: MYSQL_HOST
+            value: mysql.{{ .Values.namespaces.app }}.svc.cluster.local
+          - name: MYSQL_PORT
+            value: 3306
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: DB_USER
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: user-password
         resources:
           requests:
             cpu: {{ .Values.ratings.resources.requests.cpu }}
