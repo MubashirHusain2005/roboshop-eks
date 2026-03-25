@@ -1,104 +1,13 @@
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  name: app-quota
-  namespace: {{ .Values.namespaces.app }}
-spec:
-  hard:
-    requests.cpu: {{ .Values.quotas.app.requests.cpu }}
-    requests.memory: {{ .Values.quotas.app.requests.memory }}
-    limits.cpu: {{ .Values.quotas.app.limits.cpu }}
-    limits.memory: {{ .Values.quotas.app.limits.memory }}
-    pods: {{ .Values.quotas.app.pods | quote }}
----
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  name: data-quota
-  namespace: {{ .Values.namespaces.data }}
-spec:
-  hard:
-    requests.cpu: {{ .Values.quotas.data.requests.cpu }}
-    requests.memory: {{ .Values.quotas.data.requests.memory }}
-    limits.cpu: {{ .Values.quotas.data.limits.cpu }}
-    limits.memory: {{ .Values.quotas.data.limits.memory }}
-    pods: {{ .Values.quotas.data.pods | quote }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: redis-config
-  namespace: {{ .Values.namespaces.data }}
-data:
-  redis.conf: |
-    appendonly {{ .Values.redis.config.appendonly }}
-    appendfsync {{ .Values.redis.config.appendfsync }}
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: mongo
-  namespace: {{ .Values.namespaces.data }}
-spec:
-  serviceName: mongo
-  replicas: {{ .Values.mongo.replicas }}
-  selector:
-    matchLabels:
-      app: mongo
-  template:
-    metadata:
-      labels:
-        app: mongo
-    spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: {{ .Values.global.nodeAffinityKey }}
-                    operator: In
-                    values:
-                      - {{ .Values.global.nodeAffinityValue }}
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: mongo
-              topologyKey: kubernetes.io/hostname
-      containers:
-      - name: mongo
-        image: {{ .Values.global.registry }}/mongo:{{ .Values.global.imageTag }}
-        ports:
-        - containerPort: {{ .Values.mongo.port }}
-        volumeMounts:
-        - name: mongo-data
-          mountPath: /data/db
-        resources:
-          requests:
-            cpu: {{ .Values.mongo.resources.requests.cpu }}
-            memory: {{ .Values.mongo.resources.requests.memory }}
-          limits:
-            cpu: {{ .Values.mongo.resources.limits.cpu }}
-            memory: {{ .Values.mongo.resources.limits.memory }}
-  volumeClaimTemplates:
-  - metadata:
-      name: mongo-data
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      storageClassName: {{ .Values.mongo.storageClass }}
-      resources:
-        requests:
-          storage: {{ .Values.mongo.storage }}
----
+
+##MYSQL
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql
-  namespace: {{ .Values.namespaces.app }}
+  namespace: app-space
 spec:
   serviceName: mysql
-  replicas: {{ .Values.mysql.replicas }}
+  replicas: 2
   selector:
     matchLabels:
       app: mysql
@@ -107,56 +16,55 @@ spec:
       labels:
         app: mysql
     spec:
+      #serviceAccountName: mysql-sa    
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: {{ .Values.global.nodeAffinityKey }}
+              - key: workload
                 operator: In
                 values:
-                - {{ .Values.global.nodeAffinityValue }}
+                - app
         podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app: mysql
-                topologyKey: kubernetes.io/hostname
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: mysql
+            topologyKey: kubernetes.io/hostname
       containers:
       - name: mysql
-        image: {{ .Values.global.registry }}/mysql:{{ .Values.global.imageTag }}
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/mysql:v1
         ports:
-        - containerPort: {{ .Values.mysql.port }}
+        - containerPort: 3306
           name: mysql
         env:
         - name: MYSQL_DATABASE
-          value: {{ .Values.mysql.database }}
+          value: cities
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.mysql.secretName }}
-              key: {{ .Values.mysql.secretKeys.rootPassword }}
+              name: mysql-secret
+              key: root-password
         - name: MYSQL_USER
-          value: {{ .Values.mysql.user }}
+          value: shipping
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.mysql.secretName }}
-              key: {{ .Values.mysql.secretKeys.userPassword }}
+              name: mysql-secret
+              key: user-password
         resources:
           requests:
-            cpu: {{ .Values.mysql.resources.requests.cpu }}
-            memory: {{ .Values.mysql.resources.requests.memory }}
+            cpu: "100m"
+            memory: "256Mi"
           limits:
-            cpu: {{ .Values.mysql.resources.limits.cpu }}
-            memory: {{ .Values.mysql.resources.limits.memory }}
+            cpu: "500m"
+            memory: "512Mi"
         volumeMounts:
         - name: mysql-data
           mountPath: /var/lib/mysql
           subPath: mysql
-        readinessProbe:
+        readinessProbe:                
           exec:
             command:
             - sh
@@ -167,56 +75,27 @@ spec:
                 -u root \
                 -p"$MYSQL_ROOT_PASSWORD" \
                 --silent
-          initialDelaySeconds: {{ .Values.mysql.readinessProbe.initialDelaySeconds }}
-          periodSeconds: {{ .Values.mysql.readinessProbe.periodSeconds }}
-          failureThreshold: {{ .Values.mysql.readinessProbe.failureThreshold }}
-        startupProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - |
-              mysqladmin ping \
-               -h 127.0.0.1 \
-               -u root \
-               -p"$MYSQL_ROOT_PASSWORD" \
-               --silent
-          initialDelaySeconds: 20
-          periodSeconds: 5
-          failureThreshold: 3
-        livenessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - |
-              mysqladmin ping \
-                -h 127.0.0.1 \
-                -u root \
-                -p"$MYSQL_ROOT_PASSWORD" \
-                --silent
-          initialDelaySeconds: 0
+          initialDelaySeconds: 120
           periodSeconds: 10
-          failureThreshold: 3
   volumeClaimTemplates:
   - metadata:
       name: mysql-data
     spec:
       accessModes:
       - ReadWriteOnce
-      storageClassName: {{ .Values.mysql.storageClass }}
+      storageClassName: mysql-gp3
       resources:
         requests:
-          storage: {{ .Values.mysql.storage }}
+          storage: 5Gi
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: redis
-  namespace: {{ .Values.namespaces.data }}
+  namespace: data-space
 spec:
-  serviceName: redis
-  replicas: {{ .Values.redis.replicas }}
+  serviceName: "redis"
+  replicas: 2
   selector:
     matchLabels:
       app: redis
@@ -226,66 +105,75 @@ spec:
         app: redis
     spec:
       affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: {{ .Values.global.nodeAffinityKey }}
-                    operator: In
-                    values:
-                      - {{ .Values.global.nodeAffinityValue }}
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: redis
-              topologyKey: kubernetes.io/hostname
+         nodeAffinity:
+           requiredDuringSchedulingIgnoredDuringExecution:
+             nodeSelectorTerms:
+               - matchExpressions:
+                   - key: workload
+                     operator: In
+                     values:
+                       - app
+         podAntiAffinity:
+           requiredDuringSchedulingIgnoredDuringExecution:
+             - labelSelector:
+                 matchLabels:
+                   app: redis
+               topologyKey: kubernetes.io/hostname
       containers:
       - name: redis
-        image: {{ .Values.redis.image }}
+        image: redis:6.2
         ports:
-        - containerPort: {{ .Values.redis.port }}
+        - containerPort: 6379
         resources:
           requests:
-            cpu: {{ .Values.redis.resources.requests.cpu }}
-            memory: {{ .Values.redis.resources.requests.memory }}
+            cpu: "100m"
+            memory: "190Mi"
           limits:
-            cpu: {{ .Values.redis.resources.limits.cpu }}
-            memory: {{ .Values.redis.resources.limits.memory }}
+            cpu: "300m"
+            memory: "256Mi"
         volumeMounts:
+       
         - name: redis-config
           mountPath: /usr/local/etc/redis/redis.conf
           subPath: redis.conf
+
+
         - name: redis-data
           mountPath: /data
+
+
         command:
         - sh
         - -c
         - |
           redis-server /usr/local/etc/redis/redis.conf \
           --appendonly yes
+
+
       volumes:
       - name: redis-config
         configMap:
           name: redis-config
+
+
   volumeClaimTemplates:
   - metadata:
       name: redis-data
     spec:
       accessModes:
       - ReadWriteOnce
-      storageClassName: {{ .Values.redis.storageClass }}
+      storageClassName: redis-gp3
       resources:
         requests:
-          storage: {{ .Values.redis.storage }}
+          storage: 10Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq
-  namespace: {{ .Values.namespaces.data }}
+  namespace: data-space
 spec:
-  replicas: {{ .Values.rabbitmq.replicas }}
+  replicas: 2
   selector:
     matchLabels:
       app: rabbitmq
@@ -295,55 +183,50 @@ spec:
         app: rabbitmq
     spec:
       affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: {{ .Values.global.nodeAffinityKey }}
-                    operator: In
-                    values:
-                      - {{ .Values.global.nodeAffinityValue }}
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app: rabbitmq
-                topologyKey: kubernetes.io/hostname
+         nodeAffinity:
+           requiredDuringSchedulingIgnoredDuringExecution:
+             nodeSelectorTerms:
+               - matchExpressions:
+                   - key: workload
+                     operator: In
+                     values:
+                       - app
+         podAntiAffinity:
+           requiredDuringSchedulingIgnoredDuringExecution:
+             - labelSelector:
+                 matchLabels:
+                   app: rabbitmq
+               topologyKey: kubernetes.io/hostname
       containers:
       - name: rabbitmq
-        image: {{ .Values.rabbitmq.image }}
+        image: rabbitmq:3.8-management-alpine
         ports:
-        - containerPort: {{ .Values.rabbitmq.port }}
+        - containerPort: 5672
         env:
           - name: RABBITMQ_DEFAULT_USER
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.rabbitmq.secretName }}
-                key: RABBITMQ_DEFAULT_USER   
-          - name: RABBITMQ_DEFAULT_PASS                   
-            valueFrom: 
-              secretKeyRef:
-                name: {{ .Values.rabbitmq.secretName }}
-                key: RABBITMQ_DEFAULT_PASS
-          - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
-            value: "-rabbit loopback_users []"
+            value: guest
+          - name: RABBITMQ_DEFAULT_PASS
+            value: guest
+          - name: RABBITMQ_ALLOW_GUEST
+            value: "true"
         resources:
           requests:
-            cpu: {{ .Values.rabbitmq.resources.requests.cpu }}
-            memory: {{ .Values.rabbitmq.resources.requests.memory }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            cpu: {{ .Values.rabbitmq.resources.limits.cpu }}
-            memory: {{ .Values.rabbitmq.resources.limits.memory }}
+            cpu: "500m"
+            memory: "256Mi"
 ---
+# APP-SPACE DEPLOYMENTS
+
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robotshop-cart
-  namespace: {{ .Values.namespaces.app }}
+  namespace: app-space
 spec:
-  replicas: {{ .Values.cart.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app: cart
@@ -354,46 +237,46 @@ spec:
     spec:
       containers:
       - name: robot-app-cart
-        image: {{ .Values.global.registry }}/cart:{{ .Values.global.imageTag }}
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/cart:v1
+        imagePullPolicy: Always
         ports:
-        - containerPort: {{ .Values.cart.port }}
+        - containerPort: 8080
         env:
         - name: REDIS_HOST
-          value: redis.{{ .Values.namespaces.data }}.svc.cluster.local
+          value: redis.data-space.svc.cluster.local
         - name: REDIS_PORT
-          value: {{ .Values.redis.port | quote }}
+          value: "6379"
         - name: CATALOGUE_HOST
-          value: catalogue.{{ .Values.namespaces.app }}.svc.cluster.local
+          value: catalogue.app-space.svc.cluster.local
         - name: INSTANA_DISABLE_AUTP_INSTR
           value: "true"
         resources:
           requests:
-            cpu: {{ .Values.cart.resources.requests.cpu }}
-            memory: {{ .Values.cart.resources.requests.memory }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            cpu: {{ .Values.cart.resources.limits.cpu }}
-            memory: {{ .Values.cart.resources.limits.memory }}
+            cpu: "500m"
+            memory: "256Mi"
         livenessProbe:
           httpGet:
-            path: {{ .Values.cart.probes.path }}
-            port: {{ .Values.cart.port }}
-          initialDelaySeconds: {{ .Values.cart.probes.initialDelaySeconds }}
-          periodSeconds: {{ .Values.cart.probes.periodSeconds }}
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: {{ .Values.cart.probes.path }}
-            port: {{ .Values.cart.port }}
-          initialDelaySeconds: {{ .Values.cart.probes.initialDelaySeconds }}
-          periodSeconds: {{ .Values.cart.probes.periodSeconds }}
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robotshop-catalogue
-  namespace: {{ .Values.namespaces.app }}
+  namespace: app-space
 spec:
-  replicas: {{ .Values.catalogue.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app: catalogue
@@ -404,40 +287,40 @@ spec:
     spec:
       containers:
       - name: robot-app-catalogue
-        image: {{ .Values.global.registry }}/catalogue:{{ .Values.global.imageTag }}
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/catalogue:v1
+        imagePullPolicy: Always
         ports:
-        - containerPort: {{ .Values.catalogue.port }}
+        - containerPort: 8080
         env:
         - name: MONGO_URL
-          value: mongodb://mongo.{{ .Values.namespaces.data }}.svc.cluster.local:{{ .Values.mongo.port }}/catalogue
+          value: mongodb://mongo.data-space.svc.cluster.local:27017/catalogue
         resources:
           requests:
-            cpu: {{ .Values.catalogue.resources.requests.cpu }}
-            memory: {{ .Values.catalogue.resources.requests.memory }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            cpu: {{ .Values.catalogue.resources.limits.cpu }}
-            memory: {{ .Values.catalogue.resources.limits.memory }}
+            cpu: "500m"
+            memory: "256Mi"
         livenessProbe:
           httpGet:
-            path: {{ .Values.catalogue.probes.path }}
-            port: {{ .Values.catalogue.port }}
-          initialDelaySeconds: {{ .Values.catalogue.probes.initialDelaySeconds }}
-          periodSeconds: {{ .Values.catalogue.probes.periodSeconds }}
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: {{ .Values.catalogue.probes.path }}
-            port: {{ .Values.catalogue.port }}
-          initialDelaySeconds: {{ .Values.catalogue.probes.initialDelaySeconds }}
-          periodSeconds: {{ .Values.catalogue.probes.periodSeconds }}
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robotshop-dispatch
-  namespace: {{ .Values.namespaces.app }}
+  namespace: app-space
 spec:
-  replicas: {{ .Values.dispatch.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app: dispatch
@@ -448,23 +331,23 @@ spec:
     spec:
       containers:
       - name: robot-app-dispatch
-        image: {{ .Values.global.registry }}/dispatch:{{ .Values.global.imageTag }}
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/dispatch:v1
+        imagePullPolicy: Always
         resources:
           requests:
-            cpu: {{ .Values.dispatch.resources.requests.cpu }}
-            memory: {{ .Values.dispatch.resources.requests.memory }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            cpu: {{ .Values.dispatch.resources.limits.cpu }}
-            memory: {{ .Values.dispatch.resources.limits.memory }}
+            cpu: "500m"
+            memory: "256Mi"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robotshop-shipping
-  namespace: {{ .Values.namespaces.app }}
+  namespace: app-space
 spec:
-  replicas: {{ .Values.shipping.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app: shipping
@@ -475,49 +358,59 @@ spec:
     spec:
       containers:
         - name: robot-app-shipping
-          image: {{ .Values.global.registry }}/shipping:{{ .Values.global.imageTag }}
-          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/shipping:v1
+          imagePullPolicy: Always
           envFrom:
             - secretRef:
-                name: {{ .Values.shipping.secretName }}
+                name: mysql-secret
           ports:
-            - containerPort: {{ .Values.shipping.port }}
+            - containerPort: 8080
           resources:
             requests:
-              cpu: {{ .Values.shipping.resources.requests.cpu }}
-              memory: {{ .Values.shipping.resources.requests.memory }}
+              cpu: "250m"
+              memory: "512Mi"
             limits:
-              cpu: {{ .Values.shipping.resources.limits.cpu }}
-              memory: {{ .Values.shipping.resources.limits.memory }}
+              cpu: "500m"
+              memory: "1Gi"
+
+
           startupProbe:
             httpGet:
-              path: {{ .Values.shipping.probes.path }}
-              port: {{ .Values.shipping.port }}
-            initialDelaySeconds: {{ .Values.shipping.probes.startup.initialDelaySeconds }}
-            periodSeconds: {{ .Values.shipping.probes.startup.periodSeconds }}
-            failureThreshold: {{ .Values.shipping.probes.startup.failureThreshold }}
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 18
+
+
           readinessProbe:
             httpGet:
-              path: {{ .Values.shipping.probes.path }}
-              port: {{ .Values.shipping.port }}
-            initialDelaySeconds: {{ .Values.shipping.probes.readiness.initialDelaySeconds }}
-            periodSeconds: {{ .Values.shipping.probes.readiness.periodSeconds }}
-            failureThreshold: {{ .Values.shipping.probes.readiness.failureThreshold }}
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            failureThreshold: 6
+
+
           livenessProbe:
             httpGet:
-              path: {{ .Values.shipping.probes.path }}
-              port: {{ .Values.shipping.port }}
-            initialDelaySeconds: {{ .Values.shipping.probes.liveness.initialDelaySeconds }}
-            periodSeconds: {{ .Values.shipping.probes.liveness.periodSeconds }}
-            failureThreshold: {{ .Values.shipping.probes.liveness.failureThreshold }}
+              path: /health
+              port: 8080
+            initialDelaySeconds: 120
+            periodSeconds: 20
+            failureThreshold: 3
+
+
 ---
+
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robotshop-payment
-  namespace: {{ .Values.namespaces.app }}
+  namespace: app-space
 spec:
-  replicas: {{ .Values.payment.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app: robotshop-payment
@@ -528,52 +421,46 @@ spec:
     spec:
       containers:
       - name: robot-app-payment
-        image: {{ .Values.global.registry }}/payment:{{ .Values.global.imageTag }}
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/payment:v1
+        imagePullPolicy: Always
         ports:
-        - containerPort: {{ .Values.payment.port }}
+        - containerPort: 8080
         env:
           - name: AMQP_HOST
-            value: rabbitmq.{{ .Values.namespaces.data }}.svc.cluster.local
+            value: rabbitmq.data-space.svc.cluster.local
           - name: AMQP_PORT
-            value: {{ .Values.rabbitmq.port | quote }}
-          - name: RABBITMQ_DEFAULT_PASS
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.payment.secretName }}
-                key: RABBITMQ_DEFAULT_PASS
-          - name: RABBITMQ_DEFAULT_USER
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.payment.secretName }}
-                key: RABBITMQ_DEFAULT_USER
+            value: "5672"
+          - name: RABBITMQ_PASSWORD
+            value: guest
+          - name: RABBITMQ_USER
+            value: guest
         resources:
           requests:
-            cpu: {{ .Values.payment.resources.requests.cpu }}
-            memory: {{ .Values.payment.resources.requests.memory }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            cpu: {{ .Values.payment.resources.limits.cpu }}
-            memory: {{ .Values.payment.resources.limits.memory }}
+            cpu: "500m"
+            memory: "256Mi"
         livenessProbe:
           httpGet:
-            path: {{ .Values.payment.probes.path }}
-            port: {{ .Values.payment.port }}
-          initialDelaySeconds: {{ .Values.payment.probes.initialDelaySeconds }}
-          periodSeconds: {{ .Values.payment.probes.periodSeconds }}
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: {{ .Values.payment.probes.path }}
-            port: {{ .Values.payment.port }}
-          initialDelaySeconds: {{ .Values.payment.probes.initialDelaySeconds }}
-          periodSeconds: {{ .Values.payment.probes.periodSeconds }}
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robotshop-ratings
-  namespace: {{ .Values.namespaces.app }}
+  namespace: app-space
 spec:
-  replicas: {{ .Values.ratings.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app: robotshop-ratings
@@ -584,46 +471,30 @@ spec:
     spec:
       containers:
       - name: robot-app-ratings
-        image: {{ .Values.global.registry }}/ratings:{{ .Values.global.imageTag }}
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/ratings:v1
+        imagePullPolicy: Always
         ports:
-        - containerPort: {{ .Values.ratings.port }}
+        - containerPort: 80
         env:
           - name: MONGO_HOST
-            value: mongo.{{ .Values.namespaces.data }}.svc.cluster.local
+            value: mongo.data-space.svc.cluster.local
           - name: MONGO_PORT
-            value: {{ .Values.mongo.port | quote }}
-          - name: MYSQL_HOST
-            value: {{ .Values.ratings.mysqlHost }}
-          - name: DATABASE_URL
-            value: "mysql://shipping:secret@mysql.app-space.svc.cluster.local:3306/cities"
-          - name: MYSQL_PORT
-            value: {{ .Values.ratings.mysqlPort | quote }}
-          - name: MYSQL_USER
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.ratings.secretName }}
-                key: DB_USER
-          - name: MYSQL_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.ratings.secretName }}
-                key: DB_PASSWORD
+            value: "27017"
         resources:
           requests:
-            cpu: {{ .Values.ratings.resources.requests.cpu }}
-            memory: {{ .Values.ratings.resources.requests.memory }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            cpu: {{ .Values.ratings.resources.limits.cpu }}
-            memory: {{ .Values.ratings.resources.limits.memory }}
+            cpu: "500m"
+            memory: "256Mi"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: robotshop-user
-  namespace: {{ .Values.namespaces.app }}
+  namespace: app-space
 spec:
-  replicas: {{ .Values.user.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app: user
@@ -634,106 +505,73 @@ spec:
     spec:
       containers:
       - name: robot-app-user
-        image: {{ .Values.global.registry }}/user:{{ .Values.global.imageTag }}
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/user:v1
+        imagePullPolicy: Always
         ports:
-        - containerPort: {{ .Values.user.port }}
+        - containerPort: 8080
         env:
           - name: TRUST_PROXY
             value: "true"
           - name: INSTANA_DISABLE_AUTO_INSTR
             value: "true"
+
+
+          # Redis
           - name: REDIS_HOST
-            value: redis.{{ .Values.namespaces.data }}.svc.cluster.local
+            value: "redis.data-space.svc.cluster.local"
           - name: REDIS_PORT
-            value: {{ .Values.redis.port | quote }}
+            value: "6379"
+          # Mongo
           - name: MONGO_HOST
-            value: mongo.{{ .Values.namespaces.data }}.svc.cluster.local
+            value: "mongo.data-space.svc.cluster.local"
           - name: MONGO_PORT
-            value: {{ .Values.mongo.port | quote }}
+            value: "27017"
           - name: MONGO_URL
-            value: mongodb://mongo.{{ .Values.namespaces.data }}.svc.cluster.local:{{ .Values.mongo.port }}/users
+            value: "mongodb://mongo.data-space.svc.cluster.local:27017/users"
+
+
         resources:
           requests:
-            cpu: {{ .Values.user.resources.requests.cpu }}
-            memory: {{ .Values.user.resources.requests.memory }}
+            cpu: "100m"
+            memory: "128Mi"
           limits:
-            cpu: {{ .Values.user.resources.limits.cpu }}
-            memory: {{ .Values.user.resources.limits.memory }}
+            cpu: "500m"
+            memory: "256Mi"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-stable
-  namespace: {{ .Values.namespaces.app }}
+  name: web
+  namespace: app-space
 spec:
-  replicas: {{ .Values.web.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       app: web
-      version: {{ .Values.web.stableVersion }}
+      version: v1
   template:
     metadata:
       labels:
         app: web
-        version: {{ .Values.web.stableVersion }}
+        version: v1
     spec:
       containers:
       - name: robot-app-web
-        image: {{ .Values.global.registry }}/web:{{ .Values.global.imageTag }}
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        image: 038774803581.dkr.ecr.eu-west-2.amazonaws.com/web:v1
+        imagePullPolicy: Always
         ports:
-        - containerPort: {{ .Values.web.port }}
+        - containerPort: 3000
         env:
         - name: SESSION_SECURE
-          value: {{ .Values.web.sessionSecure | quote }}
+          value: "false"
         - name: SESSION_SAMESITE
-          value: {{ .Values.web.sessionSamesite }}
+          value: "lax"
         - name: INSTANA_DISABLE_AUTO_INSTR
           value: "true"
         resources:
           requests:
-            cpu: {{ .Values.web.resources.requests.cpu }}
-            memory: {{ .Values.web.resources.requests.memory }}
+            cpu: "100m"
+            memory: "60Mi"
           limits:
-            cpu: {{ .Values.web.resources.limits.cpu }}
-            memory: {{ .Values.web.resources.limits.memory }}
-
---- 
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: web-canary
-  namespace: {{ .Values.namespaces.app }}
-spec:
-  replicas: {{ .Values.web.replicas }}
-  selector:
-    matchLabels:
-      app: web
-      version: {{ .Values.web.canaryVersion }}
-  template:
-    metadata:
-      labels:
-        app: web
-        version: {{ .Values.web.canaryVersion }}
-    spec:
-      containers:
-      - name: robot-app-web-canary
-        image: {{ .Values.global.registry }}/web-canary:{{ .Values.web.canaryVersion }} 
-        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
-        ports:
-        - containerPort: {{ .Values.web.port }}
-        env:
-        - name: SESSION_SECURE
-          value: {{ .Values.web.sessionSecure | quote }}
-        - name: SESSION_SAMESITE
-          value: {{ .Values.web.sessionSamesite }}
-        - name: INSTANA_DISABLE_AUTO_INSTR
-          value: "true"
-        resources:
-          requests:
-            cpu: {{ .Values.web.resources.requests.cpu }}
-            memory: {{ .Values.web.resources.requests.memory }}
-          limits:
-            cpu: {{ .Values.web.resources.limits.cpu }}
-            memory: {{ .Values.web.resources.limits.memory }}
+            cpu: "200m"
+            memory: "100Mi"

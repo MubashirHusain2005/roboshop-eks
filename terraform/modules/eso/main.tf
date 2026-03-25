@@ -101,11 +101,8 @@ resource "aws_iam_role" "iam_role_eso" {
         Condition = {
           StringEquals = {
             "${replace(var.oidc_issuer_url, "https://", "")}:sub" = [
-              "system:serviceaccount:external-secrets:eso-sa",
-              "system:serviceaccount:app-space:eso-sa",
-              "system:serviceaccount:data-space:eso-sa",
-              "system:serviceaccount:monitoring:eso-sa"
-            ],
+              "system:serviceaccount:external-secrets:eso-sa"
+            ]
             "${replace(var.oidc_issuer_url, "https://", "")}:aud" = "sts.amazonaws.com"
           }
         }
@@ -143,7 +140,6 @@ resource "aws_iam_role_policy_attachment" "iampolicyattach-eso" {
 }
 
 
-
 resource "kubernetes_service_account_v1" "eso_sa_external_secrets" {
   metadata {
     name      = "eso-sa"
@@ -158,47 +154,47 @@ resource "kubernetes_service_account_v1" "eso_sa_external_secrets" {
   ]
 }
 
-resource "kubernetes_service_account_v1" "eso_sa_app_space" {
-  metadata {
-    name      = "eso-sa"
-    namespace = "app-space"
-    annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
-    }
-  }
-  depends_on = [
-    aws_iam_role_policy_attachment.iampolicyattach-eso,
-    kubectl_manifest.deployments_namespace
-  ]
-}
+#resource "kubernetes_service_account_v1" "eso_sa_app_space" {
+  #metadata {
+   # name      = "eso-sa"
+   # namespace = "app-space"
+   # annotations = {
+   #   "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
+  #  }
+ # }
+  #depends_on = [
+   # aws_iam_role_policy_attachment.iampolicyattach-eso,
+   # kubectl_manifest.deployments_namespace
+  #]
+#}
 
-resource "kubernetes_service_account_v1" "eso_sa_data_space" {
-  metadata {
-    name      = "eso-sa"
-    namespace = "data-space"
-    annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
-    }
-  }
-  depends_on = [
-    aws_iam_role_policy_attachment.iampolicyattach-eso,
-    kubectl_manifest.databases_namespace
-  ]
-}
+#resource "kubernetes_service_account_v1" "eso_sa_data_space" {
+  #metadata {
+   # name      = "eso-sa"
+   # namespace = "data-space"
+   # annotations = {
+    #  "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
+   # }
+ # }
+ # depends_on = [
+  #  aws_iam_role_policy_attachment.iampolicyattach-eso,
+  #  kubectl_manifest.databases_namespace
+  #]
+#}
 
-resource "kubernetes_service_account_v1" "eso_sa_monitoring" {
-  metadata {
-    name      = "eso-sa"
-    namespace = "monitoring"
-    annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
-    }
-  }
-  depends_on = [
-    aws_iam_role_policy_attachment.iampolicyattach-eso,
-    kubectl_manifest.monitoring_namespace
-  ]
-}
+#resource "kubernetes_service_account_v1" "eso_sa_monitoring" {
+ # metadata {
+   # name      = "eso-sa"
+  #  namespace = "monitoring"
+  #  annotations = {
+     # "eks.amazonaws.com/role-arn" = aws_iam_role.iam_role_eso.arn
+    ##}
+ # }
+ # depends_on = [
+   # aws_iam_role_policy_attachment.iampolicyattach-eso,
+   # kubectl_manifest.monitoring_namespace
+ # ]
+#}
 
 #  ESO Helm Chart
 
@@ -216,81 +212,79 @@ resource "helm_release" "external_secrets" {
   depends_on = [kubernetes_service_account_v1.eso_sa_external_secrets]
 }
 
-#  SecretStores 
 
-resource "kubectl_manifest" "secret_store_app_space" {
+resource "kubectl_manifest" "clustersecret_store" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
-kind: SecretStore
+kind: ClusterSecretStore
 metadata:
   name: aws-secrets
-  namespace: app-space
 spec:
   provider:
     aws:
       service: SecretsManager
-      region: eu-west-2
+      region: ${data.aws_region.region.name}
       auth:
         jwt:
           serviceAccountRef:
             name: eso-sa
+            namespace: external-secrets
 EOF
   depends_on = [
-    kubernetes_service_account_v1.eso_sa_app_space,
-    helm_release.external_secrets,
-    kubectl_manifest.deployments_namespace
+    kubernetes_service_account_v1.eso_sa_external_secrets,
+    helm_release.external_secrets
   ]
 }
 
-resource "kubectl_manifest" "secret_store_data_space" {
-  yaml_body = <<EOF
-apiVersion: external-secrets.io/v1beta1
-kind: SecretStore
-metadata:
-  name: aws-secrets
-  namespace: data-space
-spec:
-  provider:
-    aws:
-      service: SecretsManager
-      region: eu-west-2
-      auth:
-        jwt:
-          serviceAccountRef:
-            name: eso-sa
-EOF
-  depends_on = [
-    kubernetes_service_account_v1.eso_sa_data_space,
-    helm_release.external_secrets,
-    kubectl_manifest.databases_namespace
-  ]
-}
+#resource "kubectl_manifest" "secret_store_data_space" {
+  #yaml_body = <<EOF
+#apiVersion: external-secrets.io/v1beta1
+#kind: SecretStore
+#metadata:
+ # name: aws-secrets
+ # namespace: data-space
+#spec:
+ # provider:
+  #  aws:
+   #   service: SecretsManager
+    #  region: eu-west-2
+     # auth:
+     #   jwt:
+      #    serviceAccountRef:
+       #     name: eso-sa
+#EOF
+  #depends_on = [
+   # kubernetes_service_account_v1.eso_sa_data_space,
+   # helm_release.external_secrets,
+  #  kubectl_manifest.databases_namespace
+  #]
+#}
 
-resource "kubectl_manifest" "secret_store_monitoring" {
-  yaml_body = <<EOF
-apiVersion: external-secrets.io/v1beta1
-kind: SecretStore
-metadata:
-  name: aws-secrets
-  namespace: monitoring
-spec:
-  provider:
-    aws:
-      service: SecretsManager
-      region: eu-west-2
-      auth:
-        jwt:
-          serviceAccountRef:
-            name: eso-sa
-EOF
-  depends_on = [
-    kubernetes_service_account_v1.eso_sa_monitoring,
-    helm_release.external_secrets,
-    kubectl_manifest.monitoring_namespace
-  ]
-}
+#resource "kubectl_manifest" "secret_store_monitoring" {
+ # yaml_body = <<EOF
+#apiVersion: external-secrets.io/v1beta1
+#kind: SecretStore
+#metadata:
+  #name: aws-secrets
+  #namespace: monitoring
+#spec:
+  #provider:
+   # aws:
+     # service: SecretsManager
+     # region: eu-west-2
+    #  auth:
+     #   jwt:
+       #   serviceAccountRef:
+          #  name: eso-sa
+#EOF
+ # depends_on = [
+   # kubernetes_service_account_v1.eso_sa_monitoring,
+   # helm_release.external_secrets,
+   # kubectl_manifest.monitoring_namespace
+  #]
+#}
 
-#  ExternalSecrets 
+# ExternalSecrets 
 
 resource "kubectl_manifest" "external_secret_mysql" {
   yaml_body = <<EOF
@@ -303,7 +297,7 @@ spec:
   refreshInterval: 5m
   secretStoreRef:
     name: aws-secrets
-    kind: SecretStore
+    kind: ClusterSecretStore
   target:
     name: mysql-secret
   data:
@@ -325,7 +319,7 @@ spec:
         property: user-password
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_app_space
+    kubectl_manifest.clustersecret_store
   ]
 }
 
@@ -340,7 +334,7 @@ spec:
   refreshInterval: 5m
   secretStoreRef:
     name: aws-secrets
-    kind: SecretStore
+    kind: ClusterSecretStore
   target:
     name: rabbitmq-secret
   data:
@@ -354,7 +348,7 @@ spec:
         property: RABBITMQ_DEFAULT_PASS
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_data_space
+   kubectl_manifest.clustersecret_store
   ]
 }
 
@@ -369,7 +363,7 @@ spec:
   refreshInterval: 5m
   secretStoreRef:
     name: aws-secrets
-    kind: SecretStore
+    kind: ClusterSecretStore
   target:
     name: payment-rabbitmq-secret
   data:
@@ -383,9 +377,39 @@ spec:
         property: RABBITMQ_DEFAULT_PASS
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_app_space,
+    kubectl_manifest.clustersecret_store
   ]
 }
+
+
+#resource "kubectl_manifest" "external_secret_shipping" {
+  #yaml_body = <<EOF
+#apiVersion: external-secrets.io/v1beta1
+#kind: ExternalSecret
+#metadata:
+  #name: shipping-secret
+ # namespace: app-space
+#spec:
+  #refreshInterval: 5m
+  #secretStoreRef:
+    #name: aws-secrets
+    #kind: ClusterSecretStore
+  #target:
+    #name: shipping-secret
+  #data:
+   # - secretKey: DB_USER
+    #  remoteRef:
+     #   key: db-creds
+      #  property: DB_USER
+   # - secretKey: DB_PASSWORD
+     # remoteRef:
+       # key: db-creds
+       # property: DB_PASSWORD
+#EOF
+ # depends_on = [
+   # kubectl_manifest.clustersecret_store,
+ # ]
+#}
 
 resource "kubectl_manifest" "mysql_exporter_secret" {
   yaml_body = <<EOF
@@ -398,7 +422,7 @@ spec:
   refreshInterval: 5m
   secretStoreRef:
     name: aws-secrets
-    kind: SecretStore
+    kind: ClusterSecretStore
   target:
     name: mysql-exporter-mycnf
   data:
@@ -408,7 +432,7 @@ spec:
         property: mycnf_content
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_monitoring,
+    kubectl_manifest.clustersecret_store,
   ]
 }
 
@@ -423,7 +447,7 @@ spec:
   refreshInterval: 5m
   secretStoreRef:
     name: aws-secrets
-    kind: SecretStore
+    kind: ClusterSecretStore
   target:
     name: redis-secret
   data:
@@ -433,7 +457,7 @@ spec:
         property: REDIS_PASSWORD
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_monitoring,
+    kubectl_manifest.clustersecret_store,
   ]
 }
 
@@ -448,7 +472,7 @@ spec:
   refreshInterval: 5m
   secretStoreRef:
     name: aws-secrets
-    kind: SecretStore
+    kind: ClusterSecretStore
   target:
     name: alertmanager-gmail-secret
   data:
@@ -458,7 +482,7 @@ spec:
         property: gmail_password
 EOF
   depends_on = [
-    kubectl_manifest.secret_store_monitoring
+    kubectl_manifest.clustersecret_store
   ]
 }
 
