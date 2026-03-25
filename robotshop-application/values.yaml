@@ -226,6 +226,9 @@ payment:
 ratings:
   replicas: 1
   port: 80
+  mysqlHost: mysql.app-space.svc.cluster.local
+  mysqlPort: 3306
+  secretName: mysql-secret
   resources:
     requests:
       cpu: "100m"
