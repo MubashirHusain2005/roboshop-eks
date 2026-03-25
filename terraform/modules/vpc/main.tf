@@ -144,7 +144,7 @@ resource "aws_subnet" "public" {
   depends_on = [aws_vpc.eks_vpc]
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
     ignore_changes  = [tags]
   }
 }
@@ -187,7 +187,7 @@ resource "aws_subnet" "private" {
   depends_on = [aws_vpc.eks_vpc]
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
     ignore_changes  = [tags]
   }
 }
