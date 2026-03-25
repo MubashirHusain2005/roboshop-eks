@@ -40,3 +40,7 @@ variable "monitoring_secrets" {
   default   = "prometheus-db-creds"
   sensitive = true
 }
+
+variable "region" {
+  default = "eu-west-2"
+}
