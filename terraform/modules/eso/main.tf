@@ -269,16 +269,16 @@ EOF
 #namespace: monitoring
 #spec:
 #provider:
-# aws:
-# service: SecretsManager
-# region: eu-west-2
-#  auth:
-#   jwt:
-#   serviceAccountRef:
-#  name: eso-sa
+#aws:
+#service: SecretsManager
+#region: eu-west-2
+# auth:
+#jwt:
+#serviceAccountRef:
+# name: eso-sa
+# namespace: external-secrets
 #EOF
-# depends_on = [
-# kubernetes_service_account_v1.eso_sa_monitoring,
+#depends_on = [
 # helm_release.external_secrets,
 # kubectl_manifest.monitoring_namespace
 #]
@@ -286,135 +286,135 @@ EOF
 
 # ExternalSecrets 
 
-resource "kubectl_manifest" "external_secret_mysql" {
-  yaml_body = <<EOF
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: mysql-secret
-  namespace: app-space
-spec:
-  refreshInterval: 5m
-  secretStoreRef:
-    name: aws-secrets
-    kind: ClusterSecretStore
-  target:
-    name: mysql-secret
-  data:
-    - secretKey: DB_USER
-      remoteRef:
-        key: db-creds
-        property: DB_USER
-    - secretKey: DB_PASSWORD
-      remoteRef:
-        key: db-creds
-        property: DB_PASSWORD
-    - secretKey: root-password
-      remoteRef:
-        key: db-creds
-        property: root-password
-    - secretKey: user-password
-      remoteRef:
-        key: db-creds
-        property: user-password
-EOF
-  depends_on = [
-    kubectl_manifest.clustersecret_store
-  ]
-}
+#resource "kubectl_manifest" "external_secret_mysql" {
+#yaml_body = <<EOF
+#apiVersion: external-secrets.io/v1beta1
+#kind: ExternalSecret
+#metadata:
+#name: mysql-secret
+#namespace: app-space
+#spec:
+#refreshInterval: 5m
+#secretStoreRef:
+#name: aws-secrets
+# kind: ClusterSecretStore
+#target:
+#name: mysql-secret
+# data:
+# - secretKey: DB_USER
+#   remoteRef:
+#    key: db-creds
+#  property: DB_USER
+#  - secretKey: DB_PASSWORD
+#  remoteRef:
+#   key: db-creds
+#  property: DB_PASSWORD
+#  - secretKey: root-password
+# remoteRef:
+#   key: db-creds
+#  property: root-password
+# - secretKey: user-password
+# remoteRef:
+# key: db-creds
+# property: user-password
+#EOF
+# depends_on = [
+#  kubectl_manifest.clustersecret_store
+#]
+#}
 
-resource "kubectl_manifest" "external_secret_rabbitmq" {
-  yaml_body = <<EOF
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: rabbitmq-secret
-  namespace: data-space
-spec:
-  refreshInterval: 5m
-  secretStoreRef:
-    name: aws-secrets
-    kind: ClusterSecretStore
-  target:
-    name: rabbitmq-secret
-  data:
-    - secretKey: RABBITMQ_DEFAULT_USER
-      remoteRef:
-        key: db-creds
-        property: RABBITMQ_DEFAULT_USER
-    - secretKey: RABBITMQ_DEFAULT_PASS
-      remoteRef:
-        key: db-creds
-        property: RABBITMQ_DEFAULT_PASS
-EOF
-  depends_on = [
-    kubectl_manifest.clustersecret_store
-  ]
-}
+#resource "kubectl_manifest" "external_secret_rabbitmq" {
+#yaml_body = <<EOF
+#apiVersion: external-secrets.io/v1beta1
+#kind: ExternalSecret
+#metadata:
+# name: rabbitmq-secret
+# namespace: data-space
+#spec:
+# refreshInterval: 5m
+# secretStoreRef:
+# name: aws-secrets
+#  kind: ClusterSecretStore
+# target:
+#  name: rabbitmq-secret
+# data:
+#  - secretKey: RABBITMQ_DEFAULT_USER
+#    remoteRef:
+#     key: db-creds
+#    property: RABBITMQ_DEFAULT_USER
+# - secretKey: RABBITMQ_DEFAULT_PASS
+#  remoteRef:
+#   key: db-creds
+# property: RABBITMQ_DEFAULT_PASS
+#EOF
+# depends_on = [
+#  kubectl_manifest.clustersecret_store
+#]
+#}
 
-resource "kubectl_manifest" "external_secret_payment" {
-  yaml_body = <<EOF
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: payment-secret
-  namespace: app-space
-spec:
-  refreshInterval: 5m
-  secretStoreRef:
-    name: aws-secrets
-    kind: ClusterSecretStore
-  target:
-    name: payment-rabbitmq-secret
-  data:
-    - secretKey: RABBITMQ_DEFAULT_USER
-      remoteRef:
-        key: db-creds
-        property: RABBITMQ_DEFAULT_USER
-    - secretKey: RABBITMQ_DEFAULT_PASS
-      remoteRef:
-        key: db-creds
-        property: RABBITMQ_DEFAULT_PASS
-EOF
-  depends_on = [
-    kubectl_manifest.clustersecret_store
-  ]
-}
+#resource "kubectl_manifest" "external_secret_payment" {
+#yaml_body = <<EOF
+#apiVersion: external-secrets.io/v1beta1
+#kind: ExternalSecret
+#metadata:
+#name: payment-secret
+#namespace: app-space
+#spec:
+#refreshInterval: 5m
+#secretStoreRef:
+# name: aws-secrets
+#kind: ClusterSecretStore
+# target:
+# name: payment-rabbitmq-secret
+# data:
+# - secretKey: RABBITMQ_DEFAULT_USER
+# remoteRef:
+#  key: db-creds
+# property: RABBITMQ_DEFAULT_USER
+# - secretKey: RABBITMQ_DEFAULT_PASS
+#  remoteRef:
+#  key: db-creds
+#  property: RABBITMQ_DEFAULT_PASS
+#EOF
+# depends_on = [
+# kubectl_manifest.clustersecret_store
+#]
+#}
 
 
-resource "kubectl_manifest" "external_secret_shipping" {
-  yaml_body = <<EOF
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: shipping-secret
-  namespace: app-space
-spec:
-  refreshInterval: 5m
-  secretStoreRef:
-    name: aws-secrets
-    kind: ClusterSecretStore
-  target:
-    name: shipping-secret
-  data:
-    - secretKey: user
-      remoteRef:
-        key: db-creds
-        property: DB_USER
-    - secretKey: userPassword
-      remoteRef:
-        key: db-creds
-        property: DB_PASSWORD
-    - secretKey: database
-      remoteRef:
-        key: db-creds
-        property: DB_NAME
-EOF
+#resource "kubectl_manifest" "external_secret_shipping" {
+# yaml_body = <<EOF
+#apiVersion: external-secrets.io/v1beta1
+#kind: ExternalSecret
+#metadata:
+#name: shipping-secret
+# namespace: app-space
+#spec:
+# refreshInterval: 5m
+# secretStoreRef:
+#  name: aws-secrets
+#  kind: ClusterSecretStore
+# target:
+# name: shipping-secret
+# data:
+# - secretKey: user
+#   remoteRef:
+#    key: db-creds
+#   property: DB_USER
+#  - secretKey: userPassword
+#    remoteRef:
+#  key: db-creds
+#  property: DB_PASSWORD
+#  - secretKey: database
+#  remoteRef:
+#   key: db-creds
+#  property: DB_NAME
+#EOF
 
-  depends_on = [
-    kubectl_manifest.clustersecret_store
-  ]
-}
+#depends_on = [
+#  kubectl_manifest.clustersecret_store
+#]
+#}
 
 resource "kubectl_manifest" "mysql_exporter_secret" {
   yaml_body = <<EOF

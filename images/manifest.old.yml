@@ -705,3 +705,15 @@ spec:
           limits:
             cpu: {{ .Values.web.resources.limits.cpu }}
             memory: {{ .Values.web.resources.limits.memory }}
+
+
+kubectl create secret generic mysql-secret \
+  --from-literal=root-password=rootpass \
+  --from-literal=user-password=secret \
+  -n app-space
+
+
+kubectl create secret generic payment-rabbitmq-secret \
+  --from-literal=RABBITMQ_DEFAULT_USER=guest \
+  --from-literal=RABBITMQ_DEFAULT_PASS=guest \
+  -n data-space

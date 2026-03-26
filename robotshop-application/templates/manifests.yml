@@ -1,3 +1,38 @@
+# MySQL Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+  namespace: {{ .Values.namespaces.app }}
+type: Opaque
+stringData:
+  root-password: rootpass
+  DB_HOST: mysql.{{ .Values.namespaces.app }}.svc.cluster.local
+  DB_USER: shipping
+  DB_PASSWORD: secret
+---
+# RabbitMQ Secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-secret
+  namespace: {{ .Values.namespaces.data }}
+type: Opaque
+stringData:
+  RABBITMQ_DEFAULT_USER: guest
+  RABBITMQ_DEFAULT_PASS: guest
+---
+# RabbitMQ Secret - app namespace (consumed by payment)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-secret
+  namespace: {{ .Values.namespaces.app }}
+type: Opaque
+stringData:
+  RABBITMQ_DEFAULT_USER: guest
+  RABBITMQ_DEFAULT_PASS: guest
+---
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -139,12 +174,15 @@ spec:
               name: mysql-secret
               key: root-password
         - name: MYSQL_USER
-          value: {{ .Values.mysql.user }}
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: DB_USER
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.mysql.secretName }}
-              key: user-password
+              name: mysql-secret
+              key: DB_PASSWORD
         resources:
           requests:
             cpu: {{ .Values.mysql.resources.requests.cpu }}
@@ -279,6 +317,8 @@ spec:
         requests:
           storage: {{ .Values.redis.storage }}
 ---
+# RabbitMQ now reads credentials from rabbitmq-secret
+# Removed .Values.rabbitmq.secretName reference entirely
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -320,12 +360,12 @@ spec:
           - name: RABBITMQ_DEFAULT_USER
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.rabbitmq.secretName }}
-                key: RABBITMQ_DEFAULT_USER   
-          - name: RABBITMQ_DEFAULT_PASS                   
-            valueFrom: 
+                name: rabbitmq-secret
+                key: RABBITMQ_DEFAULT_USER
+          - name: RABBITMQ_DEFAULT_PASS
+            valueFrom:
               secretKeyRef:
-                name: {{ .Values.rabbitmq.secretName }}
+                name: rabbitmq-secret
                 key: RABBITMQ_DEFAULT_PASS
           - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
             value: "-rabbit loopback_users []"
@@ -477,11 +517,24 @@ spec:
         - name: robot-app-shipping
           image: {{ .Values.global.registry }}/shipping:{{ .Values.global.imageTag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
-          envFrom:
-            - secretRef:
-                name: mysql-secret
           ports:
             - containerPort: {{ .Values.shipping.port }}
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: DB_HOST
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: DB_PASSWORD
           resources:
             requests:
               cpu: {{ .Values.shipping.resources.requests.cpu }}
@@ -511,6 +564,8 @@ spec:
             periodSeconds: {{ .Values.shipping.probes.liveness.periodSeconds }}
             failureThreshold: {{ .Values.shipping.probes.liveness.failureThreshold }}
 ---
+# Payment now reads from rabbitmq-secret directly
+# Removed .Values.payment.secretName reference entirely
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -537,16 +592,16 @@ spec:
             value: rabbitmq.{{ .Values.namespaces.data }}.svc.cluster.local
           - name: AMQP_PORT
             value: {{ .Values.rabbitmq.port | quote }}
-          - name: RABBITMQ_DEFAULT_PASS
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.payment.secretName }}
-                key: RABBITMQ_DEFAULT_PASS
           - name: RABBITMQ_DEFAULT_USER
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.payment.secretName }}
+                name: rabbitmq-secret
                 key: RABBITMQ_DEFAULT_USER
+          - name: RABBITMQ_DEFAULT_PASS
+            valueFrom:
+              secretKeyRef:
+                name: rabbitmq-secret
+                key: RABBITMQ_DEFAULT_PASS
         resources:
           requests:
             cpu: {{ .Values.payment.resources.requests.cpu }}
@@ -589,10 +644,21 @@ spec:
         ports:
         - containerPort: {{ .Values.ratings.port }}
         env:
-          - name: MONGO_HOST
-            value: mongo.{{ .Values.namespaces.data }}.svc.cluster.local
-          - name: MONGO_PORT
-            value: {{ .Values.mongo.port | quote }}
+          - name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: DB_HOST
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: DB_USER
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-secret
+                key: DB_PASSWORD
         resources:
           requests:
             cpu: {{ .Values.ratings.resources.requests.cpu }}
@@ -682,8 +748,7 @@ spec:
           limits:
             cpu: {{ .Values.web.resources.limits.cpu }}
             memory: {{ .Values.web.resources.limits.memory }}
-
---- 
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -703,7 +768,7 @@ spec:
     spec:
       containers:
       - name: robot-app-web-canary
-        image: {{ .Values.global.registry }}/web-canary:{{ .Values.web.canaryVersion }} 
+        image: {{ .Values.global.registry }}/web-canary:{{ .Values.web.canaryVersion }}
         imagePullPolicy: {{ .Values.global.imagePullPolicy }}
         ports:
         - containerPort: {{ .Values.web.port }}
@@ -723,4 +788,5 @@ spec:
             memory: {{ .Values.web.resources.limits.memory }}
 
 ---
+
 
