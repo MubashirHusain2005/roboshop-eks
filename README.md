@@ -5,7 +5,6 @@ A production-grade deployment of a three-tier e-commerce application on AWS EKS,
 > 🎥 [Watch the Loom Demo](https://www.loom.com/share/6a9283a627ac4616a5780a99c53f7aa7)
 
 ---
-
 ## Overview
 
 The platform runs seven microservices (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline with:
