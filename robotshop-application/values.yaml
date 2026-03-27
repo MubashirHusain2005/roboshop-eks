@@ -1,6 +1,5 @@
-# ============================================
-# GLOBAL
-# ============================================
+# ECR
+
 global:
   registry: 038774803581.dkr.ecr.eu-west-2.amazonaws.com
   imageTag: v1
@@ -8,18 +7,18 @@ global:
   nodeAffinityKey: workload
   nodeAffinityValue: app
 
-# ============================================
+
 # NAMESPACES
-# ============================================
+
 namespaces:
   app: app-space
   data: data-space
   istio: istio-system
   argocd: argo-cd
 
-# ============================================
+
 # RESOURCE QUOTAS
-# ============================================
+
 quotas:
   app:
     requests:
@@ -38,9 +37,9 @@ quotas:
       memory: "16Gi"
     pods: "20"
 
-# ============================================
+
 # REDIS
-# ============================================
+
 redis:
   replicas: 2
   image: redis:6.2
@@ -58,9 +57,9 @@ redis:
     appendonly: "yes"
     appendfsync: "everysec"
 
-# ============================================
+
 # MONGO
-# ============================================
+
 mongo:
   replicas: 2
   port: 27017
@@ -74,9 +73,9 @@ mongo:
       cpu: "500m"
       memory: "512Mi"
 
-# ============================================
+
 # MYSQL
-# ============================================
+
 mysql:
   replicas: 1
   port: 3306
@@ -100,9 +99,9 @@ mysql:
     periodSeconds: 10
     failureThreshold: 20  #This was not here before
 
-# ============================================
+
 # RABBITMQ
-# ============================================
+
 rabbitmq:
   replicas: 2
   port: 5672
@@ -119,9 +118,9 @@ rabbitmq:
       cpu: "500m"
       memory: "256Mi"
 
-# ============================================
+
 # APP: CART
-# ============================================
+
 cart:
   replicas: 1
   port: 8080
@@ -137,9 +136,9 @@ cart:
     initialDelaySeconds: 30
     periodSeconds: 10
 
-# ============================================
-# APP: CATALOGUE
-# ============================================
+
+#CATALOGUE
+
 catalogue:
   replicas: 1
   port: 8080
@@ -155,9 +154,9 @@ catalogue:
     initialDelaySeconds: 30
     periodSeconds: 10
 
-# ============================================
-# APP: DISPATCH
-# ============================================
+
+# DISPATCH
+
 dispatch:
   replicas: 1
   port: 80
@@ -169,9 +168,9 @@ dispatch:
       cpu: "500m"
       memory: "256Mi"
 
-# ============================================
-# APP: SHIPPING
-# ============================================
+
+# SHIPPING
+
 shipping:
   replicas: 1
   port: 8080
@@ -201,9 +200,9 @@ shipping:
       periodSeconds: 20
       failureThreshold: 3
 
-# ============================================
-# APP: PAYMENT
-# ============================================
+
+#  PAYMENT
+
 payment:
   replicas: 1
   secretName: payment-rabbitmq-secret
@@ -220,9 +219,9 @@ payment:
     initialDelaySeconds: 30
     periodSeconds: 10
 
-# ============================================
-# APP: RATINGS
-# ============================================
+
+#  RATINGS
+
 ratings:
   replicas: 1
   port: 80
@@ -237,9 +236,9 @@ ratings:
       cpu: "500m"
       memory: "256Mi"
 
-# ============================================
-# APP: USER
-# ============================================
+
+#  USER
+
 user:
   replicas: 1
   port: 8080
@@ -251,9 +250,9 @@ user:
       cpu: "500m"
       memory: "256Mi"
 
-# ============================================
-# APP: WEB
-# ============================================
+
+#  WEB
+
 web:
   replicas: 1
   port: 3000
@@ -272,9 +271,9 @@ web:
       memory: "100Mi"
 
 
-# ============================================
-# STORAGE CLASSES (shared config)
-# ============================================
+
+# STORAGE CLASSES 
+
 storage:
   provisioner: ebs.csi.aws.com
   volumeBindingMode: WaitForFirstConsumer
@@ -282,16 +281,16 @@ storage:
     type: gp3
     encrypted: "true"
 
-# ============================================
+
 # DNS
-# ============================================
+
 dns:
   root: mubashir.site
   argocd: argocd.mubashir.site
 
-# ============================================
+
 # GATEWAY
-# ============================================
+
 gateway:
   name: web-gateway
   selector: ingress
@@ -303,9 +302,9 @@ gateway:
     - "argo-cd/argocd.mubashir.site"
     - "app-space/mubashir.site"
 
-# ============================================
+
 # CERTIFICATE
-# ============================================
+
 certificate:
   name: mubashir-site-cert
   secretName: mubashir-tls
@@ -314,21 +313,21 @@ certificate:
     - mubashir.site
     - argocd.mubashir.site
 
-# ============================================
+
 # ARGOCD
-# ============================================
+
 argocd:
   port: 80
 
-# ============================================
+
 # MTLS
-# ============================================
+
 mtls:
   mode: STRICT
 
-# ============================================
+
 # DESTINATION RULE
-# ============================================
+
 destinationRule:
   loadBalancer: ROUND_ROBIN
   outlierDetection:

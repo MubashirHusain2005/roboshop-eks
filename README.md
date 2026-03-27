@@ -250,6 +250,15 @@ Replaces the Cluster Autoscaler with faster, more cost-efficient node provisioni
 - Receives EC2 Spot interruption notices via SQS and drains nodes gracefully
 - Consolidates underutilised nodes to reduce cost
 
+### In Action
+
+![Karpenter-in-action](images/karpenter-node.PNG)
+
+
+After using Karpenter and deploying application which my resource quotas cant handle 
+
+![Karpenter-in-action-2](images/karpenter-in-action.PNG)
+
 ---
 
 ### ArgoCD
@@ -295,11 +304,11 @@ Kiali also reads the Kubernetes API and Istio config directly to surface `Virtua
 - [ ] Persistent storage for Prometheus metrics (currently lost on pod restart)
 - [ ] Thanos for Prometheus HA and long-term storage
 - [ ] `AuthorizationPolicy` per service to restrict inter-service calls
-- [ ] AWS WAF on the ALB
+- [ ] Research implementing AWS WAF on the ALB 
 
 
 
-## MADE BY: SYED MUBASHIR HUSAIN
+## MADE BY: MUBASHIR 
 
 
 

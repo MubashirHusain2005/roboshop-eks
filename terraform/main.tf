@@ -59,8 +59,6 @@ module "eks" {
   iam_cluster_role_arn = module.iam.iam_cluster_role_arn
   nodegroup_role_arn   = module.iam.nodegroup_role_arn
   private_subnet_ids   = values(module.vpc.private_subnet_ids)
-  #priv_subnet2a_id     = module.vpc.priv_subnet2a_id
-  #priv_subnet2b_id     = module.vpc.priv_subnet2b_id
   kms_key_arn       = module.vpc.kms_key_arn
   node_group_name   = var.node_group_name
   node_group_name_2 = var.node_group_name_2
