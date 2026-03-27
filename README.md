@@ -2,6 +2,10 @@
 
 A production-grade deployment of a three-tier e-commerce application on AWS EKS, featuring a full GitOps pipeline, service mesh, and observability stack. 
 
+
+![App](images/app.png)
+
+
 > 🎥 [Watch the Loom Demo](https://www.loom.com/share/6a9283a627ac4616a5780a99c53f7aa7)
 
 ---
@@ -18,7 +22,7 @@ The platform runs seven microservices (web, payment, user, cart, catalogue, ship
 
 ## Architecture
 
-![Architecture Diagram](roboshop.drawio.png)
+![Architecture Diagram](images/roboshop.drawio.png)
 
 ---
 
@@ -216,7 +220,7 @@ Bridges AWS Secrets Manager with Kubernetes-native secrets. Kubernetes secrets a
 - `ServiceMonitor` resources define which endpoints to scrape
 - Key Istio metrics: `istio_requests_total`, `istio_request_duration_milliseconds`, `istio_request_bytes`
 
-![MySQL Exporter](images/mysqlexporter.PNG)
+![MySQL Exporter](images/mysqlexporter.png)
 
 **Grafana** visualises metrics from Prometheus.
 
@@ -252,7 +256,7 @@ Replaces the Cluster Autoscaler with faster, more cost-efficient node provisioni
 
 GitOps controller that acts as the source of truth for cluster state. Continuously syncs manifests from the Git repository to the Kubernetes cluster.
 
-![ArgoCD](images/argo-cd.PNG)
+![ArgoCD](images/argo-cd.png)
 
 ---
 
@@ -273,6 +277,8 @@ Envoy sidecar (every pod)
 ```
 
 Kiali also reads the Kubernetes API and Istio config directly to surface `VirtualService` / `DestinationRule` misconfigurations alongside live traffic data.
+
+![Kiali](images/kiali.png)
 
 ---
 
