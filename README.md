@@ -52,12 +52,12 @@ roboshop-eks/
 │       └── terraform.yml           # Pipeline to run terraform plan/apply/destroy
 ├── README.md
 ├── app/                            # Dockerfiles and docker-compose for local deployment
-├── images/
+├── images/                         # Images of my deployments
 ├── robotshop-application/
 │   ├── charts/
 │   ├── templates/
 │   │   ├── destinationrule.yaml
-│   │   ├── istio.yml
+│   │   ├── istio.yml                   
 │   │   ├── manifests.yml
 │   │   ├── mtls.yml
 │   │   ├── services.yml

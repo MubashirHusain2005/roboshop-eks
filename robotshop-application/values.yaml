@@ -260,8 +260,8 @@ web:
   stableVersion: v1
   canaryVersion: v2
   sessionSecure: "false"
-  stableWeight: 80
-  canaryWeight: 20
+  stableWeight: 50
+  canaryWeight: 50
   sessionSamesite: "lax"
   resources:
     requests:
