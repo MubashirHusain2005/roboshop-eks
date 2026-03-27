@@ -3,7 +3,7 @@
 A production-grade deployment of a three-tier e-commerce application on AWS EKS, featuring a full GitOps pipeline, service mesh, and observability stack. 
 
 
-![App](images/app.png)
+![App](images/app.PNG)
 
 
 > 🎥 [Watch the Loom Demo](https://www.loom.com/share/6a9283a627ac4616a5780a99c53f7aa7)
