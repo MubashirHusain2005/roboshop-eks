@@ -104,11 +104,6 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
   role       = aws_iam_role.nodes.name
 }
 
-##Not really needed 
-#resource "aws_iam_role_policy_attachment" "AmazonSSMManagedInstanceCore" {
-#policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-#role       = aws_iam_role.nodes.name
-#}
 
 
 resource "aws_iam_role_policy_attachment" "node_group_elb_policy" {

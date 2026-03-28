@@ -78,6 +78,7 @@ mongo:
 
 mysql:
   replicas: 1
+  imageTag: v9
   port: 3306
   database: cities
   user: shipping

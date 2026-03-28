@@ -126,7 +126,7 @@ spec:
                 topologyKey: kubernetes.io/hostname
       containers:
       - name: mysql
-        image: {{ .Values.global.registry }}/mysql:{{ .Values.global.imageTag }}
+        image: {{ .Values.global.registry }}/mysql:{{ .Values.mysql.imageTag }}
         ports:
         - containerPort: {{ .Values.mysql.port }}
           name: mysql

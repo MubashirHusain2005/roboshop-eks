@@ -271,7 +271,7 @@ GitOps controller that acts as the source of truth for cluster state. Continuous
 
 ### Istio
 
-Istio acts as a service mesh which visualizes how traffic moves in a microservice based application, using envoy proxies 
+Istio acts as a service mesh which visualizes how traffic moves in a microservice based application, using envoy proxies.
 
 ## Observability Pipeline
 
@@ -293,8 +293,8 @@ Kiali also reads the Kubernetes API and Istio config directly to surface `Virtua
 
 ## Stats
 
-- 🚀 **20% reduction** in deployment time via CI/CD pipelines
-- 📦 **35% reduction** in image size using multi-stage builds and Alpine base images
+-  **20% reduction** in deployment time via CI/CD pipelines
+-  **35% reduction** in image size using multi-stage builds and Alpine base images
 
 ---
 

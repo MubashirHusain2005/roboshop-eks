@@ -30,12 +30,6 @@ terraform {
 
 #EKS AWS authentication,AWS IAM trusts identity tokens issued by my EKS cluster
 
-
-#data "aws_eks_cluster" "eks" {
-#name       = aws_eks_cluster.eks_cluster.name
-#depends_on = [aws_eks_cluster.eks_cluster]
-#}
-
 data "tls_certificate" "eks" {
   url = data.aws_eks_cluster.eks.identity[0].oidc[0].issuer
 }
