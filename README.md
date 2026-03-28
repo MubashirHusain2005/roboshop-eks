@@ -273,6 +273,9 @@ GitOps controller that acts as the source of truth for cluster state. Continuous
 
 Istio acts as a service mesh which visualizes how traffic moves in a microservice based application, using envoy proxies.
 
+![Istio-mesh](images/istio-mesh.PNG)
+![Istio-performance](images/istio-performance.PNG)
+
 ## Observability Pipeline
 
 No application code changes are needed — all telemetry flows from Istio's Envoy sidecars.

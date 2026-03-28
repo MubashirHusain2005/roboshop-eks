@@ -25,9 +25,8 @@ terraform {
 
 data "aws_caller_identity" "identity" {}
 
-data "aws_region" "region" {
-  region = var.region
-}
+data "aws_region" "region" {}
+
 
 data "aws_secretsmanager_secret" "app_secrets" {
   name = var.apps_secrets
@@ -121,8 +120,8 @@ resource "aws_iam_policy" "iam_eso_policy" {
           "secretsmanager:GetResourcePolicy"
         ]
         Resource = [
-          "arn:aws:secretsmanager:${data.aws_region.region.name}:${data.aws_caller_identity.identity.account_id}:secret:db-creds-*",
-          "arn:aws:secretsmanager:${data.aws_region.region.name}:${data.aws_caller_identity.identity.account_id}:secret:prometheus-db-creds-*"
+          "arn:aws:secretsmanager:${data.aws_region.region}:${data.aws_caller_identity.identity.account_id}:secret:db-creds-*",
+          "arn:aws:secretsmanager:${data.aws_region.region}:${data.aws_caller_identity.identity.account_id}:secret:prometheus-db-creds-*"
         ]
       }
     ]
@@ -176,7 +175,7 @@ spec:
   provider:
     aws:
       service: SecretsManager
-      region: ${data.aws_region.region.name}
+      region: ${data.aws_region.region}
       auth:
         jwt:
           serviceAccountRef:
@@ -410,3 +409,4 @@ EOF
     kubectl_manifest.monitoring_namespace
   ]
 }
+

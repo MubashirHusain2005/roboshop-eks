@@ -27,7 +27,11 @@ terraform {
   }
 }
 
-resource "kubectl_manifest" "argo_namespace" {
+data "aws_secretsmanager_secret_version" "argocd" {
+  secret_id = var.app_secrets
+}
+
+resource "kubectl_manifest" "argocd_namespace" {
   yaml_body = <<EOF
 apiVersion: v1
 kind: Namespace
@@ -55,6 +59,7 @@ resource "helm_release" "argocd_deploy" {
   chart            = "argo-cd"
   version          = "7.6.6"
   timeout          = "600"
+  replace          = true
 
   values = [
     yamlencode({
@@ -73,7 +78,7 @@ resource "helm_release" "argocd_deploy" {
       }
 
       secret = {
-        argocdServerAdminPassword = "$2a$10$Jsn3fOA5LWlmPf3bsfeom.3aXbdSd.ybCmvL4TYTh76IlRqRI2GNK"
+        argocdServerAdminPassword = jsondecode(data.aws_secretsmanager_secret_version.argocd.secret_string)["argocdServerAdminPassword"] #"$2a$10$Jsn3fOA5LWlmPf3bsfeom.3aXbdSd.ybCmvL4TYTh76IlRqRI2GNK"
       }
 
       dex = {
@@ -82,7 +87,7 @@ resource "helm_release" "argocd_deploy" {
     })
   ]
 
-  depends_on = [var.cluster_name]
+  depends_on = [kubectl_manifest.argocd_namespace]
 
 }
 
