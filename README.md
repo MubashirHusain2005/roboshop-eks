@@ -1,6 +1,6 @@
 # E-Commerce Platform on AWS EKS with Istio
 
-A production-grade deployment of a three-tier e-commerce application on AWS EKS, featuring a full GitOps pipeline, service mesh, and observability stack. 
+A production-grade deployment of a three-tier e-commerce application on AWS EKS, featuring a full GitOps pipeline, service mesh, and observability stack.
 
 
 ![App](images/app.PNG)
