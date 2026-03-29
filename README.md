@@ -220,7 +220,7 @@ Bridges AWS Secrets Manager with Kubernetes-native secrets. Kubernetes secrets a
 - `ServiceMonitor` resources define which endpoints to scrape
 - Key Istio metrics: `istio_requests_total`, `istio_request_duration_milliseconds`, `istio_request_bytes`
 
-![MySQL Exporter](images/mysqlexporter.png)
+![MySQL Exporter](images/mysqlexporter.PNG)
 
 **Grafana** visualises metrics from Prometheus.
 
@@ -265,7 +265,7 @@ After using Karpenter and deploying application which my resource quotas cant ha
 
 GitOps controller that acts as the source of truth for cluster state. Continuously syncs manifests from the Git repository to the Kubernetes cluster.
 
-![ArgoCD](images/argo-cd.png)
+![ArgoCD](images/argo-cd.PNG)
 
 ---
 
