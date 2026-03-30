@@ -21,7 +21,7 @@ The platform runs **seven microservices** (web, payment, user, cart, catalogue, 
 
 ## Architecture
 
-![Architecture Diagram](roboshop.drawio.PNG)
+![Architecture Diagram](roboshop.drawio.png)
 
 ---
 
@@ -268,7 +268,7 @@ Service mesh that manages traffic between microservices using Envoy sidecar prox
 ![Istio mesh](images/istio-mesh.PNG)
 ![Istio performance](images/istio-performance.PNG)
 
-**Canary deployment** — 10% of traffic routed to the canary version of the web service via Istio `VirtualService` and `DestinationRule`:
+**Canary deployment** — 20% of traffic routed to the canary version of the web service via Istio `VirtualService` and `DestinationRule`:
 
 ![Canary](images/canary-app.PNG)
 
@@ -294,8 +294,8 @@ Kiali also reads the Kubernetes API and Istio config directly to surface `Virtua
 
 ## Stats
 
-- 🚀 **20% reduction** in deployment time via CI/CD pipelines
-- 📦 **35% reduction** in image size using multi-stage builds and Alpine base images
+- **20% reduction** in deployment time via CI/CD pipelines
+- **35% reduction** in image size using multi-stage builds and Alpine base images
 
 ---
 
