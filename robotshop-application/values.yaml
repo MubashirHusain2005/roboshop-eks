@@ -309,7 +309,7 @@ gateway:
 certificate:
   name: mubashir-site-cert
   secretName: mubashir-tls
-  issuer: letsencrypt-prod
+  issuer: letsencrypt-prod   ##can be staging too
   dnsNames:
     - mubashir.site
     - argocd.mubashir.site

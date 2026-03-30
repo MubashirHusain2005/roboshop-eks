@@ -3,7 +3,7 @@ telemetry:
   enabled: true
 
 prometheus:
-  enabled: false  # Let external Prometheus scrape instead using pod/svc monitors
+  enabled: false  # Let external Prometheus scrape instead using my pod/svc monitors
 
 pilot:
   env:

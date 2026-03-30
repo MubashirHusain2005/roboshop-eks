@@ -97,7 +97,7 @@ EOF
 }
 
 
-# Reuse the same policy by creating a separate role for cert-manager
+
 resource "aws_iam_role" "cert_manager" {
   name = "cert-manager-role"
 
@@ -121,7 +121,7 @@ resource "aws_iam_role" "cert_manager" {
   })
 }
 
-# cert-manager needs GetChange + ChangeResourceRecordSets + ListHostedZonesByName
+
 resource "aws_iam_role_policy" "cert_manager_route53" {
   name = "cert-manager-route53-policy"
   role = aws_iam_role.cert_manager.id

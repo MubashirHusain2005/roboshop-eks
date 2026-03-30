@@ -163,7 +163,6 @@ resource "helm_release" "external_secrets" {
 }
 
 
-# ClusterSecretStore
 
 resource "kubectl_manifest" "clustersecret_store" {
   yaml_body = <<EOF
@@ -189,10 +188,7 @@ EOF
 }
 
 
-# ExternalSecrets
 
-
-# mysql-secret in app-space (shipping, ratings, mysql StatefulSet)
 resource "kubectl_manifest" "external_secret_mysql" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
@@ -231,7 +227,7 @@ EOF
   ]
 }
 
-# rabbitmq-secret in data-space (used by RabbitMQ Deployment itself)
+
 resource "kubectl_manifest" "external_secret_rabbitmq" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
@@ -262,7 +258,6 @@ EOF
   ]
 }
 
-# rabbitmq-secret in app-space (used by payment Deployment)
 resource "kubectl_manifest" "external_secret_rabbitmq_app_space" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
@@ -293,7 +288,7 @@ EOF
   ]
 }
 
-# shipping-secret in app-space
+
 resource "kubectl_manifest" "external_secret_shipping" {
   yaml_body = <<EOF
 apiVersion: external-secrets.io/v1beta1
@@ -327,9 +322,6 @@ EOF
     kubectl_manifest.deployments_namespace
   ]
 }
-
-
-# Monitoring ExternalSecrets
 
 
 resource "kubectl_manifest" "mysql_exporter_secret" {

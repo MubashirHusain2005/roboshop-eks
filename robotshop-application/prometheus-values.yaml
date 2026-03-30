@@ -80,7 +80,6 @@ alertmanager:
             smarthost: "smtp.gmail.com:587"
             auth_username: "stokemubashir@gmail.com"
             auth_password_file: /etc/alertmanager/secrets/gmail_password
-           #auth_password:  xiwkoekzbcbxqwtn
             require_tls: true
 
   alertmanagerSpec:

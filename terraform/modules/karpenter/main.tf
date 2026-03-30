@@ -337,7 +337,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         ]
         Resource = "*"
       },
-      # IAM PassRole - only for specific Karpenter role
+     
       {
         Effect = "Allow"
         Action = [
@@ -346,7 +346,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Resource = aws_iam_role.karpenter_profile_instance_role.arn
 
       },
-      # IAM Instance Profile management - scoped to Karpenter resources
+   
       {
         Effect = "Allow"
         Action = [
@@ -412,7 +412,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           }
         }
       },
-      # EC2 DeleteLaunchTemplate
+  
       {
         Effect = "Allow"
         Action = [
@@ -426,7 +426,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           }
         }
       },
-      # EC2 CreateLaunchTemplate
+    
       {
         Effect = "Allow"
         Action = [
@@ -434,7 +434,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         ]
         Resource = "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:launch-template/*"
       },
-      # EC2 CreateFleet
+     
       {
         Effect = "Allow"
         Action = [
@@ -442,7 +442,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         ]
         Resource = "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:fleet/*"
       },
-      # SQS - only specific queue
+     
       {
         Effect = "Allow"
         Action = [
@@ -466,53 +466,6 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
     ]
   })
 }
-
-###Policy needs fixing 
-#resource "aws_iam_policy" "iam_karpenter_policy" {
-# name = "iampolicy-karpenter"
-
-# policy = jsonencode({
-#  Version = "2012-10-17"
-#Statement = [
-#  {
-#   Effect = "Allow"
-#  Action = [
-#     "ssm:GetParameter",
-#    "iam:PassRole",
-#    "iam:CreateInstanceProfile",
-#    "iam:DeleteInstanceProfile",
-#   "iam:GetInstanceProfile",
-#   "iam:AddRoleToInstanceProfile",
-#   "iam:RemoveRoleFromInstanceProfile",
-#  "iam:TagInstanceProfile",
-#  "ec2:DescribeImages",
-#  "ec2:RunInstances",
-#   "ec2:DescribeSubnets",
-#  "ec2:DescribeSecurityGroups",
-#  "ec2:DescribeLaunchTemplates",
-#  "ec2:DescribeInstances",
-#   "ec2:DescribeInstanceTypes",
-#   "ec2:DescribeInstanceTypeOfferings",
-#  "ec2:DeleteLaunchTemplate",
-#  "ec2:CreateTags",
-#    "ec2:DescribeAvailabilityZones",
-#   "ec2:TerminateInstances",
-#   "ec2:CreateLaunchTemplate",
-#  "ec2:CreateFleet",
-#  "ec2:DescribeSpotPriceHistory",
-#   "pricing:GetProducts",
-#  "sqs:SendMessage",
-#  "sqs:ReceiveMessage",
-#  "sqs:DeleteMessage",
-#  "sqs:GetQueueAttributes",
-#  "sqs:GetQueueUrl",
-# "eks:DescribeCluster"
-#  ],
-#  Resource = "*"
-#},
-# ]
-#})
-#}
 
 
 resource "aws_iam_role_policy_attachment" "iampolicyattach_karpenter" {

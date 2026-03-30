@@ -147,8 +147,6 @@ resource "helm_release" "external_dns" {
 
 ##RBAC RULE to allow External-dns to read gateways and services
 
-
-##The cluster role is the set of permissions of what can be done
 resource "kubectl_manifest" "externaldns_rbac" {
   yaml_body = <<EOF
 apiVersion: rbac.authorization.k8s.io/v1

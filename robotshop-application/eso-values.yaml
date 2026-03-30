@@ -4,4 +4,3 @@ serviceAccount:
 
 replicaCount: 1
 logLevel: info
-# add other chart values here

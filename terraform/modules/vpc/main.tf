@@ -192,21 +192,7 @@ resource "aws_subnet" "private" {
   }
 }
 
-#resource "aws_route_table_association" "private" {
-#for_each       = aws_subnet.private
-#subnet_id      = each.value.id
-#route_table_id = aws_route_table.private-rt.id
-#}
 
-
-#resource "aws_eip" "ngw-eip" {
-#domain = "vpc"
-
-#tags = {
-#Name = "eip"
-#}
-
-#}
 
 resource "aws_eip" "ngw_eip" {
   for_each = var.public_subnets
@@ -259,47 +245,6 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private[each.key].id
   route_table_id = aws_route_table.private[each.key].id
 }
-
-#resource "aws_nat_gateway" "ngw" {
-#subnet_id     = aws_subnet.public["public-subnet-2b"].id
-#allocation_id = aws_eip.ngw-eip.id
-
-# tags = {
-# Name = "igw-nat"
-#}
-
-# depends_on = [aws_internet_gateway.igw, aws_eip.ngw-eip]
-#}
-
-
-
-#resource "aws_route_table" "private-rt" {
-#vpc_id = aws_vpc.eks_vpc.id
-
-#route {
-#cidr_block     = "0.0.0.0/0"
-#nat_gateway_id = aws_nat_gateway.ngw.id
-# }
-
-# tags = {
-# Name = "private-rt"
-
-#}
-
-#depends_on = [aws_nat_gateway.ngw]
-
-#}
-
-#resource "aws_route_table_association" "private-route-association-2a" {
-
-#route_table_id = aws_route_table.private-rt.id
-#subnet_id      = aws_subnet.public["private-subnet-2a"].id
-#}
-
-#resource "aws_route_table_association" "private-route-association-2b" {
-#route_table_id = aws_route_table.private-rt.id
-#subnet_id      = aws_subnet.public["private-subnet-2b"].id
-#}
 
 
 ###CloudWatch for VPC logs

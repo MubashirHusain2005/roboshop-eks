@@ -33,19 +33,6 @@ resources:
     memory: 256Mi
 
 
-#livenessProbe:
-  #httpGet:
-    #path: /healthz
-    #port: 8081
-  #initialDelaySeconds: 10
-  #periodSeconds: 10
-
-#readinessProbe:
-  #httpGet:
-    #path: /readyz
-    #port: 8081
-  #initialDelaySeconds: 10
-  #periodSeconds: 10
 
 rbac:
   create: false

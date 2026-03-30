@@ -40,48 +40,6 @@ provider "aws" {
   region = var.region
 }
 
-
-
-module "iam" {
-  source = "./modules/iam"
-}
-
-module "vpc" {
-  source             = "./modules/vpc"
-  vpc_flow_logs_role = module.iam.vpc_flow_logs_role
-  depends_on         = [module.iam]
-}
-
-module "eks" {
-  source               = "./modules/eks"
-  clus_vers            = var.clus_vers
-  vpc_id               = module.vpc.vpc_id
-  iam_cluster_role_arn = module.iam.iam_cluster_role_arn
-  nodegroup_role_arn   = module.iam.nodegroup_role_arn
-  private_subnet_ids   = values(module.vpc.private_subnet_ids)
-  kms_key_arn          = module.vpc.kms_key_arn
-  node_group_name      = var.node_group_name
-  node_group_name_2    = var.node_group_name_2
-  depends_on           = [module.iam, module.vpc]
-}
-
-
-module "karpenter" {
-
-  source                = "./modules/karpenter"
-  node_instance_profile = module.iam.node_instance_profile.name
-  cluster_id            = module.eks.cluster_id
-  oidc_provider_arn     = module.eks.oidc_provider_arn
-  oidc_issuer_url       = module.eks.oidc_issuer_url
-  private_node_1_name   = module.eks.private_node_1_name
-  private_node_2_name   = module.eks.private_node_2_name
-  cluster_endpoint      = module.eks.cluster_endpoint
-  nodegroup_role_arn    = module.iam.nodegroup_role_arn
-
-
-  depends_on = [module.eks, module.iam]
-}
-
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_ca)
@@ -137,6 +95,51 @@ provider "kubectl" {
     ]
   }
 }
+
+
+module "iam" {
+  source = "./modules/iam"
+}
+
+module "vpc" {
+  source             = "./modules/vpc"
+  vpc_flow_logs_role = module.iam.vpc_flow_logs_role
+  depends_on         = [module.iam]
+}
+
+module "eks" {
+  source               = "./modules/eks"
+  clus_vers            = var.clus_vers
+  vpc_id               = module.vpc.vpc_id
+  iam_cluster_role_arn = module.iam.iam_cluster_role_arn
+  nodegroup_role_arn   = module.iam.nodegroup_role_arn
+  private_subnet_ids   = values(module.vpc.private_subnet_ids)
+  kms_key_arn          = module.vpc.kms_key_arn
+  node_group_name      = var.node_group_name
+  node_group_name_2    = var.node_group_name_2
+  depends_on           = [module.iam, module.vpc]
+}
+
+
+module "karpenter" {
+
+  source                = "./modules/karpenter"
+  node_instance_profile = module.iam.node_instance_profile.name
+  cluster_id            = module.eks.cluster_id
+  oidc_provider_arn     = module.eks.oidc_provider_arn
+  oidc_issuer_url       = module.eks.oidc_issuer_url
+  private_node_1_name   = module.eks.private_node_1_name
+  private_node_2_name   = module.eks.private_node_2_name
+  cluster_endpoint      = module.eks.cluster_endpoint
+  nodegroup_role_arn    = module.iam.nodegroup_role_arn
+
+
+  depends_on = [module.eks, module.iam]
+}
+
+
+
+
 
 
 module "cert-manager" {
@@ -227,15 +230,12 @@ resource "null_resource" "cleanup_script" {
     when    = destroy
   }
 }
-#aws eks update-kubeconfig --region eu-west-2 --name eks-cluster
 
-
-###Null resource to update my kubeconfig file-has to run seperately if using github actions
+###Null resource to update my kubeconfig file when running locally.
 
 resource "null_resource" "update_kubeconfig" {
   provisioner "local-exec" {
     command = "aws eks --region eu-west-2 update-kubeconfig --name eks-cluster"
-
   }
   depends_on = [module.eks]
 

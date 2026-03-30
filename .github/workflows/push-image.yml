@@ -1,17 +1,17 @@
 name: Build Scan and Push Docker Images to ECR
 
-###Add paths here
+
 on:
-  #push:
-   # branches:
-    #  - main
-   # paths:
-     # - 'app/**'
- # pull_request:
-   # branches:
-    #  - main
-   # paths:
-   #   - 'app/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/**'
   workflow_dispatch:
    
 permissions:
@@ -24,7 +24,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04          # was ubuntu-latest
+    runs-on: ubuntu-24.04          
 
     strategy:
       fail-fast: false

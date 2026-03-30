@@ -1,4 +1,3 @@
-##Calls existing secret store from AWS
 data "aws_secretsmanager_secret" "prometheus_secrets" {
   name = var.prometheus_secret_name
 }
@@ -91,44 +90,8 @@ resource "helm_release" "redis_exporter" {
 
   depends_on = [
     helm_release.prometheus,
-    #kubectl_manifest.redis_secret,
   ]
 }
-
-
-#resource "kubectl_manifest" "mysql_exporter_my_cnf" {
-#yaml_body = <<EOF
-#apiVersion: v1
-#kind: Secret
-#metadata:
-#name: mysql-exporter-mycnf
-#namespace: monitoring
-#type: Opaque
-#stringData:
-# .my.cnf: |
-#  [client]
-# user=metrics_user
-#password=metrics_password
-#host=mysql.app-space.svc.cluster.local
-#EOF
-
-# depends_on = [var.cluster_endpoint]
-#}
-
-
-#resource "kubectl_manifest" "redis_secret" {
-#yaml_body = <<EOF
-
-#apiVersion: v1
-#kind: Secret
-#metadata:
-# name: redis-secret
-#namespace: monitoring  ##was data-space 
-#type: Opaque
-#stringData:
-#REDIS_PASSWORD: redispassword 
-#EOF
-#}
 
 
 ##Alerts

@@ -276,11 +276,13 @@ Istio acts as a service mesh which visualizes how traffic moves in a microservic
 ![Istio-mesh](images/istio-mesh.PNG)
 ![Istio-performance](images/istio-performance.PNG)
 
-## Canary Version with Promotion off implementation 
+## Canary Version with implementation of 10% off
 
 ![canary](images/canary-app.PNG)
 
 ## Observability Pipeline
+
+![mysqlexporter](images/mysqlexporter.PNG)
 
 No application code changes are needed — all telemetry flows from Istio's Envoy sidecars.
 
@@ -312,6 +314,7 @@ Kiali also reads the Kubernetes API and Istio config directly to surface `Virtua
 - [ ] Thanos for Prometheus HA and long-term storage
 - [ ] AuthorizationPolicy per service to restrict inter-service calls
 - [ ] Research implementing AWS WAF on the ALB 
+- [] Research implementing Vault for secrets handling.
 
 
 
