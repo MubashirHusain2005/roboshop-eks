@@ -14,7 +14,7 @@ The platform runs seven microservices (web, payment, user, cart, catalogue, ship
 
 - **Zero-trust security** via Istio service mesh and IRSA
 - **GitOps deployments** driven by ArgoCD
-- **Full observability** with Prometheus, Grafana, Kiali, and Jaeger
+- **Full observability** with Prometheus, Grafana, Kiali
 - **Dynamic node autoscaling** via Karpenter
 
 ---
@@ -60,11 +60,11 @@ roboshop-eks/
 │   ├── charts/
 │   ├── templates/
 │   │   ├── destinationrule.yml
-│   │   ├── istio.yml
-│   │   ├── manifests.yml
-│   │   ├── mtls.yml
-│   │   ├── services.yml
-│   │   └── storage.yml
+│   │   ├── istio.yml                # Virutalservices and gateway yaml files 
+│   │   ├── manifests.yml            # Yaml files of all deplpoyments and statefulsets
+│   │   ├── mtls.yml                 # Encryption between services
+│   │   ├── services.yml             # Services to expose and access apps
+│   │   └── storage.yml              # Dynamic storage provisioning
 │   ├── .helmignore
 │   ├── cert-manager-values.yaml
 │   ├── eso-values.yaml
@@ -220,6 +220,7 @@ Bridges AWS Secrets Manager with Kubernetes-native secrets. Kubernetes secrets a
 
 ![MySQL Exporter](images/mysqlexporter.PNG)
 
+
 **Grafana** visualises metrics from Prometheus with pre-built Istio dashboards for mesh-wide, per-service, and per-workload views.
 
 ---
@@ -289,7 +290,7 @@ Envoy sidecar (every pod)
 
 Kiali also reads the Kubernetes API and Istio config directly to surface `VirtualService` / `DestinationRule` misconfigurations alongside live traffic data.
 
-![Kiali](images/kiali.PNG)
+![Kiali](images/kiali.png)
 
 ---
 
@@ -304,7 +305,7 @@ Kiali also reads the Kubernetes API and Istio config directly to surface `Virtua
 
 - [ ] Run all containers as non-root users to reduce attack surface
 - [ ] Persistent storage for Prometheus metrics (currently lost on pod restart)
-- [ ] Thanos for Prometheus HA and long-term storage
+- [ ] Thanos for Prometheus HA and long-term storage of metrics data
 - [ ] `AuthorizationPolicy` per service to restrict inter-service calls
 - [ ] AWS WAF on the ALB
 - [ ] Vault for secrets management

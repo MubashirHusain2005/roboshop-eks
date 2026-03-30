@@ -1,4 +1,3 @@
-# istiod values.yaml for external Prometheus
 telemetry:
   enabled: true
 

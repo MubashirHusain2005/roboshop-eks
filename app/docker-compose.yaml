@@ -92,7 +92,7 @@ services:
     image: shipping:2.0
     depends_on:
       mysql:
-        condition: service_healthy
+        condition: service_healthy    #ensures mysql initialised before running shipping
     environment:
       DB_HOST: mysql
       DB_USER: shipping
@@ -105,7 +105,7 @@ services:
     image: ratings:1.0
     depends_on:
       mysql:
-        condition: service_healthy
+        condition: service_healthy   #ensures mysql initialised before running ratings
     environment:
       DB_HOST: mysql
       DB_USER: shipping
@@ -143,7 +143,7 @@ services:
       - payment
       - ratings
     ports:
-      - "8080:8080"  ###May have to change to 3000:3000
+      - "8080:8080"  
     networks:
       - robot-shop
 

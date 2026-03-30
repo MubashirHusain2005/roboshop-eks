@@ -51,7 +51,7 @@ resource "aws_s3_bucket_public_access_block" "terraform_s3_access" {
   restrict_public_buckets = true
 }
 
-##Bucket policy enforces SSL/TLS connectiosn only 
+##Bucket policy enforces SSL/TLS connections only 
 resource "aws_s3_bucket_policy" "s3_bucket_policy" {
   bucket = aws_s3_bucket.terraform_state_bucket.id
 
@@ -169,21 +169,6 @@ resource "aws_iam_policy" "oidc_access_aws" {
         ]
         Resource = "arn:aws:s3:::mhusains3/*"
       },
-
-
-      #  {
-      # Sid    = "DynamoDBTableAccess"
-      #   Effect = "Allow"
-      #  Action = [
-      #    "dynamodb:GetItem",
-      #   "dynamodb:PutItem",
-      #  "dynamodb:DeleteItem",
-      #  "dynamodb:DescribeTable",
-      #  "dynamodb:UpdateItem"
-      #  ]
-      #  Resource = "arn:aws:dynamodb:eu-west-2:038774803581:table/terraform-lock"
-      # },
-
       {
         Sid    = "AccessToKMS"
         Effect = "Allow"
@@ -303,7 +288,7 @@ resource "aws_kms_alias" "kms_alias" {
 
 }
 
-##This needs looking at because I cant attach it to the irsa role when it hasnt even been created.
+
 resource "aws_kms_key_policy" "kms_key_policy" {
   key_id = aws_kms_key.kms_key.id
 

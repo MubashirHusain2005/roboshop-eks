@@ -78,7 +78,7 @@ resource "helm_release" "argocd_deploy" {
       }
 
       secret = {
-        argocdServerAdminPassword = jsondecode(data.aws_secretsmanager_secret_version.argocd.secret_string)["argocdServerAdminPassword"] #"$2a$10$Jsn3fOA5LWlmPf3bsfeom.3aXbdSd.ybCmvL4TYTh76IlRqRI2GNK"
+        argocdServerAdminPassword = jsondecode(data.aws_secretsmanager_secret_version.argocd.secret_string)["argocdServerAdminPassword"] 
       }
 
       dex = {

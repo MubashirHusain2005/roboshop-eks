@@ -145,7 +145,7 @@ resource "helm_release" "external_dns" {
   ]
 }
 
-##RBAC RULE to allow External-dns to read gateways and services
+##RBAC to allow External-dns to read my gateways and services
 
 resource "kubectl_manifest" "externaldns_rbac" {
   yaml_body = <<EOF
@@ -155,10 +155,10 @@ metadata:
   name: external-dns
 rules:
 - apiGroups: [""]
-  resources: ["services", "endpoints", "pods", "nodes"]    # ← add endpoints, pods, nodes
+  resources: ["services", "endpoints", "pods", "nodes"]    
   verbs: ["get", "list", "watch"]
 - apiGroups: ["extensions", "networking.k8s.io"]
-  resources: ["ingresses"]                                  # ← add ingresses
+  resources: ["ingresses"]                                  
   verbs: ["get", "list", "watch"]
 - apiGroups: ["networking.istio.io"]
   resources: ["gateways", "virtualservices"]
@@ -166,7 +166,7 @@ rules:
 EOF
 }
 
-#Clusterrolebinding is who gets those permissions serviceaccount/user
+
 resource "kubectl_manifest" "externaldns_cluster_role_binding" {
   yaml_body = <<EOF
 apiVersion: rbac.authorization.k8s.io/v1
