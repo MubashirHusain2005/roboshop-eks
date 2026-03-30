@@ -105,7 +105,7 @@ services:
     image: ratings:1.0
     depends_on:
       mysql:
-        condition: service_healthy   #ensures mysql initialised before running ratings
+        condition: service_healthy    #ensures mysql initialised before running ratings
     environment:
       DB_HOST: mysql
       DB_USER: shipping
