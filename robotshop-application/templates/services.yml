@@ -142,7 +142,6 @@ spec:
   - port: {{ .Values.user.port }}
     targetPort: {{ .Values.user.port }}
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
