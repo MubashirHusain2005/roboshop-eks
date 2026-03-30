@@ -21,7 +21,7 @@ The platform runs **seven microservices** (web, payment, user, cart, catalogue, 
 
 ## Architecture
 
-![Architecture Diagram](roboshop.drawio.PNG)
+![Architecture Diagram](images/roboshop.drawio.PNG)
 
 ---
 
