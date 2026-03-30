@@ -98,7 +98,7 @@ mysql:
   readinessProbe:
     initialDelaySeconds: 60
     periodSeconds: 10
-    failureThreshold: 20  #This was not here before
+    failureThreshold: 20  
 
 
 # RABBITMQ

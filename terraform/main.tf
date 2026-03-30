@@ -231,7 +231,7 @@ resource "null_resource" "cleanup_script" {
   }
 }
 
-###Null resource to update my kubeconfig file when running locally.
+###Null resource to update my kubeconfig file when running locally
 
 resource "null_resource" "update_kubeconfig" {
   provisioner "local-exec" {
