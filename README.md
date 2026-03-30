@@ -6,6 +6,8 @@ A production-grade deployment of a three-tier e-commerce application on AWS EKS,
 
 > 🎥 [Watch the Loom Demo](https://www.loom.com/share/6a9283a627ac4616a5780a99c53f7aa7)
 
+>  🎥 [Watch Live Metrics](https://www.loom.com/share/284b15cf8adf46198eb03995689133f6)
+
 ---
 
 ## Overview
