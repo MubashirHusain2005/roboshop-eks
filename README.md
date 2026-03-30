@@ -2,16 +2,15 @@
 
 A production-grade deployment of a three-tier e-commerce application on AWS EKS, featuring a full GitOps pipeline, service mesh, and observability stack.
 
-
-![App](images/app.PNG)
-
+![App](images/app.png)
 
 > 🎥 [Watch the Loom Demo](https://www.loom.com/share/6a9283a627ac4616a5780a99c53f7aa7)
 
 ---
+
 ## Overview
 
-The platform runs seven microservices (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline with:
+The platform runs **seven microservices** (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline with:
 
 - **Zero-trust security** via Istio service mesh and IRSA
 - **GitOps deployments** driven by ArgoCD
@@ -22,7 +21,7 @@ The platform runs seven microservices (web, payment, user, cart, catalogue, ship
 
 ## Architecture
 
-![Architecture Diagram](images/roboshop.drawio.png)
+![Architecture Diagram](roboshop.drawio.png)
 
 ---
 
@@ -56,12 +55,12 @@ roboshop-eks/
 │       └── terraform.yml           # Pipeline to run terraform plan/apply/destroy
 ├── README.md
 ├── app/                            # Dockerfiles and docker-compose for local deployment
-├── images/                         # Images of my deployments
+├── images/                         # Screenshots of deployments
 ├── robotshop-application/
 │   ├── charts/
 │   ├── templates/
-│   │   ├── destinationrule.yaml
-│   │   ├── istio.yml                   
+│   │   ├── destinationrule.yml
+│   │   ├── istio.yml
 │   │   ├── manifests.yml
 │   │   ├── mtls.yml
 │   │   ├── services.yml
@@ -72,10 +71,11 @@ roboshop-eks/
 │   ├── istiod-values.yaml
 │   ├── karpenter-values.yaml
 │   ├── nginx-values.yaml
-│   └── prometheus-values.yaml
+│   ├── prometheus-values.yaml
+│   └── values.yaml
 └── terraform/
     ├── bootstrap/
-    │   ├── main.tf                 #ECR Repos, KMS Keys, OIDC 
+    │   ├── main.tf                 # ECR repos, KMS keys, OIDC
     │   ├── variables.tf
     │   └── outputs.tf
     ├── modules/
@@ -123,7 +123,7 @@ cd terraform/bootstrap
 terraform init && terraform plan && terraform apply
 ```
 
-This provisions the S3 bucket for Terraform remote state, ECR repositories, IAM roles, a KMS key for ECR encryption, and the GitHub OIDC provider for CI/CD access to AWS.
+Provisions the S3 bucket for Terraform remote state, ECR repositories, IAM roles, a KMS key for ECR encryption, and the GitHub OIDC provider for CI/CD access to AWS.
 
 **2. Deploy infrastructure**
 
@@ -167,7 +167,6 @@ Provisions the network foundation for the cluster.
 | Worker Node SG | Controls node-to-node and external-to-node traffic. Allows pod-to-pod communication and Istio mesh traffic. |
 
 **Control Plane ↔ Node Rules**
-
 - Nodes → control plane: port 443
 - Control plane → nodes: ephemeral ports 1024–65535
 
@@ -175,7 +174,7 @@ Provisions the network foundation for the cluster.
 
 ### IAM
 
-Defines all roles and policies governing how services interact. The cluster role allows EKS to manage services like ELB and EC2. All pod-to-AWS auth uses **IRSA** — no static credentials, no shared node-level policies.
+All pod-to-AWS auth uses **IRSA** — no static credentials, no shared node-level policies.
 
 | Component | Permissions |
 |---|---|
@@ -203,7 +202,6 @@ Defines all roles and policies governing how services interact. The cluster role
 
 Bridges AWS Secrets Manager with Kubernetes-native secrets. Kubernetes secrets are only base64-encoded — ESO makes AWS Secrets Manager the source of truth.
 
-**Flow:**
 1. A `SecretStore` defines how to connect to AWS Secrets Manager (via IRSA)
 2. An `ExternalSecret` references a specific secret in Secrets Manager
 3. ESO creates a native Kubernetes `Secret` in the target namespace
@@ -216,16 +214,13 @@ Bridges AWS Secrets Manager with Kubernetes-native secrets. Kubernetes secrets a
 **Prometheus** collects metrics from the cluster and service mesh.
 
 - Scrapes Envoy sidecar metrics at `:15090/stats/prometheus` on every pod — no app instrumentation required
-- MySQL and Redis exporters expose MySQL and Redis database metrics at `/metrics`
+- MySQL and Redis exporters expose database metrics at `/metrics`
 - `ServiceMonitor` resources define which endpoints to scrape
 - Key Istio metrics: `istio_requests_total`, `istio_request_duration_milliseconds`, `istio_request_bytes`
 
 ![MySQL Exporter](images/mysqlexporter.PNG)
 
-**Grafana** visualises metrics from Prometheus.
-
-- Pre-built Istio dashboards for mesh-wide, per-service, and per-workload views
-- Kiali renders a live service topology map with traffic health indicators and helps us to see mtls live on the graph 
+**Grafana** visualises metrics from Prometheus with pre-built Istio dashboards for mesh-wide, per-service, and per-workload views.
 
 ---
 
@@ -237,7 +232,7 @@ Automates TLS certificate provisioning from Let's Encrypt using the **DNS-01 ACM
 
 ### external-dns
 
-Watches for `Ingress` and `Service` resources and automatically creates, updates, and deletes Route 53 A records to match. When the ALB Ingress comes up, external-dns creates the DNS record pointing to it.
+Watches for `Ingress`, `Service`, and Istio `Gateway` resources and automatically creates, updates, and deletes Route 53 A records to match. When the Istio Gateway comes up, external-dns creates the DNS record pointing to it.
 
 ---
 
@@ -250,14 +245,11 @@ Replaces the Cluster Autoscaler with faster, more cost-efficient node provisioni
 - Receives EC2 Spot interruption notices via SQS and drains nodes gracefully
 - Consolidates underutilised nodes to reduce cost
 
-### In Action
+**Scaling up to handle new deployments:**
 
-![Karpenter-in-action](images/karpenter-node.PNG)
+![Karpenter in action](images/Karpenter-in-action.PNG)
 
-
-After using Karpenter and deploying application which my resource quotas cant handle 
-
-![Karpenter-in-action-2](images/karpenter-in-action.PNG)
+![Karpenter consolidating](images/Karpenter-in-action-2.PNG)
 
 ---
 
@@ -271,20 +263,20 @@ GitOps controller that acts as the source of truth for cluster state. Continuous
 
 ### Istio
 
-Istio acts as a service mesh which visualizes how traffic moves in a microservice based application, using envoy proxies.
+Service mesh that manages traffic between microservices using Envoy sidecar proxies injected into every pod. Provides traffic management, mTLS between services, and live observability of service-to-service communication.
 
-![Istio-mesh](images/istio-mesh.PNG)
-![Istio-performance](images/istio-performance.PNG)
+![Istio mesh](images/istio-mesh.PNG)
+![Istio performance](images/istio-performance.PNG)
 
-## Canary Version with implementation of 10% off
+**Canary deployment** — 10% of traffic routed to the canary version of the web service via Istio `VirtualService` and `DestinationRule`:
 
-![canary](images/canary-app.PNG)
+![Canary](images/canary.PNG)
+
+---
 
 ## Observability Pipeline
 
-![mysqlexporter](images/mysqlexporter.PNG)
-
-No application code changes are needed — all telemetry flows from Istio's Envoy sidecars.
+No application code changes needed — all telemetry flows from Istio's Envoy sidecars.
 
 ```
 Envoy sidecar (every pod)
@@ -296,14 +288,14 @@ Envoy sidecar (every pod)
 
 Kiali also reads the Kubernetes API and Istio config directly to surface `VirtualService` / `DestinationRule` misconfigurations alongside live traffic data.
 
-![Kiali](images/kiali.png)
+![Kiali](images/kiali.PNG)
 
 ---
 
 ## Stats
 
--  **20% reduction** in deployment time via CI/CD pipelines
--  **35% reduction** in image size using multi-stage builds and Alpine base images
+- 🚀 **20% reduction** in deployment time via CI/CD pipelines
+- 📦 **35% reduction** in image size using multi-stage builds and Alpine base images
 
 ---
 
@@ -312,14 +304,10 @@ Kiali also reads the Kubernetes API and Istio config directly to surface `Virtua
 - [ ] Run all containers as non-root users to reduce attack surface
 - [ ] Persistent storage for Prometheus metrics (currently lost on pod restart)
 - [ ] Thanos for Prometheus HA and long-term storage
-- [ ] AuthorizationPolicy per service to restrict inter-service calls
-- [ ] Research implementing AWS WAF on the ALB 
-- [] Research implementing Vault for secrets handling.
+- [ ] `AuthorizationPolicy` per service to restrict inter-service calls
+- [ ] AWS WAF on the ALB
+- [ ] Vault for secrets management
 
 
-
-## MADE BY: MUBASHIR 
-
-
-
+## Created BY: MUBASHIR
 
