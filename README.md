@@ -230,7 +230,7 @@ Automates TLS certificate provisioning from Let's Encrypt using the **DNS-01 ACM
 
 ---
 
-### external-dns
+### External-dns
 
 Watches for `Ingress`, `Service`, and Istio `Gateway` resources and automatically creates, updates, and deletes Route 53 A records to match. When the Istio Gateway comes up, external-dns creates the DNS record pointing to it.
 
@@ -249,7 +249,7 @@ Replaces the Cluster Autoscaler with faster, more cost-efficient node provisioni
 
 ![Karpenter in action](images/karpenter-in-action.PNG)
 
-![Karpenter consolidating](images/karpenter-in-action-2.PNG)
+![Karpenter consolidating](images/karpenter-in-action.PNG)
 
 ---
 
