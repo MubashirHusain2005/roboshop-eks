@@ -10,7 +10,7 @@ A production-grade deployment of a three-tier e-commerce application on AWS EKS,
 
 ## Overview
 
-The platform runs **seven microservices** (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline with:
+The platform runs seven microservices (web, payment, user, cart, catalogue, shipping, ratings) across a fully automated infrastructure pipeline with:
 
 - **Zero-trust security** via Istio service mesh and IRSA
 - **GitOps deployments** driven by ArgoCD
@@ -21,7 +21,7 @@ The platform runs **seven microservices** (web, payment, user, cart, catalogue, 
 
 ## Architecture
 
-![Architecture Diagram](images/roboshop.drawio.PNG)
+![Architecture Diagram](images/roboshop.drawio.png)
 
 ---
 
