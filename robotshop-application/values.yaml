@@ -169,7 +169,6 @@ dispatch:
       cpu: "500m"
       memory: "256Mi"
 
-
 # SHIPPING
 
 shipping:
