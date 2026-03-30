@@ -247,9 +247,9 @@ Replaces the Cluster Autoscaler with faster, more cost-efficient node provisioni
 
 **Scaling up to handle new deployments:**
 
-![Karpenter in action](images/Karpenter-in-action.PNG)
+![Karpenter in action](images/karpenter-in-action.PNG)
 
-![Karpenter consolidating](images/Karpenter-in-action-2.PNG)
+![Karpenter consolidating](images/karpenter-in-action-2.PNG)
 
 ---
 
@@ -270,7 +270,7 @@ Service mesh that manages traffic between microservices using Envoy sidecar prox
 
 **Canary deployment** — 10% of traffic routed to the canary version of the web service via Istio `VirtualService` and `DestinationRule`:
 
-![Canary](images/canary.PNG)
+![Canary](images/canary-app.PNG)
 
 ---
 
