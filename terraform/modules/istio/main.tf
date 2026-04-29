@@ -26,10 +26,6 @@ terraform {
   }
 }
 
-data "aws_route53_zone" "domain" {
-  name         = "mubashir.site"
-  private_zone = false
-}
 
 locals {
   istio_charts_url = "https://istio-release.storage.googleapis.com/charts"

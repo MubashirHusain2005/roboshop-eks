@@ -27,8 +27,9 @@ terraform {
   }
 }
 
+
 data "aws_s3_bucket" "s3_bucket" {
-  bucket = "terraformstatebucket00534353432534523"
+  bucket = var.bucket
 }
 
 
@@ -46,6 +47,7 @@ metadata:
   name: external-dns
 EOF
 }
+
 
 resource "aws_iam_role" "external_dns" {
   name = var.external_dns_rolename
@@ -69,6 +71,7 @@ resource "aws_iam_role" "external_dns" {
     ]
   })
 }
+
 
 resource "aws_iam_role_policy" "external_dns_route53" {
   name = var.external_dns_policy_name
@@ -195,7 +198,7 @@ resource "aws_cloudtrail" "route_53_access" {
   name                          = "route53-access-monitoring"
   s3_bucket_name                = data.aws_s3_bucket.s3_bucket.id
   include_global_service_events = true
-  is_multi_region_trail         = false
+  is_multi_region_trail         = true
   enable_log_file_validation    = true
 
   event_selector {

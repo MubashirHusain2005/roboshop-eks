@@ -28,13 +28,13 @@ data "aws_caller_identity" "identity" {}
 data "aws_region" "region" {}
 
 
-data "aws_secretsmanager_secret" "app_secrets" {
-  name = var.apps_secrets
-}
+#data "aws_secretsmanager_secret" "app_secrets" {
+  #name = var.apps_secrets
+#}
 
-data "aws_secretsmanager_secret" "prometheus_secrets" {
-  name = var.monitoring_secrets
-}
+#data "aws_secretsmanager_secret" "prometheus_secrets" {
+  #name = var.monitoring_secrets
+#}
 
 
 resource "kubectl_manifest" "deployments_namespace" {
@@ -120,8 +120,8 @@ resource "aws_iam_policy" "iam_eso_policy" {
           "secretsmanager:GetResourcePolicy"
         ]
         Resource = [
-          "arn:aws:secretsmanager:${data.aws_region.region}:${data.aws_caller_identity.identity.account_id}:secret:db-creds-*",
-          "arn:aws:secretsmanager:${data.aws_region.region}:${data.aws_caller_identity.identity.account_id}:secret:prometheus-db-creds-*"
+          "arn:aws:secretsmanager:${data.aws_region.region.name}:${data.aws_caller_identity.identity.account_id}:secret:db-creds-*",
+          "arn:aws:secretsmanager:${data.aws_region.region.name}:${data.aws_caller_identity.identity.account_id}:secret:prometheus-db-creds-*"
         ]
       }
     ]
@@ -132,6 +132,7 @@ resource "aws_iam_role_policy_attachment" "iampolicyattach-eso" {
   role       = aws_iam_role.iam_role_eso.name
   policy_arn = aws_iam_policy.iam_eso_policy.arn
 }
+
 
 resource "kubernetes_service_account_v1" "eso_sa_external_secrets" {
   metadata {
@@ -174,7 +175,7 @@ spec:
   provider:
     aws:
       service: SecretsManager
-      region: ${data.aws_region.region}
+      region: ${data.aws_region.region.name}
       auth:
         jwt:
           serviceAccountRef:

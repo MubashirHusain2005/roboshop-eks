@@ -125,7 +125,6 @@ resource "aws_internet_gateway" "igw" {
     Name = "IGW"
   }
 
-  depends_on = [aws_vpc.eks_vpc]
 }
 
 resource "aws_subnet" "public" {

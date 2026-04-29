@@ -186,7 +186,7 @@ resource "aws_iam_role" "cloud_trail_role" {
         ]
         Effect = "Allow"
         Principal = {
-          Service = "vpc-flow-logs.amazonaws.com"
+          Service = "cloudtrail.amazonaws.com"
         }
       },
     ]
@@ -212,7 +212,7 @@ resource "aws_iam_policy" "cloud_trail_policy" {
           "logs:PutLogEvents",
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams",
-          "logs:DeleteLogGroup"
+          #"logs:DeleteLogGroup"
         ]
         Resource = "*"
       }
@@ -220,7 +220,13 @@ resource "aws_iam_policy" "cloud_trail_policy" {
   })
 
   tags = {
-    Name    = "vpc-flow-logs-cloudwatch-policy"
-    Purpose = "vpc-flow-logs"
+    Name    = "cloudtrail-policy"
+    Purpose = "monitor-aws-api"
   }
+}
+
+
+resource "aws_iam_role_policy_attachment" "cloudtrail_policyattachment" {
+  role       = aws_iam_role.cloud_trail_role.name
+  policy_arn = aws_iam_policy.cloud_trail_policy.arn
 }

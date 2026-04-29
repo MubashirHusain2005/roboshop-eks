@@ -41,15 +41,6 @@ EOF
 }
 
 
-data "aws_eks_cluster_auth" "main" {
-  name = var.cluster_name
-}
-
-
-data "aws_route53_zone" "domain" {
-  name         = "mubashir.site"
-  private_zone = false
-}
 
 resource "helm_release" "argocd_deploy" {
   name             = "argocd"

@@ -34,3 +34,8 @@ variable "external_dns_values_file" {
   description = "Path to the Helm values YAML file for external-dns"
   type        = string
 }
+
+variable "bucket" {
+  description = "Bucket Name"
+  default = "terraformstatebucket00534353432534523"
+}
