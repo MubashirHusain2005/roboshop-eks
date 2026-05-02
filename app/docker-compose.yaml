@@ -12,7 +12,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 20s  ##healthcheck to verify MongoDB is ready to accept connections
 
   redis:
     image: redis:6.2-alpine
