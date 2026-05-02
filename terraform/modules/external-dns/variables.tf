@@ -37,5 +37,5 @@ variable "external_dns_values_file" {
 
 variable "bucket" {
   description = "Bucket Name"
-  default = "terraformstatebucket00534353432534523"
+  default     = "terraformstatebucket00534353432534523"
 }

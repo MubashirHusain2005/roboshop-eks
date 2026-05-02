@@ -61,7 +61,7 @@ resource "aws_eks_cluster" "eks_cluster" {
     subnet_ids = var.private_subnet_ids
 
     endpoint_private_access = true
-    endpoint_public_access  = true 
+    endpoint_public_access  = true
   }
 
   encryption_config {
@@ -213,7 +213,7 @@ resource "aws_eks_node_group" "private_node_1" {
   instance_types = ["t3.large"]
 
   scaling_config {
-    desired_size = 2 
+    desired_size = 2
     max_size     = 3
     min_size     = 1
   }
@@ -292,7 +292,7 @@ resource "aws_security_group" "eks-cluster" {
   }
 
   tags = {
-    Name                                                     = "cluster-sg"
+    Name                                                      = "cluster-sg"
     "kubernetes.io/cluster/${aws_eks_cluster.eks_cluster.id}" = "owned"
   }
 }
@@ -329,8 +329,8 @@ resource "aws_security_group" "nodes" {
   }
 
   tags = {
-    Name                                                     = "node-sg"
-    "karpenter.sh/discovery"                                 = aws_eks_cluster.eks_cluster.id
+    Name                                                      = "node-sg"
+    "karpenter.sh/discovery"                                  = aws_eks_cluster.eks_cluster.id
     "kubernetes.io/cluster/${aws_eks_cluster.eks_cluster.id}" = "owned"
   }
 

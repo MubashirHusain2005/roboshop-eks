@@ -337,7 +337,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         ]
         Resource = "*"
       },
-     
+
       {
         Effect = "Allow"
         Action = [
@@ -346,7 +346,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         Resource = aws_iam_role.karpenter_profile_instance_role.arn
 
       },
-   
+
       {
         Effect = "Allow"
         Action = [
@@ -412,7 +412,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           }
         }
       },
-  
+
       {
         Effect = "Allow"
         Action = [
@@ -426,7 +426,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
           }
         }
       },
-    
+
       {
         Effect = "Allow"
         Action = [
@@ -434,7 +434,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         ]
         Resource = "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:launch-template/*"
       },
-     
+
       {
         Effect = "Allow"
         Action = [
@@ -442,7 +442,7 @@ resource "aws_iam_policy" "iam_karpenter_policy" {
         ]
         Resource = "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:fleet/*"
       },
-     
+
       {
         Effect = "Allow"
         Action = [
