@@ -31,37 +31,6 @@ variable "cert_issuer" {
 }
 
 
-#variable "pub_cidr_2a" {
-#type    = string
-#default = "10.0.1.0/24"
-#}
-
-#variable "pub_cidr_2b" {
-#type    = string
-#default = "10.0.2.0/24"
-#}
-
-#variable "priv_cidr_2c" {
-#type    = string
-#default = "10.0.3.0/24"
-#}
-
-#variable "priv_cidr_2d" {
-#type    = string
-#default = "10.0.4.0/24"
-#}
-
-
-#variable "avai_zone_2a" {
-#type    = string
-#default = "eu-west-2a"
-#}
-
-#variable "avai_zone_2b" {
-#type    = string
-#default = "eu-west-2b"
-#}
-
 
 variable "inst_tenancy" {
   type    = string

@@ -140,7 +140,7 @@ resource "aws_iam_role_policy" "cert_manager_route53" {
           "route53:ChangeResourceRecordSets",
           "route53:ListResourceRecordSets"
         ]
-        Resource = "arn:aws:route53:::hostedzone/Z09331692XTWCNAOSXR5T"
+        Resource = "arn:aws:route53:::hostedzone/Z09331692XTWCNAOSXR5T" 
       },
       {
         Effect   = "Allow"

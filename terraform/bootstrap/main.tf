@@ -51,7 +51,7 @@ resource "aws_s3_bucket_public_access_block" "terraform_s3_access" {
   restrict_public_buckets = true
 }
 
-##Bucket policy enforces SSL/TLS connections only 
+##Bucket policy enforces TLS connections only 
 resource "aws_s3_bucket_policy" "s3_bucket_policy" {
   bucket = aws_s3_bucket.terraform_state_bucket.id
 

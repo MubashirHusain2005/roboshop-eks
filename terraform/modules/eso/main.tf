@@ -28,14 +28,6 @@ data "aws_caller_identity" "identity" {}
 data "aws_region" "region" {}
 
 
-#data "aws_secretsmanager_secret" "app_secrets" {
-#name = var.apps_secrets
-#}
-
-#data "aws_secretsmanager_secret" "prometheus_secrets" {
-#name = var.monitoring_secrets
-#}
-
 
 resource "kubectl_manifest" "deployments_namespace" {
   yaml_body  = <<EOF

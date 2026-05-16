@@ -251,7 +251,7 @@ resource "aws_eks_node_group" "private_node_2" {
   instance_types = ["t3.large"]
 
   scaling_config {
-    desired_size = 2 ##This was 2 
+    desired_size = 2 
     max_size     = 3
     min_size     = 1
   }
@@ -323,9 +323,8 @@ resource "aws_security_group" "nodes" {
     description = "Allow SSH traffic from within VPC only"
     from_port   = 22
     to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr_block]
-
+    protocol    = "-1"
+    cidr_blocks = "10.0.0.0/16"
   }
 
   tags = {
